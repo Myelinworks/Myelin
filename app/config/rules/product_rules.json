@@ -1,0 +1,47 @@
+{
+  "workspace": "product",
+  "_note_missing_ids": "PRO-009 and PRO-010 are not enumerated in the source spec provided (only 10 named decisions were given for the PRO-001..012 range: weights 8/12/10/8/8/6/6/15/5/5). Omitted pending product-owner confirmation rather than invented.",
+  "decisions": {
+    "PRO-001": { "name": "select_market_opportunity", "score_weight": 0.08, "affects": ["product"], "formula": "opportunity_x_market_demand" },
+    "PRO-002": { "name": "create_new_product", "score_weight": 0.12, "affects": ["marketing", "finance"], "formula": "creates_new_product" },
+    "PRO-003": { "name": "prioritize_features", "score_weight": 0.10, "affects": ["marketing", "customer_satisfaction"], "formula": "completed_features / planned_features" },
+    "PRO-004": { "name": "rnd_investment", "score_weight": 0.08, "affects": ["finance"], "formula": "previous_innovation_score + rnd_investment" },
+    "PRO-005": { "name": "quality_strategy", "score_weight": 0.08, "affects": ["operations"], "formula": "base_quality + qa_investment" },
+    "PRO-006": { "name": "approve_prototype", "score_weight": 0.06, "affects": ["marketing"], "formula": "development_status_eq_100" },
+    "PRO-007": { "name": "beta_testing", "score_weight": 0.06, "affects": ["customer_success"], "formula": "feedback_collected" },
+    "PRO-008": { "name": "launch_product", "score_weight": 0.15, "affects": ["sales", "marketing", "operations"], "formula": "readiness_gte_threshold" },
+    "PRO-011": { "name": "customer_feedback_prioritization", "score_weight": 0.05, "affects": ["customer_success"], "formula": "roadmap_priority_score" },
+    "PRO-012": { "name": "retire_product", "score_weight": 0.05, "affects": ["finance"], "formula": "product_lifecycle" }
+  },
+  "core_formulas": {
+    "product_quality": "base_quality + qa_investment + rnd_bonus - technical_debt",
+    "feature_completion": "completed_features / planned_features * 100",
+    "innovation_score": "rnd_investment + new_features + technology_adoption",
+    "product_readiness": "(development + testing + manufacturing) / 3",
+    "product_rating": "customer_experience + quality + reliability",
+    "demand_score": "market_fit + brand_awareness + marketing_impact",
+    "product_health": "quality + customer_satisfaction + demand",
+    "product_development_cost": "feature_cost + rnd_cost + testing_cost",
+    "time_to_market": "remaining_development / development_velocity",
+    "product_roi": "revenue_generated - development_cost"
+  },
+  "scoring_weights": {
+    "strategic_thinking": 0.25,
+    "customer_centric_thinking": 0.20,
+    "innovation": 0.20,
+    "long_term_thinking": 0.15,
+    "resource_utilization": 0.10,
+    "decision_quality": 0.10
+  },
+  "dependencies": {
+    "product_creation": ["finance", "marketing"],
+    "feature_priority": ["marketing", "customer_success"],
+    "rnd_investment": ["finance"],
+    "quality_strategy": ["marketing", "operations", "customer_success"],
+    "prototype_approval": ["marketing"],
+    "beta_testing": ["marketing", "customer_success"],
+    "launch_approval": ["finance", "marketing", "sales", "operations", "customer_success"],
+    "manufacturing_approval": ["operations"],
+    "product_retirement": ["finance", "marketing", "sales", "operations", "customer_success"]
+  }
+}
