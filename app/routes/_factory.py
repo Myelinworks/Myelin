@@ -57,7 +57,7 @@ def build_workspace_router(
         try:
             impacts = compute_decision_impact(workspace.value, submission.decision_key, modifiers)
         except (NotImplementedError, KeyError) as exc:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
         session.add(
             DecisionLog(
