@@ -2,6 +2,7 @@
   "workspace": "marketing",
   "impact_fields": ["marketing", "sales", "finance", "operations", "manufacturing", "supply_chain", "hr", "customer_support", "product", "strategy"],
   "decisions": {
+    "marketing_budget_allocation":  { "evidence_only": true, "_note": "No base-impact table row given in the source doc -- this decision splits budget across the channel decisions below rather than having its own KPI effect. Evidence-only until a business-impact treatment is specified." },
     "increase_google_ads_budget":   { "base_impact": [20, 15, -8, 5, 6, 3, 2, 4, 0, 7] },
     "increase_meta_ads_budget":     { "base_impact": [18, 12, -7, 4, 5, 3, 2, 5, 0, 6] },
     "increase_linkedin_ads":        { "base_impact": [10, 9, -5, 2, 2, 1, 1, 1, 0, 4] },
