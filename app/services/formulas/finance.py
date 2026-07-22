@@ -45,3 +45,23 @@ def reserve_ratio(reserve_cash: float, cash_available: float) -> float:
 
 def operating_margin(revenue: float, operating_expenses: float) -> float:
     return (revenue - operating_expenses) / revenue if revenue else 0.0
+
+
+# The three below are taken verbatim from each decision's own "formula" field in
+# finance_rules.json (FIN-003, FIN-005, FIN-006) -- distinct from the engine_formulas above,
+# which are general quarter-level formulas, not decision-specific.
+
+
+def remaining_cash_after_capex(cash: float, capex: float) -> float:
+    """FIN-003 Capital Expenditure: 'cash - capex'."""
+    return cash - capex
+
+
+def cash_after_debt_utilisation(cash: float, loan: float) -> float:
+    """FIN-005 Debt Utilisation: 'cash + loan'."""
+    return cash + loan
+
+
+def total_hiring_budget(payroll: float, new_salaries: float) -> float:
+    """FIN-006 Hiring Budget Approval: 'payroll + new_salaries'."""
+    return payroll + new_salaries
