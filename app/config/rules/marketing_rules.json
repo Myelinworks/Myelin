@@ -1,0 +1,33 @@
+{
+  "workspace": "marketing",
+  "impact_fields": ["marketing", "sales", "finance", "operations", "manufacturing", "supply_chain", "hr", "customer_support", "product", "strategy"],
+  "decisions": {
+    "increase_google_ads_budget":   { "base_impact": [20, 15, -8, 5, 6, 3, 2, 4, 0, 7] },
+    "increase_meta_ads_budget":     { "base_impact": [18, 12, -7, 4, 5, 3, 2, 5, 0, 6] },
+    "increase_linkedin_ads":        { "base_impact": [10, 9, -5, 2, 2, 1, 1, 1, 0, 4] },
+    "increase_seo_budget":          { "base_impact": [15, 10, -4, 2, 2, 1, 3, 1, 4, 10] },
+    "increase_content_marketing":   { "base_impact": [16, 8, -5, 2, 2, 1, 2, 2, 6, 8] },
+    "increase_influencer_budget":   { "base_impact": [22, 14, -9, 3, 4, 2, 1, 8, 0, 10] },
+    "increase_pr_budget":           { "base_impact": [18, 5, -6, 1, 1, 0, 1, 4, 0, 12] },
+    "increase_email_marketing":     { "base_impact": [10, 12, -3, 3, 3, 2, 1, 5, 0, 5] },
+    "increase_referral_budget":     { "base_impact": [12, 16, -4, 4, 3, 2, 1, 2, 0, 6] },
+    "sponsor_events":               { "base_impact": [20, 8, -10, 2, 2, 1, 3, 3, 0, 10] },
+    "discount_10_percent":          { "base_impact": [12, 25, -18, 15, 20, 15, 3, 10, 0, 5], "category": "pricing_promotion" },
+    "bundle_products":              { "base_impact": [8, 15, -8, 8, 10, 8, 0, 4, 3, 4], "category": "pricing_promotion" },
+    "free_shipping":                { "base_impact": [10, 18, -12, 10, 8, 18, 0, 6, 0, 3], "category": "pricing_promotion" },
+    "premium_pricing":              { "base_impact": [-5, -8, 15, -6, -5, -5, 0, -2, 2, 8], "category": "pricing_promotion" },
+    "premium_brand_positioning":    { "base_impact": [15, 8, 12, -3, 4, 2, 2, 2, 10, 15], "category": "brand" },
+    "mass_market_positioning":      { "base_impact": [20, 18, -6, 15, 18, 15, 5, 8, -4, 6], "category": "brand" },
+    "sustainability_campaign":      { "base_impact": [12, 6, -5, 2, 5, 4, 2, 2, 5, 10], "category": "brand" },
+    "hire_marketing_staff":         { "base_impact": [18, 5, -10, 0, 0, 0, 15, 0, 0, 4], "category": "team" },
+    "fire_marketing_staff":         { "base_impact": [-20, -6, 8, 0, 0, 0, -18, 0, 0, -5], "category": "team" },
+    "employee_training":            { "base_impact": [12, 5, -4, 0, 0, 0, 10, 1, 2, 4], "category": "team" },
+    "outsource_agency":             { "base_impact": [15, 8, -7, 0, 0, 0, -4, 0, 0, 3], "category": "team" },
+    "enter_new_city":               { "base_impact": [18, 15, -10, 12, 15, 18, 6, 5, 3, 15], "category": "market_expansion" },
+    "enter_new_country":            { "base_impact": [25, 20, -18, 20, 22, 25, 12, 10, 8, 25], "category": "market_expansion" },
+    "target_enterprise":            { "base_impact": [10, 12, 8, 5, 4, 2, 3, 2, 3, 8], "category": "market_expansion" },
+    "target_students":              { "base_impact": [18, 16, -5, 8, 10, 8, 2, 5, 2, 4], "category": "market_expansion" }
+  },
+  "modifiers_applied": ["brand_strength", "market_saturation", "inventory_availability", "competitor_activity"],
+  "note": "Base impacts are MAXIMUM potential influence, not guaranteed outcomes. Actual Impact = Base % x Brand Strength Modifier x Market Saturation Modifier x Inventory Availability Modifier x Competitor Activity Modifier. Worked example (Increase Google Ads Budget, Sales field): base +15% x brand 0.9 x saturation 0.6 x inventory 1.0 x competitor 0.8 = 6.48%."
+}
