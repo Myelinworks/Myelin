@@ -36,9 +36,15 @@ class DecisionSubmitBase(BaseModel):
 
 
 class FieldImpactResponse(BaseModel):
+    """base_value/actual_value rather than "_pct" -- only Marketing's modifier-chain
+    decisions are percentages; Finance/Product/Sales handlers compute plain values
+    (ratios, dollar amounts, scores) with no modifier chain applied, so labeling
+    every field "_pct" would misrepresent non-percentage results.
+    """
+
     field: str
-    base_impact_pct: float
-    actual_impact_pct: float
+    base_value: float
+    actual_value: float
 
 
 class DecisionSubmissionResponse(BaseModel):
