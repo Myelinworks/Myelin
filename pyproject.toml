@@ -22,3 +22,11 @@ dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# session-scoped so the session-scoped test_engine fixture's asyncpg connections stay bound
+# to the same event loop as the tests that use them (function-scoped loops would cause
+# "another operation is in progress" cross-loop errors against the async engine).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
