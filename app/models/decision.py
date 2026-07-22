@@ -35,6 +35,10 @@ class Decision(UUIDPkMixin, TimestampMixin, Base):
     quarter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("quarters.id"), nullable=False)
     workspace: Mapped[Workspace] = mapped_column(SAEnum(Workspace, name="workspace"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Identifies WHAT was decided (e.g. "increase_google_ads_budget", "FIN-001") -- the key
+    # decision_engine and evidence_engine look up in the workspace's rules config. `payload`
+    # carries the decision-specific inputs (e.g. the channel spend split).
+    decision_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     status: Mapped[DecisionStatus] = mapped_column(
         SAEnum(DecisionStatus, name="decision_status"), default=DecisionStatus.DRAFT, nullable=False
