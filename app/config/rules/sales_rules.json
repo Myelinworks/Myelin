@@ -1,0 +1,60 @@
+{
+  "workspace": "sales",
+  "decisions": {
+    "SAL-001": { "name": "sales_channel_prioritization", "score_weight": 0.08, "affects": ["revenue"] },
+    "SAL-002": { "name": "marketplace_strategy", "score_weight": 0.08, "affects": ["marketing"] },
+    "SAL-003": { "name": "enterprise_b2b_deals", "score_weight": 0.08, "affects": ["operations"] },
+    "SAL-004": { "name": "pricing_execution", "score_weight": 0.08, "affects": ["revenue"] },
+    "SAL-005": { "name": "promotional_offers", "score_weight": 0.08, "affects": ["marketing"] },
+    "SAL-006": { "name": "customer_segment_strategy", "score_weight": 0.08, "affects": ["marketing"] },
+    "SAL-007": { "name": "distribution_expansion", "score_weight": 0.08, "affects": ["operations"] },
+    "SAL-008": { "name": "sales_forecast", "score_weight": 0.06, "affects": ["finance"] },
+    "SAL-009": { "name": "partnership_approval", "score_weight": 0.08, "affects": ["marketing"] },
+    "SAL-010": { "name": "customer_retention_strategy", "score_weight": 0.08, "affects": ["customer_success"] },
+    "SAL-011": { "name": "negotiation", "score_weight": 0.12, "affects": ["revenue"] },
+    "SAL-012": { "name": "quarter_sales_approval", "score_weight": 0.10, "affects": ["company"] }
+  },
+  "formulas": {
+    "revenue": "units_sold * selling_price",
+    "average_selling_price": "revenue / units_sold",
+    "average_order_value": "revenue / total_orders",
+    "website_revenue": "website_orders * selling_price",
+    "marketplace_revenue": "marketplace_orders * selling_price",
+    "enterprise_revenue": "enterprise_units * selling_price",
+    "conversion_rate": "orders / visitors * 100",
+    "repeat_purchase_rate": "repeat_customers / active_customers * 100",
+    "customer_lifetime_value": "aov * purchase_frequency * customer_lifespan",
+    "revenue_forecast_accuracy": "actual_revenue / forecast_revenue * 100",
+    "channel_contribution": "channel_revenue / total_revenue * 100",
+    "discount_impact": "discount_amount / revenue * 100",
+    "gross_sales": "units_sold * selling_price",
+    "net_sales": "gross_sales - discounts - returns"
+  },
+  "negotiation_engine": {
+    "negotiation_score": "price_competitiveness + relationship_score + inventory_availability + brand_strength + delivery_capability - risk",
+    "acceptance_probability": "negotiation_score * buyer_flexibility * market_demand",
+    "negotiable_variables": ["price", "quantity", "delivery_timeline", "warranty", "payment_terms", "support", "free_accessories"],
+    "updates_on_close": ["enterprise_revenue", "gross_margin", "inventory", "customer_satisfaction", "partner_relationship", "cash_flow"]
+  },
+  "scoring_weights": {
+    "revenue_optimization": 0.25,
+    "strategic_thinking": 0.20,
+    "customer_focus": 0.20,
+    "negotiation_decision_making": 0.15,
+    "channel_strategy": 0.10,
+    "long_term_growth": 0.10
+  },
+  "dependencies": {
+    "channel_strategy": ["marketing"],
+    "marketplace_strategy": ["marketing"],
+    "enterprise_deals": ["product", "operations"],
+    "pricing_execution": ["finance"],
+    "promotions": ["finance", "marketing"],
+    "customer_segments": ["marketing"],
+    "distribution_expansion": ["operations"],
+    "forecast": ["finance", "marketing", "operations"],
+    "partnerships": ["marketing"],
+    "retention": ["product", "customer_success"],
+    "negotiation": ["finance", "product", "operations"]
+  }
+}
