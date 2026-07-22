@@ -5,6 +5,8 @@ description = "Myelin backend MVP: deterministic CEO decision-simulation platfor
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.31.0",
     "fastapi>=0.139.2",
+    "sqlalchemy[asyncio]>=2.0.51",
     "uvicorn[standard]>=0.51.0",
 ]
