@@ -124,6 +124,7 @@ def test_generate_evidence_end_to_end():
         quarter_id=quarter_id,
         workspace=Workspace.MARKETING,
         title="Q1 Marketing Budget Allocation",
+        decision_key="marketing_budget_allocation",
         payload={
             "total_budget": 10000,
             "channel_spend": {
@@ -134,7 +135,7 @@ def test_generate_evidence_end_to_end():
         },
     )
 
-    records = generate_evidence(decision, "marketing_budget_allocation", company_id=company_id)
+    records = generate_evidence(decision, company_id=company_id)
 
     assert len(records) == 6
     assert all(isinstance(r, EvidenceRecord) for r in records)
@@ -147,8 +148,9 @@ def test_generate_evidence_unregistered_decision_raises():
         quarter_id=uuid.uuid4(),
         workspace=Workspace.FINANCE,
         title="Department Budget Allocation",
+        decision_key="FIN-001",
         payload={},
     )
 
     with pytest.raises(NotImplementedError):
-        generate_evidence(decision, "FIN-001", company_id=uuid.uuid4())
+        generate_evidence(decision, company_id=uuid.uuid4())

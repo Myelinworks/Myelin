@@ -131,7 +131,6 @@ EVIDENCE_EXTRACTORS: dict[tuple[Workspace, str], Callable[[dict[str, Any]], list
 
 def generate_evidence(
     decision: Decision,
-    decision_key: str,
     *,
     company_id: uuid.UUID,
     prior_quarter_evidence: list[EvidenceRecord] | None = None,
@@ -143,10 +142,10 @@ def generate_evidence(
     (marketing-specific). Once more workspaces register extractors, this needs a per-workspace
     adaptability hook instead of always assuming channel_spend.
     """
-    extractor = EVIDENCE_EXTRACTORS.get((decision.workspace, decision_key))
+    extractor = EVIDENCE_EXTRACTORS.get((decision.workspace, decision.decision_key))
     if extractor is None:
         raise NotImplementedError(
-            f"No evidence-extraction rule registered for {decision.workspace.value}/{decision_key}. "
+            f"No evidence-extraction rule registered for {decision.workspace.value}/{decision.decision_key}. "
             "Evidence rules for this decision haven't been specified yet -- register one in "
             "EVIDENCE_EXTRACTORS rather than guessing what evidence it should produce."
         )

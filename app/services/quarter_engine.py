@@ -109,10 +109,6 @@ def run_quarter(
     """Run the Business Impact + Evidence pipelines for every decision in a quarter, then
     roll evidence up into cognitive scores and a leaderboard-ready performance summary.
 
-    Each decision's `payload` must include a "decision_key" identifying which named decision
-    it is (e.g. "marketing_budget_allocation", "FIN-001") -- Decision has no dedicated column
-    for this yet since routes (which will set it on submission) aren't built in this pass.
-
     Decisions without a registered evidence extractor or base-impact table are skipped, not
     fatal -- most of the ~60 workspace decisions don't have their rules specified yet (see
     evidence_engine.EVIDENCE_EXTRACTORS), so failing the whole quarter on the first
@@ -122,25 +118,18 @@ def run_quarter(
     workspace_results: dict[str, dict] = {}
 
     for decision in decisions:
-        decision_key = decision.payload.get("decision_key")
-        if not decision_key:
-            note = f"{decision.id}: payload missing 'decision_key'"
-            result.skipped_evidence.append(note)
-            result.skipped_business_impact.append(note)
-            continue
-
         workspace_results.setdefault(decision.workspace.value, {})
 
         try:
             result.evidence_records += generate_evidence(
-                decision, decision_key, company_id=company_id, prior_quarter_evidence=prior_quarter_evidence
+                decision, company_id=company_id, prior_quarter_evidence=prior_quarter_evidence
             )
         except NotImplementedError as exc:
             result.skipped_evidence.append(str(exc))
 
         try:
             result.business_impacts[decision.id] = compute_decision_impact(
-                decision.workspace.value, decision_key, modifiers
+                decision.workspace.value, decision.decision_key, modifiers
             )
         except (NotImplementedError, KeyError) as exc:
             result.skipped_business_impact.append(str(exc))

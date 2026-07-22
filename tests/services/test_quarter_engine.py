@@ -62,8 +62,8 @@ def test_run_quarter_end_to_end_mixed_registered_and_unregistered_decisions():
         quarter_id=quarter_id,
         workspace=Workspace.MARKETING,
         title="Q1 Marketing Budget Allocation",
+        decision_key="marketing_budget_allocation",
         payload={
-            "decision_key": "marketing_budget_allocation",
             "total_budget": 10000,
             "channel_spend": {
                 "increase_google_ads_budget": 3000,
@@ -77,20 +77,14 @@ def test_run_quarter_end_to_end_mixed_registered_and_unregistered_decisions():
         quarter_id=quarter_id,
         workspace=Workspace.FINANCE,
         title="Department Budget Allocation",
-        payload={"decision_key": "FIN-001"},
-    )
-    no_key_decision = Decision(
-        id=uuid.uuid4(),
-        quarter_id=quarter_id,
-        workspace=Workspace.SALES,
-        title="Some sales decision",
+        decision_key="FIN-001",
         payload={},
     )
 
     result = run_quarter(
         company_id,
         quarter_id,
-        [registered_decision, unregistered_decision, no_key_decision],
+        [registered_decision, unregistered_decision],
         WORKED_EXAMPLE_MODIFIERS,
     )
 
@@ -98,11 +92,9 @@ def test_run_quarter_end_to_end_mixed_registered_and_unregistered_decisions():
     assert len(result.evidence_records) == 6
     assert all(r.company_id == company_id for r in result.evidence_records)
 
-    # business impact: marketing decision key isn't in marketing_rules.json's base_impact
-    # table (that table only covers channel-increase decisions, not the allocation decision
-    # itself) so it's skipped too -- only the "missing decision_key" note differs per decision.
-    assert len(result.skipped_business_impact) == 3
-    assert any("missing 'decision_key'" in note for note in result.skipped_business_impact)
+    # business impact: marketing_budget_allocation is evidence_only (no base_impact table row),
+    # and FIN-001 isn't a base-impact-table workspace at all -- both skipped, for different reasons.
+    assert len(result.skipped_business_impact) == 2
 
     # cognitive scores computed from the one registered decision's evidence: three-way split
     # (33% each) means diversified_investment=YES (+2), long_term_investment=YES (+3, seo
