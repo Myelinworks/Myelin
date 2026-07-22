@@ -72,10 +72,23 @@ def build_workspace_router(
             )
         )
 
+        # Unlike business impact (the response contract promises a business_impact list),
+        # a missing evidence-extraction rule is non-fatal here -- the Business Impact and
+        # Evidence pipelines are independent (see architecture docs), and quarter_engine
+        # already treats this as a recoverable "skipped", not a hard failure. Blocking an
+        # otherwise-successful submission because evidence isn't wired up yet for this
+        # decision_key would be wrong for the same reason quarter_engine doesn't do it.
         try:
             evidence_records = generate_evidence(decision, company_id=company_id)
+            evidence_output: dict = {
+                "evidence": [
+                    {"key": e.evidence_key, "value": e.evidence_value, "categories": e.categories}
+                    for e in evidence_records
+                ]
+            }
         except NotImplementedError as exc:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+            evidence_records = []
+            evidence_output = {"skipped": str(exc)}
 
         session.add_all(evidence_records)
         session.add(
@@ -83,12 +96,7 @@ def build_workspace_router(
                 decision_id=decision.id,
                 stage="evidence",
                 input_snapshot={"decision_key": submission.decision_key, "payload": submission.payload},
-                output_snapshot={
-                    "evidence": [
-                        {"key": e.evidence_key, "value": e.evidence_value, "categories": e.categories}
-                        for e in evidence_records
-                    ]
-                },
+                output_snapshot=evidence_output,
             )
         )
 
