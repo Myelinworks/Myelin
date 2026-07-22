@@ -27,9 +27,17 @@ that touches the database or Redis:
 cp .env.example .env
 ```
 
-`DATABASE_URL` must be an `asyncpg`-style URL
-(`postgresql+asyncpg://...`) pointing at your Supabase Postgres instance.
-`REDIS_URL` points at an Upstash-compatible Redis instance.
+`DATABASE_URL` must be an `asyncpg`-style URL (`postgresql+asyncpg://...`)
+pointing at your Supabase Postgres instance -- **use the connection pooler
+URL** (Dashboard → Settings → Database → Connection Pooling), not the direct
+`db.<ref>.supabase.co` host: that host is IPv6-only and unreachable from
+networks without native IPv6. `REDIS_URL` points at an Upstash-compatible
+Redis instance.
+
+Tests run against the same Supabase project, but in a dedicated `test`
+Postgres schema (via SQLAlchemy `schema_translate_map`), never `public` --
+see `tests/conftest.py`. Each test runs inside a rolled-back transaction, so
+the schema is always empty between tests.
 
 ## Architecture: the dual pipeline
 
@@ -66,24 +74,38 @@ as the audit trail — every pipeline run against a decision writes an immutable
 can be replayed from its logs.
 
 All four engines are pure, DB-session-agnostic functions over plain
-Decision/EvidenceRecord objects (no route wiring yet — that's the next pass),
-which makes them fully unit-testable without a live database. See `tests/services/`
-— 27 tests cover the worked examples from the source docs (e.g. the marketing
-modifier-chain example resolves to exactly 6.48%).
+Decision/EvidenceRecord objects, which makes them fully unit-testable without
+a live database (`tests/services/`, 27 tests). Routes (`app/routes/`) wire
+them to HTTP and own all persistence -- see "API surface" below.
 
 ### Known gaps (flagged in code, not guessed)
 
 Most of the ~60 workspace decisions don't have evidence-extraction or
 base-impact rules specified yet — `evidence_engine.EVIDENCE_EXTRACTORS` and
 `decision_engine.compute_decision_impact` raise `NotImplementedError`/`KeyError`
-for anything unregistered rather than inventing a rule, and `quarter_engine.run_quarter`
-collects these as `skipped_evidence`/`skipped_business_impact` instead of
-failing the whole quarter. Other flagged gaps (see inline `TODO(source-doc-gap)`
-comments): how `actual_impact_pct` converts into an absolute KPI delta;
-Finance FIN-008..013 per-dimension weights (inferred, need product-owner
-confirmation); the marketing long-term-channel taxonomy and risk-level
-thresholds beyond the given >70% cutoff; and the excess-leads-to-KPI-delta
-magnitude in the Marketing→Sales handoff.
+for anything unregistered rather than inventing a rule. `quarter_engine.run_quarter`
+collects these as `skipped_evidence`/`skipped_business_impact` (non-fatal, quarter
+level); the single-decision submission route 422s on a missing **business-impact**
+rule (the response contract promises a `business_impact` list) but treats a missing
+**evidence** rule as non-fatal, logging the gap in `DecisionLog` instead -- the two
+pipelines are independent and one being unimplemented for a given decision shouldn't
+block the other. Concretely: only Marketing's channel/pricing/brand/team/expansion
+decisions (the base-impact-table ones) can currently return 201 with real business
+impact; every Finance/Product/Sales/CX decision 422s until `decision_engine` grows a
+generic formula-application mechanism for those workspaces.
+
+Other flagged gaps (see inline `TODO(source-doc-gap)` comments): how
+`actual_impact_pct` converts into an absolute KPI delta; Finance FIN-008..013
+per-dimension weights (inferred, need product-owner confirmation); the
+marketing long-term-channel taxonomy and risk-level thresholds beyond the
+given >70% cutoff; and the excess-leads-to-KPI-delta magnitude in the
+Marketing→Sales handoff.
+
+**Operations and People workspaces have no routes.** Both are named in the
+Quarter Flow doc's workspace sequence but neither has a rules doc
+(`operations_rules.json` / `people_rules.json` don't exist). Do not scaffold
+a router for either until rules exist -- a router whose every decision_key
+would 422 isn't a real endpoint, it's dead code dressed as a feature.
 
 ## Directory structure
 
@@ -116,13 +138,17 @@ app/
     operations.py          # OperationsState — Operations workspace KPI snapshot
     cx.py                  # CXState        — Customer Experience workspace KPI snapshot
 
-  schemas/                # pydantic request/response schemas, mirrored per domain (planned)
-    finance.py / marketing.py / product.py / sales.py / operations.py / cx.py
-    decision.py / quarter.py
+  schemas/                # pydantic request/response schemas, one file per workspace
+    base.py                # ORMBase, QuarterScopedBase -- shared id/created_at/quarter_id
+    decision.py             # DecisionSubmitBase (decision_key validated against rules JSON), DecisionLogEntry
+    finance.py / marketing.py / product.py / sales.py / cx.py
+    quarter.py              # QuarterReportResponse, LeaderboardResponse
 
-  routes/                 # one thin router per workspace, no business logic (planned)
-    finance.py / marketing.py / product.py / sales.py / operations.py / cx.py
-    quarter.py            # quarter lifecycle / simulation control endpoints
+  routes/
+    deps.py                 # get_quarter, get_open_quarter (the lock guard), get_quarter_modifiers
+    _factory.py              # build_workspace_router -- the shared 3-endpoint shape
+    finance.py / marketing.py / product.py / sales.py / cx.py  # one-line factory calls
+    quarter.py               # lock / report / leaderboard endpoints
 
   services/
     decision_engine.py          # Business Impact pipeline: modifier chain + marketing impact table
@@ -131,15 +157,48 @@ app/
     quarter_engine.py           # Run Quarter orchestration: costs, handoffs, full pipeline wiring
     formulas/                   # concrete per-workspace arithmetic (finance/product/sales/cx)
 
-  main.py                 # FastAPI app, CORS middleware, GET /health
+  main.py                 # FastAPI app, CORS middleware, GET /health, router registration
 
-alembic/                  # async-compatible Alembic migrations, wired to app models
+alembic/                  # async-compatible Alembic migrations, applied to Supabase (14 tables)
 tests/services/           # unit tests for all four engines (27 tests, no DB required)
+tests/routes/             # route-level integration tests against the live Supabase `test` schema
 ```
 
-`schemas/` and `routes/` currently exist as empty packages — they're
-intentionally left unimplemented until routes are wired up (the next pass),
-rather than scaffolding routers with no real logic behind them.
+## API surface
+
+Per workspace (finance, marketing, product, sales, cx):
+
+- `POST /companies/{company_id}/quarters/{quarter_id}/{workspace}/decisions` —
+  validates `decision_key` against that workspace's rules JSON (422 with the
+  invalid key named if unknown), persists a `Decision` row, runs
+  `decision_engine` + `evidence_engine` for that one decision, writes two
+  `DecisionLog` rows (`business_impact`, `evidence`), returns the immediate
+  business-impact delta. Rejected with 409 if the quarter is already locked.
+- `GET /companies/{company_id}/quarters/{quarter_id}/{workspace}/state` —
+  current `*State` row; 404 if no snapshot exists yet.
+- `GET /companies/{company_id}/quarters/{quarter_id}/{workspace}/decisions` —
+  the workspace's decision log for that quarter (audit trail).
+
+Quarter-level:
+
+- `POST /companies/{company_id}/quarters/{quarter_id}/lock` — runs
+  `quarter_engine.run_quarter` over every decision in the quarter, persists
+  `EvidenceRecord`/`CognitiveScore`/`QuarterPerformance`, marks the quarter
+  `CLOSED`. 409 if already locked.
+- `GET /companies/{company_id}/quarters/{quarter_id}/report` — reads back the
+  persisted `QuarterPerformance` row; never recomputes. 404 before lock.
+- `GET /companies/{company_id}/leaderboard` — `QuarterPerformance` rollups
+  for a company across quarters.
+
+**`decision_key` is a real, indexed column on `Decision`** (not a
+`payload["decision_key"]` convention) -- it's what `decision_engine` and
+`evidence_engine` key their lookups on. `payload` carries the decision's
+specific inputs. Two payload shapes are validated at the schema layer because
+the source spec actually specifies them: `marketing_budget_allocation`'s
+`channel_spend` must sum to `total_budget`, and `SAL-011` (negotiation)
+payload keys must be a subset of `sales_rules.json`'s `negotiable_variables`.
+Every other decision_key's payload is an unvalidated dict pending further
+per-decision specification.
 
 ## Data model notes
 
