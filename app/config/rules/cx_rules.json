@@ -1,0 +1,67 @@
+{
+  "workspace": "cx",
+  "decisions": {
+    "CX-001": { "name": "customer_support_strategy", "score_weight": 0.08, "affects": ["brand_trust"] },
+    "CX-002": { "name": "complaint_resolution", "score_weight": 0.10, "affects": ["product"] },
+    "CX-003": { "name": "return_warranty_policy", "score_weight": 0.08, "affects": ["finance"] },
+    "CX-004": { "name": "loyalty_program", "score_weight": 0.08, "affects": ["sales"] },
+    "CX-005": { "name": "referral_program", "score_weight": 0.08, "affects": ["marketing"] },
+    "CX-006": { "name": "customer_feedback_prioritization", "score_weight": 0.08, "affects": ["product"] },
+    "CX-007": { "name": "community_strategy", "score_weight": 0.07, "affects": ["marketing"] },
+    "CX-008": { "name": "customer_education", "score_weight": 0.06, "affects": ["product"] },
+    "CX-009": { "name": "churn_prevention", "score_weight": 0.10, "affects": ["sales"] },
+    "CX-010": { "name": "brand_crisis_response", "score_weight": 0.12, "affects": ["company"] },
+    "CX-011": { "name": "vip_customer_strategy", "score_weight": 0.05, "affects": ["sales"] },
+    "CX-012": { "name": "quarter_cx_approval", "score_weight": 0.10, "affects": ["company"] }
+  },
+  "variables": {
+    "customer_satisfaction":   { "initial": 78, "scoring_impact": 0.15 },
+    "net_promoter_score":      { "initial": 32, "scoring_impact": 0.10 },
+    "customer_loyalty":        { "initial": 55, "scoring_impact": 0.08 },
+    "brand_trust":             { "initial": 55, "scoring_impact": 0.10 },
+    "brand_reputation":        { "initial": 58, "scoring_impact": 0.08 },
+    "churn_rate":              { "initial": 0.06, "scoring_impact": 0.12 },
+    "repeat_purchase_rate":    { "initial": 0.18, "scoring_impact": 0.08 },
+    "referral_rate":           { "initial": 0.09, "scoring_impact": 0.06 },
+    "community_members":       { "initial": 1200, "scoring_impact": 0.04 },
+    "product_adoption":        { "initial": 62, "scoring_impact": 0.05 },
+    "average_resolution_time_hrs": { "initial": 24, "scoring_impact": 0.03 },
+    "first_contact_resolution": { "initial": 0.72, "scoring_impact": 0.03 },
+    "return_rate":              { "initial": 0.021, "scoring_impact": 0.04 },
+    "warranty_claims":          { "initial": 0.018, "scoring_impact": 0.02 },
+    "customer_lifetime_value":  { "initial": null, "scoring_impact": 0.08 },
+    "social_sentiment":         { "initial": 62, "scoring_impact": 0.04 }
+  },
+  "formulas": {
+    "customer_satisfaction": "positive_experiences / total_experiences * 100",
+    "nps": "percent_promoters - percent_detractors",
+    "churn_rate": "lost_customers / active_customers * 100",
+    "retention_rate": "active_customers / previous_customers * 100",
+    "referral_rate": "referred_customers / active_customers * 100",
+    "product_adoption": "active_feature_users / active_customers * 100",
+    "customer_lifetime_value": "average_order_value * purchase_frequency * customer_lifespan",
+    "brand_trust": "previous_trust + positive_experiences - negative_experiences",
+    "community_growth": "new_members - inactive_members",
+    "social_sentiment": "positive_mentions - negative_mentions"
+  },
+  "scoring_weights": {
+    "customer_centric_thinking": 0.30,
+    "strategic_thinking": 0.20,
+    "problem_solving": 0.15,
+    "brand_building": 0.10,
+    "long_term_thinking": 0.10,
+    "decision_quality": 0.10,
+    "crisis_management": 0.05
+  },
+  "dependencies": {
+    "return_warranty": ["finance", "product", "operations"],
+    "loyalty_program": ["marketing", "sales"],
+    "referral_program": ["marketing", "sales"],
+    "customer_feedback": ["product"],
+    "community_strategy": ["marketing"],
+    "customer_education": ["product"],
+    "churn_prevention": ["sales"],
+    "brand_crisis": ["finance", "marketing", "product", "sales", "operations"],
+    "vip_strategy": ["sales"]
+  }
+}
