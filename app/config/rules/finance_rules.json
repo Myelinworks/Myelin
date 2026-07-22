@@ -1,0 +1,97 @@
+{
+  "workspace": "finance",
+  "overall_scoring_weights": {
+    "strategic_thinking": 0.35,
+    "resource_allocation": 0.30,
+    "risk_management": 0.15,
+    "financial_discipline": 0.10,
+    "long_term_thinking": 0.10
+  },
+  "decisions": {
+    "FIN-001": {
+      "name": "department_budget_allocation", "ui": "sliders", "input_range": "0 to available_budget",
+      "formula": "budget <= available_cash", "dependencies": ["all_departments"],
+      "weights": { "strategic_thinking": 0.35, "resource_allocation": 0.30, "risk_management": 0.05, "financial_discipline": 0.20, "long_term_thinking": 0.10 }
+    },
+    "FIN-002": {
+      "name": "emergency_cash_reserve", "ui": "slider", "input_range": "0 to 5000000", "default": 1500000,
+      "formula": "reserve_cash / cash", "dependencies": ["finance"],
+      "weights": { "strategic_thinking": 0.10, "resource_allocation": 0.15, "risk_management": 0.40, "financial_discipline": 0.25, "long_term_thinking": 0.10 }
+    },
+    "FIN-003": {
+      "name": "capital_expenditure", "ui": "multi_select", "options": ["office", "equipment", "software", "automation"],
+      "formula": "cash - capex", "dependencies": ["operations"],
+      "weights": { "strategic_thinking": 0.20, "resource_allocation": 0.20, "risk_management": 0.10, "financial_discipline": 0.10, "long_term_thinking": 0.40 }
+    },
+    "FIN-004": {
+      "name": "cost_optimisation", "ui": "dropdown", "options": ["none", "mild", "moderate", "aggressive"],
+      "formula": "expenses * reduction_pct", "dependencies": ["hr", "operations"],
+      "weights": { "strategic_thinking": 0.20, "resource_allocation": 0.15, "risk_management": 0.25, "financial_discipline": 0.30, "long_term_thinking": 0.10 }
+    },
+    "FIN-005": {
+      "name": "debt_utilisation", "ui": "dropdown", "options": [0, 1000000, 2500000, 5000000], "default": 0,
+      "formula": "cash + loan", "dependencies": ["investor_engine"],
+      "weights": { "strategic_thinking": 0.15, "resource_allocation": 0.10, "risk_management": 0.45, "financial_discipline": 0.20, "long_term_thinking": 0.10 }
+    },
+    "FIN-006": {
+      "name": "hiring_budget_approval", "ui": "slider", "input_range": "0 to 2000000", "default": 800000,
+      "formula": "payroll + new_salaries", "dependencies": ["hr"],
+      "weights": { "strategic_thinking": 0.20, "resource_allocation": 0.30, "risk_management": 0.10, "financial_discipline": 0.10, "long_term_thinking": 0.30 }
+    },
+    "FIN-007": {
+      "name": "growth_investment_allocation", "ui": "slider", "input_range": "0 to 5000000", "default": 2000000,
+      "formula": "investment_distribution", "dependencies": ["marketing", "product"],
+      "weights": { "strategic_thinking": 0.35, "resource_allocation": 0.25, "risk_management": 0.10, "financial_discipline": 0.10, "long_term_thinking": 0.20 }
+    },
+    "FIN-008": {
+      "name": "pricing_approval", "ui": "dropdown", "options": ["maintain", "+5%", "+10%", "-5%", "-10%"],
+      "dependencies": ["marketing", "sales", "product"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "_note": "Source doc does not give explicit per-dimension weights for FIN-008. Using inferred placeholder pending product-owner confirmation.",
+      "weights_inferred": { "strategic_thinking": 0.30, "resource_allocation": 0.15, "risk_management": 0.20, "financial_discipline": 0.20, "long_term_thinking": 0.15 }
+    },
+    "FIN-009": {
+      "name": "production_budget_approval", "ui": "slider", "dependencies": ["operations"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "weights_inferred": { "strategic_thinking": 0.20, "resource_allocation": 0.30, "risk_management": 0.15, "financial_discipline": 0.20, "long_term_thinking": 0.15 }
+    },
+    "FIN-010": {
+      "name": "inventory_investment", "ui": "slider", "dependencies": ["operations", "sales"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "weights_inferred": { "strategic_thinking": 0.20, "resource_allocation": 0.30, "risk_management": 0.20, "financial_discipline": 0.15, "long_term_thinking": 0.15 }
+    },
+    "FIN-011": {
+      "name": "founder_withdrawal_dividend", "ui": "toggle", "dependencies": ["cash", "investor_confidence"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "weights_inferred": { "strategic_thinking": 0.25, "resource_allocation": 0.10, "risk_management": 0.35, "financial_discipline": 0.20, "long_term_thinking": 0.10 }
+    },
+    "FIN-012": {
+      "name": "vendor_payment_strategy", "ui": "dropdown", "options": ["pay_early", "pay_on_time", "delay_payment"],
+      "dependencies": ["operations", "supplier_trust"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "weights_inferred": { "strategic_thinking": 0.15, "resource_allocation": 0.20, "risk_management": 0.35, "financial_discipline": 0.20, "long_term_thinking": 0.10 }
+    },
+    "FIN-013": {
+      "name": "quarter_financial_approval", "ui": "approval", "dependencies": ["entire_company"],
+      "weights": "UNSPECIFIED_IN_SOURCE_DOC_INFERRED_DEFAULT",
+      "weights_inferred": { "strategic_thinking": 0.25, "resource_allocation": 0.15, "risk_management": 0.25, "financial_discipline": 0.25, "long_term_thinking": 0.10 }
+    }
+  },
+  "engine_formulas": {
+    "available_budget": "opening_cash - reserve_cash",
+    "closing_cash": "opening_cash + revenue - total_expenses - investments",
+    "monthly_burn": "fixed_costs + variable_costs",
+    "quarterly_burn": "monthly_burn * 3",
+    "cash_runway": "cash_available / monthly_burn",
+    "debt_ratio": "outstanding_debt / total_assets",
+    "budget_utilisation": "total_budget_used / total_budget_allocated",
+    "growth_investment_ratio": "growth_budget / total_budget",
+    "reserve_ratio": "reserve_cash / cash_available",
+    "operating_margin": "(revenue - operating_expenses) / revenue"
+  },
+  "recurring_cost_categories": {
+    "recurring_automatic": ["salaries", "rent", "software", "insurance", "cloud", "maintenance"],
+    "decision_based": ["marketing_campaigns", "hiring", "rnd", "training", "equipment", "pr_campaigns"],
+    "variable_operating": ["manufacturing_cost_per_unit", "shipping", "payment_gateway_fees", "warranty_claims", "customer_support_cost", "returns"]
+  }
+}
