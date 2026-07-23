@@ -6,8 +6,10 @@ each need the same guard-rail and audit-logging fix applied separately.
 """
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +20,15 @@ from app.routes.deps import get_open_quarter, get_quarter, get_quarter_modifiers
 from app.schemas.decision import DecisionLogEntry, DecisionSubmissionResponse, DecisionSubmitBase, FieldImpactResponse
 from app.services.decision_engine import compute_decision_impact
 from app.services.evidence_engine import generate_evidence
+
+
+def _state_to_dict(state: Base | None) -> dict[str, Any] | None:
+    """Flattens a *State ORM row into a plain dict so decision_engine can read prerequisite
+    values (e.g. FIN-002 needs cash_balance) without decision_engine touching the DB itself.
+    """
+    if state is None:
+        return None
+    return {column.key: getattr(state, column.key) for column in sa_inspect(state).mapper.columns}
 
 
 def build_workspace_router(
@@ -51,12 +62,22 @@ def build_workspace_router(
         await session.flush()
 
         modifiers = await get_quarter_modifiers(quarter.id, session)
+        current_state = (
+            await session.execute(select(state_model).where(state_model.quarter_id == quarter.id))
+        ).scalar_one_or_none()
 
-        # Gaps in decision_engine (TODO(source-doc-gap) items) surface as 422s here rather
-        # than silently persisting a decision with no computed business impact.
+        # Gaps in decision_engine (TODO(source-doc-gap) items, unimplemented decision_keys,
+        # missing prerequisite payload/state fields) surface as 422s here rather than
+        # silently persisting a decision with no computed business impact.
         try:
-            impacts = compute_decision_impact(workspace.value, submission.decision_key, modifiers)
-        except (NotImplementedError, KeyError) as exc:
+            impacts = compute_decision_impact(
+                workspace.value,
+                submission.decision_key,
+                modifiers,
+                payload=submission.payload,
+                state=_state_to_dict(current_state),
+            )
+        except (NotImplementedError, KeyError, ValueError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
         session.add(
@@ -107,7 +128,7 @@ def build_workspace_router(
             workspace=workspace,
             decision_key=submission.decision_key,
             business_impact=[
-                FieldImpactResponse(field=i.field, base_impact_pct=i.base_impact_pct, actual_impact_pct=i.actual_impact_pct)
+                FieldImpactResponse(field=i.field, base_value=i.base_value, actual_value=i.actual_value)
                 for i in impacts
             ],
             evidence_generated=len(evidence_records),
