@@ -75,31 +75,63 @@ can be replayed from its logs.
 
 All four engines are pure, DB-session-agnostic functions over plain
 Decision/EvidenceRecord objects, which makes them fully unit-testable without
-a live database (`tests/services/`, 27 tests). Routes (`app/routes/`) wire
+a live database (`tests/services/`, 47 tests). Routes (`app/routes/`) wire
 them to HTTP and own all persistence -- see "API surface" below.
 
-### Known gaps (flagged in code, not guessed)
+### Honest current state: which decisions actually work
 
-Most of the ~60 workspace decisions don't have evidence-extraction or
-base-impact rules specified yet — `evidence_engine.EVIDENCE_EXTRACTORS` and
-`decision_engine.compute_decision_impact` raise `NotImplementedError`/`KeyError`
-for anything unregistered rather than inventing a rule. `quarter_engine.run_quarter`
-collects these as `skipped_evidence`/`skipped_business_impact` (non-fatal, quarter
-level); the single-decision submission route 422s on a missing **business-impact**
-rule (the response contract promises a `business_impact` list) but treats a missing
-**evidence** rule as non-fatal, logging the gap in `DecisionLog` instead -- the two
-pipelines are independent and one being unimplemented for a given decision shouldn't
-block the other. Concretely: only Marketing's channel/pricing/brand/team/expansion
-decisions (the base-impact-table ones) can currently return 201 with real business
-impact; every Finance/Product/Sales/CX decision 422s until `decision_engine` grows a
-generic formula-application mechanism for those workspaces.
+`decision_engine.compute_decision_impact` dispatches by workspace: Marketing
+uses the base-impact-table + modifier-chain pattern (all 25 channel/pricing/
+brand/team/expansion decisions work); Finance/Product/Sales dispatch by
+`decision_key` to a specific handler in `decision_engine.WORKSPACE_HANDLERS`.
+Coverage is narrow because the source docs specify decision-level formulas
+narrowly -- most decisions' `"formula"` field is a validation constraint, a
+vague label, a boolean gate, or simply absent. Every gap below raises
+`NotImplementedError` with a decision-specific reason (`decision_engine.GAP_REASONS`,
+41 entries) rather than a blanket message or an invented formula.
+
+**Returns 201 with real business impact today:**
+- All 25 Marketing base-impact-table decisions (`increase_google_ads_budget`, etc.)
+- `FIN-002` Emergency Cash Reserve (`reserve_ratio`) -- needs a `FinanceState` row for the quarter
+- `FIN-003` Capital Expenditure (`remaining_cash`) -- needs a `FinanceState` row
+- `FIN-005` Debt Utilisation (`cash_after_debt`) -- needs a `FinanceState` row
+- `FIN-006` Hiring Budget Approval (`total_hiring_budget`) -- payload-only, no state dependency
+- `PRO-003` Prioritize Features (`feature_completion_pct`) -- payload-only
+- `SAL-011` Negotiation (`negotiation_score` + `acceptance_probability`) -- its own
+  handler, not forced through the generic formula shape; payload splits into
+  `terms` (validated against `negotiable_variables`) and `negotiation_inputs`
+  (the scoring context, which the source doc doesn't specify a source for,
+  so it's required directly in the payload)
+
+**Important caveat on the 3 `FinanceState`-dependent ones**: nothing in the
+app currently *writes* a `FinanceState` row (that's the `actual_impact_pct`→
+absolute-delta gap below), so on any real fresh quarter today FIN-002/003/005
+will 422 with "no state snapshot yet" even though the code path is correct
+and tested against a seeded row (`tests/routes/test_finance_product_sales_decisions.py`).
+
+**Still `NotImplementedError`, one specific reason each** (see `GAP_REASONS`):
+- Finance: `FIN-001` (formula is a constraint, not a value), `FIN-004`
+  (reduction_pct per cost-optimisation level never given numerically), `FIN-007`
+  (formula isn't a concrete expression), `FIN-008`–`FIN-013` (no formula field at all)
+- Product: `PRO-001`, `PRO-002`, `PRO-004`–`PRO-008`, `PRO-011`, `PRO-012` (formula
+  missing, mismatched against `core_formulas`, or not a value-producing expression)
+- Sales: `SAL-001`–`SAL-010`, `SAL-012` (no per-decision formula field in
+  `sales_rules.json` at all -- only general sales metrics)
+- CX: all 12 decisions (`CX-001`–`CX-012`) -- no per-decision formula field
+  in `cx_rules.json` at all
+
+Separately, `evidence_engine.EVIDENCE_EXTRACTORS` only has `marketing_budget_allocation`
+registered -- every decision above returns real business impact with
+`evidence_generated: 0`, since the two pipelines are independent and a missing
+evidence rule doesn't block a successful business-impact submission (logged in
+`DecisionLog` instead of 422ing).
 
 Other flagged gaps (see inline `TODO(source-doc-gap)` comments): how
-`actual_impact_pct` converts into an absolute KPI delta; Finance FIN-008..013
-per-dimension weights (inferred, need product-owner confirmation); the
-marketing long-term-channel taxonomy and risk-level thresholds beyond the
-given >70% cutoff; and the excess-leads-to-KPI-delta magnitude in the
-Marketing→Sales handoff.
+`actual_value` converts into an absolute KPI delta on a `*State` row (this is
+also why the 3 FinanceState-dependent decisions above can't succeed on a real
+quarter yet); the marketing long-term-channel taxonomy and risk-level
+thresholds beyond the given >70% cutoff; and the excess-leads-to-KPI-delta
+magnitude in the Marketing→Sales handoff.
 
 **Operations and People workspaces have no routes.** Both are named in the
 Quarter Flow doc's workspace sequence but neither has a rules doc
