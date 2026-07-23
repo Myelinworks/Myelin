@@ -40,9 +40,13 @@ async def test_fin_002_emergency_cash_reserve_happy_path(client, company_and_qua
         json={"decision_key": "FIN-002", "payload": {"reserve_cash": 150000}},
     )
     assert response.status_code == 201
-    impact = response.json()["business_impact"][0]
+    body = response.json()
+    impact = body["business_impact"][0]
     assert impact["field"] == "reserve_ratio"
     assert impact["actual_value"] == 0.15
+    # no evidence extractor registered for FIN-002 -- business impact still succeeds (201),
+    # evidence generation degrades non-fatally to zero rather than blocking the submission.
+    assert body["evidence_generated"] == 0
 
 
 async def test_fin_002_without_finance_state_422s(client, company_and_quarter):
@@ -135,9 +139,12 @@ async def test_sal_011_negotiation_happy_path(client, company_and_quarter):
         },
     )
     assert response.status_code == 201
-    impacts = {i["field"]: i for i in response.json()["business_impact"]}
+    body = response.json()
+    impacts = {i["field"]: i for i in body["business_impact"]}
     assert impacts["negotiation_score"]["actual_value"] == 67
     assert impacts["acceptance_probability"]["actual_value"] == 48.24
+    # same non-fatal-evidence degradation as FIN-002 above.
+    assert body["evidence_generated"] == 0
 
 
 async def test_sal_011_invalid_term_key_422s_at_schema_layer(client, company_and_quarter):
