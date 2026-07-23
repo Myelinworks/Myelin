@@ -9,7 +9,7 @@ async def test_marketing_happy_path_decision_submission(client, company_and_quar
     assert body["decision_key"] == "increase_google_ads_budget"
     assert len(body["business_impact"]) == 10
     sales_impact = next(f for f in body["business_impact"] if f["field"] == "sales")
-    assert sales_impact["base_impact_pct"] == 15
+    assert sales_impact["base_value"] == 15
     # no evidence-extraction rule registered for this decision_key -- honest zero, not a 422
     assert body["evidence_generated"] == 0
 
@@ -24,8 +24,9 @@ async def test_decision_key_validation_rejects_unknown_key(client, company_and_q
 
 
 async def test_finance_decision_422s_no_business_impact_formula(client, company_and_quarter):
-    """Finance isn't a base-impact-table workspace (only Marketing is) -- decision_engine has
-    nothing to compute yet, and that must surface as an explicit 422, not a silent zero.
+    """FIN-001's formula is a validation constraint, not a value-producing formula -- a
+    cataloged gap (see decision_engine.GAP_REASONS), and that must surface as an explicit
+    422 naming the reason, not a silent zero.
     """
     company, quarter = company_and_quarter
     response = await client.post(
@@ -33,6 +34,7 @@ async def test_finance_decision_422s_no_business_impact_formula(client, company_
         json={"decision_key": "FIN-001", "payload": {}},
     )
     assert response.status_code == 422
+    assert "validation constraint" in response.json()["detail"]
 
 
 async def test_marketing_evidence_only_decision_422s_no_base_impact_row(client, company_and_quarter):
