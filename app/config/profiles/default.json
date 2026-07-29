@@ -1,0 +1,170 @@
+{
+  "name": "default",
+  "source": "docs/00-formula-index.md, cross-checked against the worked calculations in docs/12-quarter-1-reference.md",
+  "marketing": {
+    "google_ads": {
+      "leads_constant": 375,
+      "leads_exponent": 0.68
+    },
+    "meta_ads": {
+      "leads_constant": 200,
+      "leads_exponent": 0.65,
+      "impressions_per_lakh": 40000,
+      "brand_per_lakh": 1.2
+    },
+    "social_influencer": {
+      "leads_constant": 225,
+      "leads_exponent": 0.72,
+      "brand_per_lakh": 2.5
+    },
+    "content_seo": {
+      "leads_constant": 75,
+      "leads_exponent": 0.62,
+      "asset_per_lakh": 3.5,
+      "asset_payout_per_point": 25
+    },
+    "events_pr": {
+      "leads_constant": 90,
+      "leads_exponent": 0.62,
+      "brand_per_lakh": 1.5
+    },
+    "email_marketing": {
+      "leads_constant": 80,
+      "leads_exponent": 0.55,
+      "repeat_rate_constant": 3,
+      "repeat_rate_exponent": 0.5
+    },
+    "referral": {
+      "note": "No profile-side constants by design. Referral is a hard cap, not a curve: cap ratio and flat cost-per-lead are both company data and live in the seed config."
+    },
+    "prelaunch_buzz": {
+      "buzz_constant": 4,
+      "buzz_exponent": 0.5,
+      "payout_next_quarter_per_point": 15,
+      "payout_second_quarter_per_point": 25,
+      "conversion_bonus_per_point": 0.3
+    },
+    "brand_multiplier": {
+      "formula": "1 + 0.02 * brand_score",
+      "intercept": 1,
+      "coefficient": 0.02,
+      "status": "fitted_not_confirmed",
+      "note": "Not stated in source. Fitted to 3 data points in docs/13-quarter-2-reference.md §2.1"
+    }
+  },
+  "sales": {
+    "reps": {
+      "capacity_per_lakh": 500,
+      "conversion_bonus_constant": 2,
+      "conversion_bonus_exponent": 0.5
+    },
+    "crm_tools": {
+      "conversion_bonus_constant": 1.5,
+      "conversion_bonus_exponent": 0.4
+    },
+    "onboarding": {
+      "satisfaction_constant": 3,
+      "satisfaction_exponent": 0.5,
+      "repeat_rate_constant": 3,
+      "repeat_rate_exponent": 0.4
+    }
+  },
+  "rnd": {
+    "quality_qa": {
+      "quality_score_constant": 6,
+      "quality_score_exponent": 0.5,
+      "defect_rate_base_pct": 8,
+      "defect_rate_constant": 1.2,
+      "defect_rate_exponent": 0.5,
+      "defect_rate_floor_pct": 2
+    },
+    "innovation": {
+      "feature_completeness_constant": 8,
+      "feature_completeness_exponent": 0.5,
+      "feature_completeness_reset_at": 100,
+      "innovation_score_constant": 5,
+      "innovation_score_exponent": 0.5
+    },
+    "warranty": {
+      "one_year_conversion_bonus_pts": 1.5,
+      "two_year_conversion_bonus_pts": 3.0,
+      "two_year_cost_multiplier": 1.8
+    },
+    "conversion_ceiling": {
+      "base_pct": 15,
+      "quality_weight": 1,
+      "innovation_weight": 0.5,
+      "pct_per_point": 0.3
+    }
+  },
+  "operations": {
+    "manufacturing": {
+      "capacity_constant": 400,
+      "capacity_exponent": 0.7,
+      "unit_cost_reduction_constant": 90,
+      "unit_cost_reduction_exponent": 0.5
+    },
+    "supplier_qc": {
+      "reliability_constant": 4,
+      "reliability_exponent": 0.5,
+      "effective_capacity_divisor": 100
+    },
+    "logistics": {
+      "efficiency_constant": 5,
+      "efficiency_exponent": 0.5,
+      "satisfaction_per_efficiency_point": 0.05
+    }
+  },
+  "hr": {
+    "culture_benefits": {
+      "satisfaction_constant": 5,
+      "satisfaction_exponent": 0.5,
+      "productivity_intercept": 1,
+      "productivity_centre": 50,
+      "productivity_coefficient": 0.004
+    },
+    "training_development": {
+      "engagement_constant": 6,
+      "engagement_exponent": 0.5,
+      "attrition_base_pct": 15,
+      "attrition_coefficient": 0.12,
+      "attrition_floor_pct": 3
+    },
+    "cx_team": {
+      "satisfaction_constant": 4,
+      "satisfaction_exponent": 0.5,
+      "repeat_rate_constant": 2,
+      "repeat_rate_exponent": 0.4
+    }
+  },
+  "finance_admin": {
+    "compliance_legal": {
+      "compliance_constant": 5,
+      "compliance_exponent": 0.5
+    },
+    "financial_planning": {
+      "forecast_accuracy_constant": 6,
+      "forecast_accuracy_exponent": 0.5,
+      "cash_efficiency_centre": 50,
+      "cash_efficiency_pct_per_point": 0.1
+    },
+    "audit_prep": {
+      "audit_readiness_constant": 5,
+      "audit_readiness_exponent": 0.5
+    },
+    "penalty_risk": {
+      "base_pct": 40,
+      "compliance_coefficient": 0.25,
+      "audit_coefficient": 0.1,
+      "floor_pct": 5
+    }
+  },
+  "valuation": {
+    "revenue_multiple": 3.0,
+    "annualisation_factor": 4,
+    "revenue_weight": 0.7,
+    "asset_weight": 0.2,
+    "intangible_per_score_point_inr": 20000,
+    "intangible_per_customer_inr": 300
+  }
+}
