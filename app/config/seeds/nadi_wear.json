@@ -1,0 +1,42 @@
+{
+  "name": "nadi_wear",
+  "display_name": "Nadi Wear Pvt. Ltd.",
+  "source": "docs/12-quarter-1-reference.md §1, with per-line constants from §2.7, §4.4, §5.1, §5.4, §6.4 and baselines from §5-§7",
+  "opening_cash_inr": 15000000,
+  "selling_price_inr": 9999,
+  "base_manufacturing_cost_inr": 3250,
+  "manufacturing_cost_floor_inr": 2600,
+  "fixed_costs_inr": 2350000,
+  "working_capital_buffer_inr": 1000000,
+  "holding_cost_per_unit_inr": 150,
+  "warranty_claim_cost_inr": 1500,
+  "referral_cost_per_lead_inr": 300,
+  "referral_cap_ratio": 0.20,
+  "cost_per_hire_inr": 200000,
+  "core_team_size": 14,
+  "opening_inventory_units": 600,
+  "opening_customers": 4000,
+  "opening_scores": {
+    "supplier_reliability": 70,
+    "logistics_efficiency": 60,
+    "employee_satisfaction": 65,
+    "employee_engagement": 60,
+    "compliance_score": 50,
+    "forecast_accuracy": 55,
+    "audit_readiness": 50,
+    "brand_score": 0,
+    "seo_asset": 0,
+    "buzz_score": 0,
+    "quality_score": 0,
+    "innovation_score": 0,
+    "feature_completeness": 0,
+    "repeat_purchase_rate_pct": null,
+    "attrition_rate_pct": 0
+  },
+  "notes": {
+    "cumulative_scores_open_at_zero": "brand_score, seo_asset, buzz_score, quality_score, innovation_score and feature_completeness are not stated as Q1 opening values, but are derivable: docs/13-quarter-2-reference.md §1 opens Q2 at exactly the amount Q1 built (Brand 8.7, SEO 4.5, Buzz 5.5, Quality 9.95, Innovation 7.5), so Q1 opened at zero for each.",
+    "repeat_purchase_rate_pct": "Left null. Not stated. Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near 10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs designer confirmation.",
+    "attrition_rate_pct": "Zero because docs/12-quarter-1-reference.md §6.2 states attrition has no effect in Q1 -- it erodes capacity built in a prior quarter, and Q1 has none.",
+    "sourced_but_not_modelled": "§1 also states a 22,000-signup waitlist, a 2,50,000/quarter market ceiling and a 19% base conversion rate. None feed any formula in the execution chain (conversion is governed by the R&D ceiling, not the 19% figure), so none are seeded."
+  }
+}
