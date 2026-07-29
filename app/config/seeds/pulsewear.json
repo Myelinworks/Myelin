@@ -4,6 +4,7 @@
   "source": "docs/03-company-load-state.md",
   "opening_cash_inr": 15600000,
   "selling_price_inr": 10000,
+  "base_conversion_rate_pct": null,
   "base_manufacturing_cost_inr": 4500,
   "manufacturing_cost_floor_inr": null,
   "fixed_costs_inr": 7800000,

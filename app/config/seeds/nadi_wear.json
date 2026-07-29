@@ -4,6 +4,7 @@
   "source": "docs/12-quarter-1-reference.md §1, with per-line constants from §2.7, §4.4, §5.1, §5.4, §6.4 and baselines from §5-§7",
   "opening_cash_inr": 15000000,
   "selling_price_inr": 9999,
+  "base_conversion_rate_pct": 19,
   "base_manufacturing_cost_inr": 3250,
   "manufacturing_cost_floor_inr": 2600,
   "fixed_costs_inr": 2350000,
@@ -37,6 +38,7 @@
     "cumulative_scores_open_at_zero": "brand_score, seo_asset, buzz_score, quality_score, innovation_score and feature_completeness are not stated as Q1 opening values, but are derivable: docs/13-quarter-2-reference.md §1 opens Q2 at exactly the amount Q1 built (Brand 8.7, SEO 4.5, Buzz 5.5, Quality 9.95, Innovation 7.5), so Q1 opened at zero for each.",
     "repeat_purchase_rate_pct": "Left null. Not stated. Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near 10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs designer confirmation.",
     "attrition_rate_pct": "Zero because docs/12-quarter-1-reference.md §6.2 states attrition has no effect in Q1 -- it erodes capacity built in a prior quarter, and Q1 has none.",
-    "sourced_but_not_modelled": "§1 also states a 22,000-signup waitlist, a 2,50,000/quarter market ceiling and a 19% base conversion rate. None feed any formula in the execution chain (conversion is governed by the R&D ceiling, not the 19% figure), so none are seeded."
+    "base_conversion_rate_pct": "The starting point for raw conversion, before the R&D ceiling caps it: raw = base + Reps bonus + CRM bonus, and the final rate is MIN(raw, ceiling) + warranty bonus. In Q1 raw reaches 25.3% and the 19.11% ceiling binds.",
+    "sourced_but_not_modelled": "§1 also states a 22,000-signup waitlist and a 2,50,000/quarter market ceiling. Neither feeds any formula in the execution chain, so neither is seeded."
   }
 }

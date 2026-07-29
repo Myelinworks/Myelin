@@ -436,6 +436,7 @@ class CompanySeed(_Frozen):
 
     opening_cash_inr: Decimal
     selling_price_inr: Decimal
+    base_conversion_rate_pct: Decimal | None = None
     base_manufacturing_cost_inr: Decimal
     manufacturing_cost_floor_inr: Decimal | None = None
     fixed_costs_inr: Decimal
