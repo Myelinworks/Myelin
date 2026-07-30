@@ -7,56 +7,62 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.models.decision import Decision
 from app.models.evidence import EvidenceRecord
-from app.models.quarter import Quarter, QuarterStatus
+from app.models.quarter import Quarter
 from app.models.quarter_performance import QuarterPerformance
-from app.routes.deps import get_open_quarter, get_quarter, get_quarter_modifiers
+from app.routes.deps import get_quarter
 from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
-from app.services.quarter_engine import run_quarter
+from app.services.quarter_run_service import run_quarter
 
 router = APIRouter(prefix="/companies/{company_id}", tags=["quarter"])
+
+
+async def _report_response(
+    company_id: uuid.UUID, quarter: Quarter, performance: QuarterPerformance, session: AsyncSession
+) -> QuarterReportResponse:
+    decisions_submitted = (
+        await session.execute(select(func.count()).select_from(Decision).where(Decision.quarter_id == quarter.id))
+    ).scalar_one()
+    evidence_records_generated = (
+        await session.execute(
+            select(func.count()).select_from(EvidenceRecord).where(EvidenceRecord.quarter_id == quarter.id)
+        )
+    ).scalar_one()
+
+    engine_result = performance.engine_result or {}
+    return QuarterReportResponse(
+        company_id=company_id,
+        quarter_id=quarter.id,
+        overall_score=performance.overall_score,
+        dimension_scores=performance.dimension_scores,
+        decisions_submitted=decisions_submitted,
+        evidence_records_generated=evidence_records_generated,
+        generated_at=performance.created_at,
+        units_sold=engine_result.get("units_sold"),
+        revenue_inr=engine_result.get("revenue_inr"),
+        net_cash_flow_inr=engine_result.get("net_cash_flow_inr"),
+        closing_cash_inr=engine_result.get("closing_cash_inr"),
+        result_hash=performance.result_hash,
+    )
 
 
 @router.post("/quarters/{quarter_id}/lock", response_model=QuarterReportResponse)
 async def lock_quarter(
     company_id: uuid.UUID,
-    quarter: Quarter = Depends(get_open_quarter),
+    quarter: Quarter = Depends(get_quarter),
     session: AsyncSession = Depends(get_db),
 ) -> QuarterReportResponse:
-    decisions = list((await session.execute(select(Decision).where(Decision.quarter_id == quarter.id))).scalars())
+    """Runs the pure 22-line engine (`compute_quarter`, via `run_quarter`) over this quarter's
+    submitted allocations and persists the result.
 
-    prior_quarter = (
-        await session.execute(
-            select(Quarter).where(Quarter.company_id == company_id, Quarter.number == quarter.number - 1)
-        )
-    ).scalar_one_or_none()
-    prior_evidence: list[EvidenceRecord] = []
-    if prior_quarter is not None:
-        prior_evidence = list(
-            (
-                await session.execute(select(EvidenceRecord).where(EvidenceRecord.quarter_id == prior_quarter.id))
-            ).scalars()
-        )
+    Idempotent: `run_quarter` itself is the lock guard -- an already-locked quarter returns its
+    persisted result unchanged rather than recomputing or 409ing, so calling this twice is safe.
+    """
+    await run_quarter(session, quarter.id)
 
-    modifiers = await get_quarter_modifiers(quarter.id, session)
-
-    result = run_quarter(company_id, quarter.id, decisions, modifiers, prior_quarter_evidence=prior_evidence)
-
-    session.add_all(result.evidence_records)
-    session.add_all(result.cognitive_scores)
-    session.add(result.quarter_performance)
-    quarter.status = QuarterStatus.CLOSED
-    await session.commit()
-    await session.refresh(result.quarter_performance)
-
-    return QuarterReportResponse(
-        company_id=company_id,
-        quarter_id=quarter.id,
-        overall_score=result.quarter_performance.overall_score,
-        dimension_scores=result.quarter_performance.dimension_scores,
-        decisions_submitted=len(decisions),
-        evidence_records_generated=len(result.evidence_records),
-        generated_at=result.quarter_performance.created_at,
-    )
+    performance = (
+        await session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == quarter.id))
+    ).scalar_one()
+    return await _report_response(company_id, quarter, performance, session)
 
 
 @router.get("/quarters/{quarter_id}/report", response_model=QuarterReportResponse)
@@ -72,24 +78,7 @@ async def get_quarter_report(
     if performance is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Quarter {quarter.id} has not been locked yet -- no report")
 
-    decisions_submitted = (
-        await session.execute(select(func.count()).select_from(Decision).where(Decision.quarter_id == quarter.id))
-    ).scalar_one()
-    evidence_records_generated = (
-        await session.execute(
-            select(func.count()).select_from(EvidenceRecord).where(EvidenceRecord.quarter_id == quarter.id)
-        )
-    ).scalar_one()
-
-    return QuarterReportResponse(
-        company_id=company_id,
-        quarter_id=quarter.id,
-        overall_score=performance.overall_score,
-        dimension_scores=performance.dimension_scores,
-        decisions_submitted=decisions_submitted,
-        evidence_records_generated=evidence_records_generated,
-        generated_at=performance.created_at,
-    )
+    return await _report_response(company_id, quarter, performance, session)
 
 
 @router.get("/leaderboard", response_model=LeaderboardResponse)

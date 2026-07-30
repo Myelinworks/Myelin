@@ -85,9 +85,13 @@ async def test_quarter_locked_blocks_further_decisions(client, company_and_quart
     assert response.status_code == 409
 
 
-async def test_locking_an_already_locked_quarter_409s(client, company_and_quarter):
+async def test_locking_an_already_locked_quarter_is_idempotent(client, company_and_quarter):
+    """run_quarter() is its own lock guard: a second /lock call returns the persisted result
+    unchanged rather than recomputing or 409ing (decision submission after lock still 409s --
+    see test_quarter_locked_blocks_further_decisions -- only re-locking itself is idempotent)."""
     company, quarter = company_and_quarter
-    await client.post(f"/companies/{company.id}/quarters/{quarter.id}/lock")
+    first = await client.post(f"/companies/{company.id}/quarters/{quarter.id}/lock")
 
     second_lock = await client.post(f"/companies/{company.id}/quarters/{quarter.id}/lock")
-    assert second_lock.status_code == 409
+    assert second_lock.status_code == 200
+    assert second_lock.json() == first.json()
