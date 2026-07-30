@@ -41,13 +41,17 @@ async def _load_company(company_id: uuid.UUID, session: AsyncSession) -> Company
     return company
 
 
-def _scenario_response(company: Company) -> ScenarioResponse:
+def _company_detail(company: Company, quarters: list[Quarter]) -> CompanyDetailResponse:
     scenario = load_scenario(company.scenario_id)
-    return ScenarioResponse(
-        scenario_id=scenario.scenario_id,
-        display_name=scenario.display_name,
-        total_quarters=scenario.total_quarters,
-        crisis_quarter=scenario.crisis_quarter,
+    return CompanyDetailResponse(
+        **CompanyResponse.model_validate(company, from_attributes=True).model_dump(),
+        scenario=ScenarioResponse(
+            scenario_id=scenario.scenario_id,
+            display_name=scenario.display_name,
+            total_quarters=scenario.total_quarters,
+            crisis_quarter=scenario.crisis_quarter,
+        ),
+        quarters=[QuarterSummary.model_validate(q, from_attributes=True) for q in quarters],
     )
 
 
@@ -65,16 +69,7 @@ async def create_company_route(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
     await session.commit()
-    return CompanyDetailResponse(
-        id=company.id,
-        created_at=company.created_at,
-        name=company.name,
-        scenario_id=company.scenario_id,
-        seed_name=company.seed_name,
-        profile_name=company.profile_name,
-        scenario=_scenario_response(company),
-        quarters=[],
-    )
+    return _company_detail(company, quarters=[])
 
 
 @router.get("/companies/{company_id}", response_model=CompanyDetailResponse)
@@ -90,16 +85,7 @@ async def get_company(
         .all()
     )
 
-    return CompanyDetailResponse(
-        id=company.id,
-        created_at=company.created_at,
-        name=company.name,
-        scenario_id=company.scenario_id,
-        seed_name=company.seed_name,
-        profile_name=company.profile_name,
-        scenario=_scenario_response(company),
-        quarters=[QuarterSummary.model_validate(q, from_attributes=True) for q in quarters],
-    )
+    return _company_detail(company, list(quarters))
 
 
 @router.post(

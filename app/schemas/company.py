@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+from app.engines.survival import RunStatus
 from app.models.quarter import QuarterStatus
 from app.schemas.base import ORMBase
 
@@ -37,6 +38,12 @@ class CompanyResponse(ORMBase):
     scenario_id: str
     seed_name: str
     profile_name: str
+
+    run_status: RunStatus
+    # Which survival condition last fired, and the numbers behind it. Both stay populated after
+    # a distressed run is upgraded to COMPLETED -- that is the signal Q4 tiering reads.
+    survival_condition: str | None = None
+    survival_detail: str | None = None
 
 
 class CompanyDetailResponse(CompanyResponse):

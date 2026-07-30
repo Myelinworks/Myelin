@@ -217,6 +217,83 @@ class TestQuarterCreationLimits:
         assert response.status_code == 404
 
 
+class TestSurvivalOverHttp:
+    """Cash-only quarters: no Marketing or Sales spend means no revenue, so the whole
+    discretionary allocation is a straight drain and closing cash is easy to steer precisely.
+    Compliance & Legal is the lever -- it feeds a score, never a cash inflow.
+    """
+
+    @staticmethod
+    async def _quarter_spending(client, company_id, compliance_lakhs: str):
+        quarter = await _open_quarter(client, company_id)
+        response = await client.post(
+            f"/companies/{company_id}/quarters/{quarter['id']}/allocations/finance_admin",
+            json={"compliance_legal": compliance_lakhs},
+        )
+        assert response.status_code == 200
+        return quarter, await _lock(client, company_id, quarter["id"])
+
+    async def test_nadi_wear_q1_loss_is_neither_failed_nor_distressed(self, client):
+        """The acceptance case, and the most likely wrong implementation: Q1 loses Rs 31,27,837
+        and is still a healthy quarter -- it closes at Rs 1,18,72,163, nearly 12x the buffer.
+        """
+        company = await _create_company(client)
+        q1 = await _open_quarter(client, company_id := company["id"])
+        await _submit_all_departments(client, company_id, q1["id"], Q1_BY_DEPARTMENT)
+        report = await _lock(client, company_id, q1["id"])
+
+        assert Decimal(report["net_cash_flow_inr"]) < 0  # it really did lose money
+        assert Decimal(report["closing_cash_inr"]) > Decimal("11000000")
+
+        body = (await client.get(f"/companies/{company_id}")).json()
+        assert body["run_status"] == "active"
+        assert body["survival_condition"] is None
+
+    async def test_cash_below_zero_fails_the_run(self, client):
+        company = await _create_company(client)
+        # Rs 2,00,00,000 of spend against Rs 1,50,00,000 of cash.
+        await self._quarter_spending(client, company_id := company["id"], "200.00")
+
+        body = (await client.get(f"/companies/{company_id}")).json()
+        assert body["run_status"] == "failed"
+        assert body["survival_condition"] == "cash_exhausted"
+        assert "at or below zero" in body["survival_detail"]
+
+    async def test_a_failed_company_cannot_open_another_quarter(self, client):
+        company = await _create_company(client)
+        await self._quarter_spending(client, company_id := company["id"], "200.00")
+
+        response = await client.post(f"/companies/{company_id}/quarters")
+
+        assert response.status_code == 422
+        assert "failed" in response.json()["detail"]
+
+    async def test_below_buffer_but_positive_is_distressed_and_keeps_playing(self, client):
+        """Rs 1,20,00,000 of spend leaves Rs 5,60,000 -- under the Rs 10,00,000 buffer, above
+        zero. Distressed is a warning tier, not game over, so the next quarter still opens."""
+        company = await _create_company(client)
+        await self._quarter_spending(client, company_id := company["id"], "120.00")
+
+        body = (await client.get(f"/companies/{company_id}")).json()
+        assert body["run_status"] == "distressed"
+        assert body["survival_condition"] == "buffer_breached"
+        assert Decimal(body["quarters"][0]["cash_balance"]) > 0
+
+        assert (await client.post(f"/companies/{company_id}/quarters")).status_code == 201
+
+    async def test_completing_the_last_quarter_marks_the_run_completed(self, client):
+        company = await _create_company(client)
+        company_id = company["id"]
+        for _ in range(4):
+            quarter = await _open_quarter(client, company_id)
+            await _lock(client, company_id, quarter["id"])
+
+        body = (await client.get(f"/companies/{company_id}")).json()
+        assert body["run_status"] == "completed"
+        # the distress that built up along the way is still recorded, for Q4 tiering to read
+        assert body["survival_condition"] == "sustained_decline"
+
+
 @pytest.mark.parametrize("seed_backed", ["nadi_wear"])
 def test_only_seeds_that_can_actually_run_back_a_scenario(seed_backed):
     """PulseWear is deliberately not shipped as a scenario -- docs/03 never states 9 constants

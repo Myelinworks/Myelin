@@ -14,7 +14,8 @@ from app.models.company_state_snapshot import CompanyStateSnapshot
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
-from app.services.quarter_run_service import run_quarter
+from app.engines.survival import RunStatus
+from app.services.quarter_run_service import _result_hash, run_quarter
 
 # docs/12-quarter-1-reference.md §12: Rs 45,00,000 across six departments.
 Q1_ALLOCATION_FIELDS = dict(
@@ -124,6 +125,39 @@ class TestIdempotency:
 
         assert performance_count == 1
         assert snapshot_count == 1
+
+    async def test_rerunning_a_locked_quarter_does_not_re_evaluate_survival(
+        self, db_session, nadi_wear_company, q1_quarter
+    ):
+        """The lock guard returns before survival runs at all, so a second call cannot move the
+        status -- important because `buffer_breached` is "at any point" and `sustained_decline`
+        counts a streak, so a re-evaluation on a longer history could legitimately reach a
+        different answer and silently rewrite a recorded outcome.
+        """
+        await run_quarter(db_session, q1_quarter.id)
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+        first_status, first_hash = nadi_wear_company.run_status, performance.result_hash
+
+        await run_quarter(db_session, q1_quarter.id)
+        await db_session.refresh(nadi_wear_company)
+        await db_session.refresh(performance)
+
+        assert nadi_wear_company.run_status == first_status == RunStatus.ACTIVE
+        assert performance.result_hash == first_hash
+
+    async def test_run_status_is_part_of_the_hash(self, db_session, q1_quarter):
+        """Two quarters with identical numbers but different run status are different outcomes,
+        and a hash that ignored status would call them the same.
+        """
+        await run_quarter(db_session, q1_quarter.id)
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+
+        assert performance.result_hash != _result_hash(performance.engine_result, RunStatus.DISTRESSED)
+        assert performance.result_hash == _result_hash(performance.engine_result, RunStatus.ACTIVE)
 
     async def test_hash_is_stable_not_python_hash(self, db_session, q1_quarter):
         """A stable hash must be identical across separate runs, unlike Python's salted-per-process

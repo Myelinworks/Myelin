@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.loader import available_scenario_ids, load_scenario, load_seed
 from app.config.schema import Scenario
 from app.core.db import Base
+from app.engines.survival import is_terminal
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
 from app.models.cx import CXState
@@ -170,8 +171,14 @@ async def create_quarter(session: AsyncSession, company: Company) -> Quarter:
             f"quarter {number} is past the end of the simulation"
         )
 
-    # Phase 6 hook: the survival gate adds terminal company statuses (insolvent, wound up). When
-    # it lands, refuse here as well -- a terminated run must not be able to open another quarter.
+    # A terminated run cannot open another quarter. FAILED means the company ran out of cash;
+    # COMPLETED means it played its last quarter. DISTRESSED is deliberately not here -- it is a
+    # warning tier that changes the Q4 term-sheet menu, and the company keeps playing.
+    if is_terminal(company.run_status):
+        raise ValueError(
+            f"company {company.id} is {company.run_status.value} and cannot open another quarter"
+            + (f" ({company.survival_detail})" if company.survival_detail else "")
+        )
 
     quarter = Quarter(
         company_id=company.id,

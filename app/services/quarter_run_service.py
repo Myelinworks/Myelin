@@ -21,9 +21,11 @@ from typing import Any, Union, get_args, get_origin, get_type_hints
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.loader import load_profile, load_seed
+from app.config.loader import load_profile, load_scenario, load_seed
+from app.config.schema import Scenario
 from app.engines.quarter import QuarterResult, compute_quarter
 from app.engines.state import CompanyState, QuarterAllocations
+from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
 from app.models.quarter import Quarter, QuarterStatus
@@ -94,11 +96,15 @@ def _from_jsonable(annotation: Any, value: Any) -> Any:
     return value  # int, str, bool round-trip through JSON as-is
 
 
-def _result_hash(result_json: dict[str, Any]) -> str:
+def _result_hash(result_json: dict[str, Any], run_status: RunStatus) -> str:
     """sha256 over the canonical (sorted-key) serialised result -- not Python's `hash()`, which
     is salted per process and would never compare equal across two runs, let alone two processes.
+
+    Run status is hashed alongside the result because it is part of what locking this quarter
+    decided: the same numbers can leave a company ACTIVE or DISTRESSED depending on the history
+    behind them, and a hash that ignored that would call two different outcomes identical.
     """
-    canonical = json.dumps(result_json, sort_keys=True)
+    canonical = json.dumps({"result": result_json, "run_status": run_status.value}, sort_keys=True)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -130,6 +136,47 @@ async def _load_opening_state(session: AsyncSession, quarter: Quarter, seed: Any
         raise ValueError(f"prior quarter {prior.id} has no closing-state snapshot -- lock it before this one")
 
     return _from_jsonable(CompanyState, snapshot.state)
+
+
+async def _prior_results(session: AsyncSession, quarter: Quarter) -> list[QuarterResult]:
+    """Every already-locked quarter's result for this company, oldest first.
+
+    Survival needs the whole run, not just the quarter being locked: `buffer_breached` is "at any
+    point", and `sustained_decline` counts a streak across quarters.
+    """
+    rows = (
+        (
+            await session.execute(
+                select(QuarterPerformance.engine_result)
+                .join(Quarter, Quarter.id == QuarterPerformance.quarter_id)
+                .where(
+                    Quarter.company_id == quarter.company_id,
+                    Quarter.number < quarter.number,
+                    QuarterPerformance.engine_result.isnot(None),
+                )
+                .order_by(Quarter.number)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [_from_jsonable(QuarterResult, row) for row in rows]
+
+
+def _run_status(outcome: SurvivalOutcome, quarter: Quarter, scenario: Scenario) -> RunStatus:
+    """Fold the survival outcome and the scenario's length into one persisted status.
+
+    FAILED wins outright -- a run that ran out of cash on its last quarter did not complete.
+    Otherwise reaching `total_quarters` means COMPLETED, which shadows DISTRESSED: both are true,
+    but "the run is over" is what gates quarter creation. The distress signal is not lost, because
+    `survival_condition` records what fired regardless of the status it ends up under, which is
+    what Q4 tiering reads.
+    """
+    if outcome.status is RunStatus.FAILED:
+        return RunStatus.FAILED
+    if quarter.number >= scenario.total_quarters:
+        return RunStatus.COMPLETED
+    return outcome.status
 
 
 async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterResult:
@@ -172,13 +219,24 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
 
     result = compute_quarter(opening_state, allocations, profile, seed)
 
+    # Survival is evaluated inside this same transaction, over the whole run including the
+    # quarter being locked -- so the lock, the result and the status it produced all commit
+    # together or not at all.
+    history = [*await _prior_results(session, quarter), result]
+    outcome = evaluate_survival(history, profile.survival)
+    run_status = _run_status(outcome, quarter, load_scenario(company.scenario_id))
+
+    company.run_status = run_status
+    company.survival_condition = outcome.triggered_by
+    company.survival_detail = outcome.detail
+
     result_json = _to_jsonable(result)
     state_json = result_json["closing_state"]
 
     if performance is None:
         performance = QuarterPerformance(company_id=quarter.company_id, quarter_id=quarter_id)
         session.add(performance)
-    performance.result_hash = _result_hash(result_json)
+    performance.result_hash = _result_hash(result_json, run_status)
     performance.engine_result = result_json
 
     snapshot = (
