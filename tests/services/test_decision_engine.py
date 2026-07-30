@@ -1,10 +1,6 @@
 import pytest
 
-from app.services.decision_engine import (
-    GAP_REASONS,
-    apply_modifier_chain,
-    compute_decision_impact,
-)
+from app.services.decision_engine import GAP_REASONS, compute_decision_impact
 
 WORKED_EXAMPLE_MODIFIERS = {
     "brand_strength": 0.9,
@@ -12,15 +8,6 @@ WORKED_EXAMPLE_MODIFIERS = {
     "inventory_availability": 1.0,
     "competitor_activity": 0.8,
 }
-
-
-def test_apply_modifier_chain_matches_worked_example():
-    # marketing_rules.json worked example: Increase Google Ads Budget, Sales field.
-    assert apply_modifier_chain(15, WORKED_EXAMPLE_MODIFIERS) == pytest.approx(6.48)
-
-
-def test_apply_modifier_chain_no_modifiers_is_identity():
-    assert apply_modifier_chain(20, {}) == 20
 
 
 def test_compute_decision_impact_marketing_sales_field():

@@ -2,14 +2,10 @@
 
 Two mechanisms are implemented here, matching what the source docs actually specify:
 
-1. The generic "base impact x modifiers" pattern -- currently only Marketing's rule config
-   uses this positional base-impact-table shape:
-
-       Actual Impact % = Base Impact % x Brand Strength x Market Saturation
-                          x Inventory Availability x Competitor Activity
-
-   Verified against the worked example in marketing_rules.json (Increase Google Ads Budget,
-   Sales field): 15 x 0.9 x 0.6 x 1.0 x 0.8 == 6.48.
+1. Marketing dispatches to `app.engines.legacy_matrix` -- the "base impact x modifiers"
+   percentage-influence model (`Actual Impact % = Base Impact % x Brand Strength x Market
+   Saturation x Inventory Availability x Competitor Activity`), a genuinely different model
+   from the power-law engine in `app/engines/quarter.py`. See that module's docstring.
 
 2. Per-decision formula handlers for Finance/Product/Sales, dispatched by decision_key via
    WORKSPACE_HANDLERS. Each handler pulls its inputs from `payload` and/or a plain `state`
@@ -20,9 +16,8 @@ Two mechanisms are implemented here, matching what the source docs actually spec
    have a decision-specific formula in the source docs (their "formula" fields are either
    validation constraints, vague labels, boolean gates, or simply absent -- see GAP_REASONS,
    one specific reason per uncovered decision_key rather than a blanket message). Sales and CX
-   have almost no per-decision formulas at all -- SAL-011 is the one exception, handled by its
-   own negotiation_score/acceptance_probability engine rather than forced through the generic
-   formula shape.
+   have almost no per-decision formulas at all, and SAL-011's own negotiation engine is
+   unbounded (see GAP_REASONS), so neither workspace has a wired handler today.
 
 TODO(source-doc-gap): the docs specify Marketing's Actual Impact as a *percentage* (e.g.
 "Sales: 6.48%") but never state what absolute baseline that percentage is applied against.
@@ -34,8 +29,7 @@ value itself; nothing here writes to a *State table.
 from dataclasses import dataclass
 from typing import Any
 
-from app.config.rules import load_rules
-from app.engines import gaps
+from app.engines import gaps, legacy_matrix
 from app.services.formulas import finance as finance_formulas
 from app.services.formulas import product as product_formulas
 
@@ -53,29 +47,6 @@ class FieldImpact:
     field: str
     base_value: float
     actual_value: float
-
-
-def apply_modifier_chain(base_value: float, modifiers: dict[str, float]) -> float:
-    """Actual value = base value x each modifier value, multiplied in turn."""
-    actual = base_value
-    for value in modifiers.values():
-        actual *= value
-    return actual
-
-
-def _compute_marketing_table_impact(decision_key: str, modifiers: dict[str, float]) -> list[FieldImpact]:
-    rules = load_rules("marketing")
-    decision = rules["decisions"].get(decision_key)
-    if decision is None or "base_impact" not in decision:
-        raise KeyError(f"No base_impact table for decision '{decision_key}' in workspace 'marketing'")
-
-    fields = rules["impact_fields"]
-    base_impacts = decision["base_impact"]
-
-    return [
-        FieldImpact(field=field, base_value=base, actual_value=apply_modifier_chain(base, modifiers))
-        for field, base in zip(fields, base_impacts, strict=True)
-    ]
 
 
 def _require_payload_fields(payload: dict[str, Any], fields: list[str], decision_key: str) -> dict[str, Any]:
@@ -295,7 +266,10 @@ def compute_decision_impact(
     payload/state input.
     """
     if workspace == "marketing":
-        return _compute_marketing_table_impact(decision_key, modifiers)
+        return [
+            FieldImpact(field=impact.field, base_value=impact.base_value, actual_value=impact.actual_value)
+            for impact in legacy_matrix.compute_marketing_table_impact(decision_key, modifiers)
+        ]
 
     handlers = WORKSPACE_HANDLERS.get(workspace)
     if handlers is None:
