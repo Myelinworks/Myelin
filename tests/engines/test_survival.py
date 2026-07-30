@@ -14,10 +14,12 @@ import pytest
 from app.config.loader import load_profile
 from app.engines.quarter import compute_quarter
 from app.engines.state import CompanyState
-from app.engines.survival import RunStatus, evaluate_survival, is_terminal
+from app.engines.survival import RunStatus, evaluate_survival, is_terminal, tier_assignment_quarter
 from tests.engines.test_quarter_q1 import Q1_ALLOCATIONS
 
 BUFFER = Decimal("1000000")  # Nadi Wear's working capital buffer
+# nadi_wear_standard runs 4 quarters, so Tier Assignment lands on Q3.
+TIER_QUARTER = tier_assignment_quarter(4)
 
 
 @pytest.fixture(scope="module")
@@ -119,41 +121,54 @@ class TestBufferBreached:
 
 
 class TestSustainedDecline:
-    """The condition that genuinely needs the full history, not just the current quarter."""
+    """Evaluated once, at the tier-assignment quarter (Q3 of a four-quarter scenario) -- it is a
+    Tier Assignment input, not a running health check. See `_sustained_decline`'s docstring."""
 
-    def test_two_consecutive_falling_quarters_is_distress(self, q1, rules):
+    def test_two_consecutive_falling_quarters_is_distress_at_the_tier_quarter(self, q1, rules):
         history = [
             _quarter(q1, number=1, cash="14000000", ncf="-1000000"),
             _quarter(q1, number=2, cash="13000000", ncf="-1000000"),
             _quarter(q1, number=3, cash="12000000", ncf="-1000000"),
         ]
-        outcome = evaluate_survival(history, rules)
+        outcome = evaluate_survival(history, rules, TIER_QUARTER)
 
         assert outcome.status is RunStatus.DISTRESSED
         assert outcome.triggered_by == "sustained_decline"
         assert "3 consecutive quarters" in outcome.detail
 
-    def test_a_fall_that_recovers_does_not_trigger(self, q1, rules):
-        """The control case: cash falls in Q2, recovers in Q3. The streak is broken, and the
-        latest quarter is positive, so the run is healthy."""
+    def test_a_fall_that_recovers_by_the_tier_quarter_does_not_trigger(self, q1, rules):
+        """The control case: cash falls in Q1 and Q2, recovers in Q3. The streak is broken at
+        the quarter that counts, so the run is healthy."""
         history = [
             _quarter(q1, number=1, cash="14000000", ncf="-1000000"),
             _quarter(q1, number=2, cash="13000000", ncf="-1000000"),
             _quarter(q1, number=3, cash="15000000", ncf="2000000"),
         ]
 
-        assert evaluate_survival(history, rules).status is RunStatus.ACTIVE
+        assert evaluate_survival(history, rules, TIER_QUARTER).status is RunStatus.ACTIVE
 
-    def test_the_streak_must_end_at_the_current_quarter(self, q1, rules):
-        """Two bad quarters followed by a good one is not a company currently in decline --
-        the condition describes where the run stands now, not whether it ever stumbled."""
+    def test_does_not_fire_before_the_run_reaches_the_tier_quarter(self, q1, rules):
+        """Two losing quarters at Q1-Q2 is a startup burning cash, not a distressed company."""
         history = [
-            _quarter(q1, number=1, cash="13000000", ncf="-2000000"),
-            _quarter(q1, number=2, cash="11000000", ncf="-2000000"),
-            _quarter(q1, number=3, cash="11500000", ncf="500000"),
+            _quarter(q1, number=1, cash="14000000", ncf="-1000000"),
+            _quarter(q1, number=2, cash="13000000", ncf="-1000000"),
         ]
 
-        assert evaluate_survival(history, rules).status is RunStatus.ACTIVE
+        assert evaluate_survival(history, rules, TIER_QUARTER).status is RunStatus.ACTIVE
+
+    def test_a_verdict_raised_at_the_tier_quarter_survives_into_q4(self, q1, rules):
+        """Q4 must not silently clear a distress signal Q3 legitimately raised -- Phase 11's
+        tiering reads it. The streak is measured as it stood at Q3, from wherever we now are."""
+        history = [
+            _quarter(q1, number=1, cash="14000000", ncf="-1000000"),
+            _quarter(q1, number=2, cash="13000000", ncf="-1000000"),
+            _quarter(q1, number=3, cash="12000000", ncf="-1000000"),
+            _quarter(q1, number=4, cash="20000000", ncf="8000000"),
+        ]
+        outcome = evaluate_survival(history, rules, TIER_QUARTER)
+
+        assert outcome.status is RunStatus.DISTRESSED
+        assert outcome.triggered_by == "sustained_decline"
 
     def test_alternating_losses_never_build_a_streak(self, q1, rules):
         history = [
@@ -162,7 +177,43 @@ class TestSustainedDecline:
             _quarter(q1, number=3, cash="13500000", ncf="-1000000"),
         ]
 
+        assert evaluate_survival(history, rules, TIER_QUARTER).status is RunStatus.ACTIVE
+
+    def test_stays_dormant_without_scenario_context(self, q1, rules):
+        """No tier quarter supplied means the caller has no scenario context; the condition sits
+        out rather than guessing a quarter to fire at."""
+        history = [
+            _quarter(q1, number=1, cash="14000000", ncf="-1000000"),
+            _quarter(q1, number=2, cash="13000000", ncf="-1000000"),
+            _quarter(q1, number=3, cash="12000000", ncf="-1000000"),
+        ]
+
         assert evaluate_survival(history, rules).status is RunStatus.ACTIVE
+
+
+class TestProfitableBurnIsNotDistressed:
+    """The contradiction this scoping exists to prevent.
+
+    `docs/13` §4's Efficiency-Final variant is scored **82/100** by the source -- a good quarter.
+    Under a per-quarter reading of `sustained_decline` it came out DISTRESSED at Q2, on two
+    consecutive negative-NCF quarters, while holding 11x its working capital buffer. An 82/100
+    company is not distressed; that reading was wrong, and this is the regression that keeps it
+    from coming back.
+    """
+
+    def test_profitable_burn_not_distressed_at_q2(self, nadi_wear, profile, q1, rules):
+        from tests.engines.test_q2_conversion import Q2_EFFICIENCY_ALLOCATIONS
+
+        q2 = compute_quarter(q1.closing_state, Q2_EFFICIENCY_ALLOCATIONS, profile, nadi_wear)
+        outcome = evaluate_survival([q1, q2], rules, TIER_QUARTER)
+
+        # both quarters really are loss-making, so this is not passing for a trivial reason
+        assert q1.net_cash_flow_inr < 0 and q2.net_cash_flow_inr < 0
+        # ...while sitting on many multiples of the buffer
+        assert q2.closing_cash_inr > q2.working_capital_buffer_inr * 10
+
+        assert outcome.status is RunStatus.ACTIVE
+        assert outcome.triggered_by is None
 
 
 class TestConfigDrivesTheConditions:

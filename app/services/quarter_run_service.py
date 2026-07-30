@@ -25,7 +25,7 @@ from app.config.loader import load_profile, load_scenario, load_seed
 from app.config.schema import Scenario
 from app.engines.quarter import QuarterResult, compute_quarter
 from app.engines.state import CompanyState, QuarterAllocations
-from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival
+from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival, tier_assignment_quarter
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
 from app.models.quarter import Quarter, QuarterStatus
@@ -222,9 +222,12 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     # Survival is evaluated inside this same transaction, over the whole run including the
     # quarter being locked -- so the lock, the result and the status it produced all commit
     # together or not at all.
+    scenario = load_scenario(company.scenario_id)
     history = [*await _prior_results(session, quarter), result]
-    outcome = evaluate_survival(history, profile.survival)
-    run_status = _run_status(outcome, quarter, load_scenario(company.scenario_id))
+    outcome = evaluate_survival(
+        history, profile.survival, tier_assignment_quarter(scenario.total_quarters)
+    )
+    run_status = _run_status(outcome, quarter, scenario)
 
     company.run_status = run_status
     company.survival_condition = outcome.triggered_by

@@ -64,7 +64,7 @@ def _quarter_number(quarter: QuarterResult) -> int:
     return quarter.closing_state.quarter_number - 1
 
 
-def _cash_exhausted(history: list[QuarterResult]) -> str | None:
+def _cash_exhausted(history: list[QuarterResult], _tier_assignment_quarter: int | None) -> str | None:
     """Closing cash at or below zero, in any quarter. The run is over.
 
     Checked across the whole history rather than just the latest quarter so that a run which
@@ -79,7 +79,7 @@ def _cash_exhausted(history: list[QuarterResult]) -> str | None:
     return None
 
 
-def _buffer_breached(history: list[QuarterResult]) -> str | None:
+def _buffer_breached(history: list[QuarterResult], _tier_assignment_quarter: int | None) -> str | None:
     """Closing cash below the working capital buffer -- "breached at any point", per the
     designer's wording, so one bad quarter marks the run even if it recovers later.
 
@@ -96,22 +96,36 @@ def _buffer_breached(history: list[QuarterResult]) -> str | None:
     return None
 
 
-def _sustained_decline(history: list[QuarterResult]) -> str | None:
-    """Negative NCF now, and cash falling for at least two consecutive quarters ending here.
+def _sustained_decline(history: list[QuarterResult], tier_assignment_quarter: int | None) -> str | None:
+    """Negative NCF at the **tier-assignment quarter**, with cash falling for 2+ consecutive
+    quarters ending there.
+
+    Anchored to that one quarter, not to whichever quarter happens to be latest. The designer's
+    rule is "**Q3** NCF < 0 with cash declining 2+ consecutive quarters" -- a Tier Assignment
+    input evaluated once, not a running health check. Read as a per-quarter signal it flags a
+    normal cash-burning startup distressed by construction: the canonical Efficiency-Final run,
+    which the source scores 82/100, would be DISTRESSED at Q2 while holding 11x its buffer.
+    An 82/100 company is not distressed, so that reading is wrong.
+
+    Evaluating the streak *as it stood at* the tier-assignment quarter -- rather than only while
+    that quarter is the latest -- also makes the verdict sticky: Q4 cannot silently clear a
+    distress signal that Q3 legitimately raised, which is what Phase 11's tiering reads.
 
     A quarter's cash falls exactly when its net cash flow is negative (`closing = opening +
     NCF`), so the streak is counted on NCF rather than on differenced balances -- same condition,
     one fewer place for an off-by-one to hide.
-
-    Deliberately anchored to the *latest* quarter: this is the designer's "Q3 NCF < 0 with cash
-    declining 2+ consecutive quarters", a statement about where the run currently stands, not
-    about whether two bad quarters ever happened.
     """
-    if not history or history[-1].net_cash_flow_inr >= 0:
+    if tier_assignment_quarter is None:
+        return None
+
+    quarters_to_tier = [q for q in history if _quarter_number(q) <= tier_assignment_quarter]
+    if not quarters_to_tier or _quarter_number(quarters_to_tier[-1]) != tier_assignment_quarter:
+        return None  # the run has not reached the tier-assignment quarter yet
+    if quarters_to_tier[-1].net_cash_flow_inr >= 0:
         return None
 
     streak = 0
-    for quarter in reversed(history):
+    for quarter in reversed(quarters_to_tier):
         if quarter.net_cash_flow_inr >= 0:
             break
         streak += 1
@@ -120,23 +134,40 @@ def _sustained_decline(history: list[QuarterResult]) -> str | None:
         return None
     return (
         f"net cash flow was negative for {streak} consecutive quarters, "
-        f"through Q{_quarter_number(history[-1])}"
+        f"through the tier-assignment quarter Q{tier_assignment_quarter}"
     )
 
 
-PREDICATES: dict[str, Callable[[list[QuarterResult]], str | None]] = {
+PREDICATES: dict[str, Callable[[list[QuarterResult], int | None], str | None]] = {
     "cash_exhausted": _cash_exhausted,
     "buffer_breached": _buffer_breached,
     "sustained_decline": _sustained_decline,
 }
 
 
-def evaluate_survival(company_history: list[QuarterResult], rules: SurvivalConfig) -> SurvivalOutcome:
+def tier_assignment_quarter(total_quarters: int) -> int:
+    """The quarter Tier Assignment is evaluated at: the one before the endgame.
+
+    `docs/17-designer-resolutions.md` states the rule in terms of Q3 for the canonical
+    four-quarter scenario; expressed relative to scenario length so a scenario of a different
+    length assigns its tier in the right place rather than always at a hardcoded Q3.
+    """
+    return total_quarters - 1
+
+
+def evaluate_survival(
+    company_history: list[QuarterResult],
+    rules: SurvivalConfig,
+    tier_quarter: int | None = None,
+) -> SurvivalOutcome:
     """Evaluate every configured condition over the run so far.
 
     `company_history` is every quarter computed to date, oldest first -- not just the current
-    one, because `sustained_decline` is a multi-quarter condition and `buffer_breached` is
-    "at any point".
+    one, because `sustained_decline` looks at a streak and `buffer_breached` is "at any point".
+
+    `tier_quarter` is where Tier Assignment is evaluated (see `tier_assignment_quarter`).
+    `None` means the caller has no scenario context, and the tier-scoped conditions stay
+    dormant rather than guessing a quarter to fire at.
     """
     if not company_history:
         return SurvivalOutcome(status=RunStatus.ACTIVE)
@@ -151,7 +182,7 @@ def evaluate_survival(company_history: list[QuarterResult], rules: SurvivalConfi
                 f"than one that is absent"
             )
 
-        detail = predicate(company_history)
+        detail = predicate(company_history, tier_quarter)
         if detail is None:
             continue
 

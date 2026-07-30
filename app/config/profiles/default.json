@@ -17,7 +17,7 @@
       },
       {
         "id": "sustained_decline",
-        "rule": "quarter_ncf < 0 AND cash fell 2+ consecutive quarters",
+        "rule": "at the tier-assignment quarter only: quarter_ncf < 0 AND cash fell 2+ consecutive quarters",
         "outcome": "DISTRESSED"
       }
     ]
