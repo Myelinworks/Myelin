@@ -297,5 +297,5 @@ class TestCrisisIsDeferredNotIgnored:
         """Silently running a crisis quarter with the crisis dropped would be a wrong number."""
         opening = CompanyState.opening(nadi_wear)
 
-        with pytest.raises(NotImplementedError, match="Phase 6"):
+        with pytest.raises(NotImplementedError, match="Phase 10"):
             compute_quarter(opening, Q1_ALLOCATIONS, profile, nadi_wear, CrisisEvent(scenario="A"))

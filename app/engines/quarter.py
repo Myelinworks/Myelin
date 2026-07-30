@@ -107,12 +107,12 @@ def compute_quarter(
     """Run one quarter end to end.
 
     `seed` carries the company constants the lines need (selling price, cost floor, warranty claim
-    cost, referral cap). `crisis_event` exists so the signature is stable for Phase 6; passing a
+    cost, referral cap). `crisis_event` exists so the signature is stable for Phase 10; passing a
     non-`None` value raises rather than silently returning a quarter with the crisis ignored.
     """
     if crisis_event is not None:
         raise NotImplementedError(
-            f"crisis scenario '{crisis_event.scenario}' is not implemented until Phase 6; "
+            f"crisis scenario '{crisis_event.scenario}' is not implemented until Phase 10; "
             f"running the quarter would silently ignore it"
         )
 

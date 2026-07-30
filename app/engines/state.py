@@ -36,7 +36,7 @@ REQUIRED_OPENING_SCORES = sorted(
 
 @dataclass(frozen=True)
 class CrisisEvent:
-    """Placeholder for the Phase 6 crisis engine.
+    """Placeholder for the Phase 10 crisis engine.
 
     `compute_quarter` accepts it so the signature does not change later, but refuses to run with a
     non-`None` value rather than silently producing a quarter with the crisis ignored.
