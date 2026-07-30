@@ -1,6 +1,11 @@
 {
   "name": "default",
   "source": "docs/00-formula-index.md, cross-checked against the worked calculations in docs/12-quarter-1-reference.md",
+  "raw_conversion_composition": {
+    "formula": "base + Reps bonus + CRM bonus + CX Team repeat-rate bonus + Buzz Q+2 bonus",
+    "status": "inferred_not_confirmed",
+    "note": "CX Team's term reproduces both Q2 variants in docs/13 §4/§5, but both used the same Rs 1,50,000 CX spend -- one data point, not a confirmed curve. See docs/10-implementation-gaps.md."
+  },
   "marketing": {
     "google_ads": {
       "leads_constant": 375,

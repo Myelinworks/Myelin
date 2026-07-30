@@ -13,7 +13,9 @@ from decimal import Decimal
 
 import pytest
 
+from app.engines.lines import sales as sales_lines
 from app.engines.quarter import compute_quarter
+from app.engines.state import CompanyState
 from tests.engines.conftest import close
 from tests.engines.test_quarter_q1 import Q1_ALLOCATIONS, q1  # noqa: F401 -- fixture import
 
@@ -129,8 +131,6 @@ class TestGate2BothBranchesOfTheMinAreExercised:
     def test_raw_binds_when_rnd_spend_is_high_and_sales_spend_is_low(self, nadi_wear, profile):
         """High Quality/Innovation spend lifts the ceiling far above a deliberately small raw
         conversion (minimal Reps/CRM/CX), so this time `MIN` must select raw, not ceiling."""
-        from app.engines.state import CompanyState
-
         opening = CompanyState.opening(nadi_wear)
         allocations = replace(
             Q1_ALLOCATIONS,
@@ -145,3 +145,52 @@ class TestGate2BothBranchesOfTheMinAreExercised:
         assert result.ceiling_bound is False
         assert result.raw_conversion_pct < result.conversion_ceiling_pct
         assert result.conversion_rate_pct == result.raw_conversion_pct + result.warranty_bonus_pts
+
+
+class TestCxContributionShape:
+    """Every other test in this suite exercises CX Team at a single spend level (Rs 1,50,000 --
+    both Q2 variants used it, so two runs are one data point). This proves the relationship
+    holds across a range, not just at that one figure."""
+
+    @staticmethod
+    def _raw_conversion_at(cx_spend: Decimal, nadi_wear, profile) -> Decimal:
+        opening = CompanyState.opening(nadi_wear)
+        allocations = replace(Q1_ALLOCATIONS, cx_team=cx_spend)
+        return compute_quarter(opening, allocations, profile, nadi_wear).raw_conversion_pct
+
+    def test_raw_conversion_increases_monotonically_with_cx_spend(self, nadi_wear, profile):
+        levels = [Decimal("0.50"), Decimal("1.50"), Decimal("3.00"), Decimal("6.00")]
+        raw_values = [self._raw_conversion_at(x, nadi_wear, profile) for x in levels]
+
+        assert raw_values == sorted(raw_values)
+        assert len(set(raw_values)) == len(raw_values)  # strictly increasing, no ties
+
+    def test_zero_cx_spend_recovers_the_pre_phase_3_5_formula(self, nadi_wear, profile):
+        """At cx_team=0, raw conversion must equal exactly `base + Reps + CRM` -- proof the CX
+        term is cleanly additive, not entangled with the rest of the composition."""
+        raw_without_cx = self._raw_conversion_at(Decimal("0"), nadi_wear, profile)
+
+        assert close(raw_without_cx, "25.34", tolerance="0.01")
+
+
+class TestOnboardingDoesNotFeedConversion:
+    """CX Team's Repeat Purchase Rate bonus feeds raw conversion; Sales' Onboarding produces the
+    same dimensional quantity (`Repeat Purchase Rate += pts`) but does not. Nothing in docs/ says
+    why one does and the other doesn't -- it looks exactly like the kind of asymmetry a future
+    "these are the same shape, unify them" refactor would silently erase, so it's locked here."""
+
+    def test_onboarding_spend_does_not_move_raw_conversion(self, nadi_wear, profile):
+        opening = CompanyState.opening(nadi_wear)
+        low = compute_quarter(opening, replace(Q1_ALLOCATIONS, onboarding=Decimal("0")), profile, nadi_wear)
+        high = compute_quarter(opening, replace(Q1_ALLOCATIONS, onboarding=Decimal("20.00")), profile, nadi_wear)
+
+        assert low.raw_conversion_pct == high.raw_conversion_pct
+
+    def test_including_onboarding_would_have_broken_q2_efficiency(self, q2_efficiency, profile):
+        """If Onboarding's `3 x^0.4` repeat bonus fed conversion the way CX Team's does, Q2
+        Efficiency's raw conversion would land near 32.4%, not the doc's 28.4% -- the asymmetry
+        is load-bearing, not an oversight."""
+        onboarding_repeat_bonus = sales_lines.onboarding(Decimal("2.00"), profile).repeat_rate_pts
+        hypothetical_raw = q2_efficiency.raw_conversion_pct + onboarding_repeat_bonus
+
+        assert close(hypothetical_raw, "32.4", tolerance="0.05")

@@ -367,6 +367,21 @@ class ValuationConfig(_Frozen):
     intangible_per_customer_inr: Decimal
 
 
+class RawConversionCompositionConfig(_Frozen):
+    """`raw = base + Reps bonus + CRM bonus + CX Team repeat-rate bonus + Buzz Q+2 bonus`.
+
+    Not stated in `docs/00-formula-index.md`; derived from the gap between `base + Reps + CRM`
+    and the stated raw figures in `docs/13-quarter-2-reference.md` §4/§5. `status` flags it the
+    same way as the fitted brand multiplier and the equipment depreciation rate: implemented
+    because it reproduces the doc's numbers, but resting on a single CX spend level (both Q2
+    variants used the same Rs 1,50,000), so it is not designer-confirmed.
+    """
+
+    formula: str
+    status: str
+    note: str
+
+
 # --------------------------------------------------------------------------------------
 # Top-level profile
 # --------------------------------------------------------------------------------------
@@ -377,6 +392,7 @@ class SimulationProfile(_Frozen):
 
     name: str
     source: str
+    raw_conversion_composition: RawConversionCompositionConfig
     marketing: MarketingConfig
     sales: SalesConfig
     rnd: RndConfig

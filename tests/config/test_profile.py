@@ -77,3 +77,14 @@ class TestBrandMultiplier:
         assert brand.status == "fitted_not_confirmed"
         assert brand.formula == "1 + 0.02 * brand_score"
         assert "13-quarter-2-reference" in brand.note
+
+
+class TestRawConversionComposition:
+    """CX Team's contribution to raw conversion -- see docs/10-implementation-gaps.md."""
+
+    def test_is_flagged_as_unconfirmed(self):
+        composition = load_profile().raw_conversion_composition
+
+        assert composition.status == "inferred_not_confirmed"
+        assert "CX Team" in composition.formula
+        assert "10-implementation-gaps" in composition.note
