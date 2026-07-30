@@ -31,6 +31,7 @@ from app.models import (  # noqa: F401
     operations,
     product,
     quarter,
+    quarter_allocation,
     quarter_performance,
     sales,
 )
