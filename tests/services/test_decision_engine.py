@@ -48,8 +48,8 @@ def test_gap_catalog_covers_every_unwired_decision_key():
     assert sum(1 for (ws, _) in GAP_REASONS if ws == "finance") == 9
     # Product: 10 total, 1 wired (PRO-003) -> 9 gaps.
     assert sum(1 for (ws, _) in GAP_REASONS if ws == "product") == 9
-    # Sales: 12 total, 1 wired (SAL-011) -> 11 gaps.
-    assert sum(1 for (ws, _) in GAP_REASONS if ws == "sales") == 11
+    # Sales: 12 total, 0 wired (SAL-011's negotiation engine is unbounded, not implementable) -> 12 gaps.
+    assert sum(1 for (ws, _) in GAP_REASONS if ws == "sales") == 12
     # CX: 12 total, 0 wired -> 12 gaps.
     assert sum(1 for (ws, _) in GAP_REASONS if ws == "cx") == 12
 
@@ -131,45 +131,23 @@ def test_pro_003_missing_payload_field_raises_value_error():
         compute_decision_impact("product", "PRO-003", {}, payload={"completed_features": 6}, state=None)
 
 
-# --- SAL-011 Negotiation -------------------------------------------------------------------
-
-NEGOTIATION_INPUTS = {
-    "price_competitiveness": 10,
-    "relationship_score": 20,
-    "inventory_availability": 15,
-    "brand_strength": 25,
-    "delivery_capability": 5,
-    "risk": 8,
-    "buyer_flexibility": 0.8,
-    "market_demand": 0.9,
-}
+# --- SAL-011 Negotiation stays gapped, like every other Sales decision ---------------------
+#
+# Negotiation Score sums six differently-scaled quantities with no stated weights, then
+# Acceptance Probability multiplies that by two further unscaled factors -- it cannot produce
+# a real score or a 0-1 probability for any input, so there is no bound that would make the
+# computation meaningful. This used to be "wired" against exactly that unbounded arithmetic;
+# raising is the honest behaviour, not a regression.
 
 
-def test_sal_011_negotiation_score_and_acceptance_probability():
-    impacts = compute_decision_impact(
-        "sales",
-        "SAL-011",
-        {},
-        payload={"terms": {"price": 950}, "negotiation_inputs": NEGOTIATION_INPUTS},
-        state=None,
-    )
-    by_field = {i.field: i for i in impacts}
-    # negotiation_score = 10+20+15+25+5-8 = 67
-    assert by_field["negotiation_score"].actual_value == 67
-    # acceptance_probability = 67 * 0.8 * 0.9 = 48.24
-    assert by_field["acceptance_probability"].actual_value == pytest.approx(48.24)
-
-
-def test_sal_011_missing_negotiation_inputs_raises_value_error():
-    with pytest.raises(ValueError, match="negotiation_inputs"):
-        compute_decision_impact("sales", "SAL-011", {}, payload={"terms": {"price": 950}}, state=None)
-
-
-def test_sal_011_incomplete_negotiation_inputs_raises_value_error():
-    with pytest.raises(ValueError, match="risk"):
-        incomplete = {k: v for k, v in NEGOTIATION_INPUTS.items() if k != "risk"}
+def test_sal_011_is_not_implemented_with_the_negotiation_engine_reason():
+    with pytest.raises(NotImplementedError, match="Negotiation Score has no specified weights"):
         compute_decision_impact(
-            "sales", "SAL-011", {}, payload={"terms": {}, "negotiation_inputs": incomplete}, state=None
+            "sales",
+            "SAL-011",
+            {},
+            payload={"terms": {"price": 950}, "negotiation_inputs": {}},
+            state=None,
         )
 
 

@@ -129,7 +129,10 @@ async def test_pro_004_still_gapped(client, company_and_quarter):
     assert response.status_code == 422
 
 
-async def test_sal_011_negotiation_happy_path(client, company_and_quarter):
+async def test_sal_011_still_gapped_unbounded_negotiation_engine(client, company_and_quarter):
+    """Negotiation Score sums six differently-scaled quantities with no stated weights, then
+    Acceptance Probability multiplies that by two further unscaled factors -- no bound would
+    make the result meaningful, so this stays a cataloged gap rather than a computed value."""
     company, quarter = company_and_quarter
     response = await client.post(
         f"/companies/{company.id}/quarters/{quarter.id}/sales/decisions",
@@ -138,13 +141,7 @@ async def test_sal_011_negotiation_happy_path(client, company_and_quarter):
             "payload": {"terms": {"price": 950, "quantity": 100}, "negotiation_inputs": NEGOTIATION_INPUTS},
         },
     )
-    assert response.status_code == 201
-    body = response.json()
-    impacts = {i["field"]: i for i in body["business_impact"]}
-    assert impacts["negotiation_score"]["actual_value"] == 67
-    assert impacts["acceptance_probability"]["actual_value"] == 48.24
-    # same non-fatal-evidence degradation as FIN-002 above.
-    assert body["evidence_generated"] == 0
+    assert response.status_code == 422
 
 
 async def test_sal_011_invalid_term_key_422s_at_schema_layer(client, company_and_quarter):

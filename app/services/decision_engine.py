@@ -35,9 +35,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.config.rules import load_rules
+from app.engines import gaps
 from app.services.formulas import finance as finance_formulas
 from app.services.formulas import product as product_formulas
-from app.services.formulas import sales as sales_formulas
 
 
 @dataclass(frozen=True)
@@ -156,55 +156,16 @@ PRODUCT_HANDLERS = {
 
 
 # --- Sales handlers ------------------------------------------------------------------------
+#
+# SAL-011 (negotiation_score + acceptance_probability) used to be wired here against the
+# unbounded formulas in app.services.formulas.sales -- six differently-scaled quantities
+# summed with no weights, then multiplied by two further unscaled factors, which cannot
+# produce a real score or a 0-1 probability no matter what's fed in. Clamping the output
+# would have been inventing bounds the source never specifies, so it raises instead (see the
+# GAP_REASONS entry below, which reuses the exact reason engines/gaps.py already raises for
+# the pure-engine equivalent of this same gap).
 
-# The scoring context for a negotiation -- distinct from `negotiable_variables` (the deal
-# terms themselves, validated at the schema layer in SalesDecisionSubmit). Neither the
-# source doc nor our models specify where these come from (no Customer/Deal model exists),
-# so they're required directly in the payload rather than guessed from state.
-NEGOTIATION_INPUT_FIELDS = [
-    "price_competitiveness",
-    "relationship_score",
-    "inventory_availability",
-    "brand_strength",
-    "delivery_capability",
-    "risk",
-    "buyer_flexibility",
-    "market_demand",
-]
-
-
-def handle_sal_011_negotiation(payload: dict[str, Any], state: dict[str, Any] | None) -> list[FieldImpact]:
-    """SAL-011 isn't a simple formula -- it's sales_rules.json's negotiation_engine
-    (negotiation_score + acceptance_probability), kept as its own function rather than
-    forced through the generic per-decision formula shape.
-
-    Payload shape: {"terms": {...subset of negotiable_variables...}, "negotiation_inputs": {...}}.
-    `terms` is validated against negotiable_variables at the schema layer; `negotiation_inputs`
-    (the scoring context, not a deal term) is validated here.
-    """
-    negotiation_inputs = payload.get("negotiation_inputs")
-    if not isinstance(negotiation_inputs, dict):
-        raise ValueError("SAL-011 payload missing required 'negotiation_inputs' object")
-    fields = _require_payload_fields(negotiation_inputs, NEGOTIATION_INPUT_FIELDS, "SAL-011 negotiation_inputs")
-
-    score = sales_formulas.negotiation_score(
-        price_competitiveness=fields["price_competitiveness"],
-        relationship_score=fields["relationship_score"],
-        inventory_availability=fields["inventory_availability"],
-        brand_strength=fields["brand_strength"],
-        delivery_capability=fields["delivery_capability"],
-        risk=fields["risk"],
-    )
-    probability = sales_formulas.acceptance_probability(score, fields["buyer_flexibility"], fields["market_demand"])
-    return [
-        FieldImpact(field="negotiation_score", base_value=score, actual_value=score),
-        FieldImpact(field="acceptance_probability", base_value=probability, actual_value=probability),
-    ]
-
-
-SALES_HANDLERS = {
-    "SAL-011": handle_sal_011_negotiation,
-}
+SALES_HANDLERS: dict[str, Any] = {}
 
 
 WORKSPACE_HANDLERS: dict[str, dict[str, Any]] = {
@@ -269,6 +230,7 @@ GAP_REASONS: dict[tuple[str, str], str] = {
     ),
     ("product", "PRO-011"): "customer_feedback_prioritization's formula ('roadmap_priority_score') isn't defined anywhere in the source doc.",
     ("product", "PRO-012"): "retire_product's formula ('product_lifecycle') isn't defined anywhere in the source doc.",
+    ("sales", "SAL-011"): gaps.NEGOTIATION_REASON,
 }
 
 _SALES_NO_FORMULA_DECISIONS = {
