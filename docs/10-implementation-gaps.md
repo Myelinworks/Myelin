@@ -99,6 +99,34 @@ split is not itemised in `docs/14-quarter-3-reference.md` §2, only department t
 
 ---
 
+## P1 — Q1's opening Repeat Purchase Rate is null, so the chained Q2 free-repeat-unit rate falls short
+
+`config/seeds/nadi_wear.json`'s `opening_scores.repeat_purchase_rate_pct` is `null` (own note:
+*"Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near
+10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs
+designer confirmation."*). `CompanyState.opening` treats a null repeat rate as `0` for Q1, which
+is correct for Q1 itself (the free-repeat-units term is provably zero in Q1 regardless -- see
+`state.py`'s docstring) but means Q1's *closing* Repeat Purchase Rate -- carried into Q2 as its
+*opening* rate -- comes out to only `0 + 3.8 + 3.3 + 1.9 ≈ 8.99%`, not the `19.0%` §1 of
+`docs/13-quarter-2-reference.md` states directly.
+
+**Impact, discovered by the persisted Q1->Q2 carry-forward test in
+`tests/services/test_quarter_run_service.py`:** running the actual Nadi Wear Q1 allocation
+through `compute_quarter` and chaining its closing state into Q2 Efficiency-Final gives free
+repeat units of `8.99% × 561.62 ≈ 50.5`, not the doc's `19.0% × 562 = 107` -- a ~56-unit shortfall
+that lands directly in `units_sold` (816 computed vs. 872 quoted) and everything downstream
+(revenue, NCF, valuation). Q2's Raw Conversion, Ceiling and Conversion Rate are unaffected --
+none of them depend on Repeat Purchase Rate -- so `tests/engines/test_q2_conversion.py`'s
+pure-chain test did not surface this; it only asserts those three.
+
+**Action required:** designer must confirm Q1's true opening Repeat Purchase Rate (or confirm it
+really is 0, and that Q2's 19.0% comes from somewhere other than a simple opening + Q1's three
+contributions). Until then, a full Q1->Q2->Q3->Q4 chain run through the real Nadi Wear opening
+seed will not reproduce `docs/13`'s onward units/revenue/NCF figures, even though every individual
+formula in the chain is correct.
+
+---
+
 ## P1 — Momentum Score entirely unspecified
 
 `16-quarter-4-endgame.md` names seven inputs (Brand, Innovation, Quality, Supplier Reliability,
