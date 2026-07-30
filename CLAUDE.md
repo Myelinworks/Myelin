@@ -29,8 +29,9 @@ If a coefficient is not in `docs/`, it does not exist. Raise `NotImplementedErro
 **Company-agnostic.** No company number and no market-calibration constant appears in engine code.
 - `config/profiles/*.json` — curve shapes, coefficients, exponents, baselines, floors
 - `config/seeds/*.json` — opening company state
+- `config/scenarios/*.json` — which seed + profile to run, for how many quarters, when a crisis fires, and opening values for state the 22-line chain does not own (the four legacy modifiers, the six `*State` rows)
 
-Adding a company must require zero code changes.
+Adding a company must require zero code changes. So must adding a scenario.
 
 **Units.** `x` = spend in ₹ lakhs. ₹4,00,000 → `x = 4.00`. Convert once at the config/input boundary, never inside a formula.
 
