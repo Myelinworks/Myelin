@@ -10,6 +10,12 @@ gaps preferred over silently wrong numbers.*
 
 ## P0 — Blocking: two conflicting company baselines
 
+> ✅ **RESOLVED** by `docs/17-designer-resolutions.md` — **Nadi Wear is canonical**; PulseWear is
+> deprecated. The entry below is kept for the reasoning that led to the question. PulseWear's
+> seed stays in the repo, still unable to run a quarter, as the guard-rail proving the engine
+> reads company numbers from config rather than code
+> (`tests/engines/test_quarter_company_agnostic.py`).
+
 The source set describes **two different companies** with incompatible economics.
 
 | | PulseWear (`03`) | Nadi Wear (`12`–`16`) |
@@ -35,6 +41,12 @@ Q1–Q4 worked-example set must be recalculated.
 
 ## P0 — Blocking: two incompatible marketing models
 
+> ✅ **RESOLVED** by `docs/17-designer-resolutions.md` — the **power-law model is canonical**;
+> the percentage-influence matrix is deprecated. It is kept, not deleted, in
+> `app/engines/legacy_matrix/`: it is a genuine second model with its own validation case
+> (`15% × 0.9 × 0.6 × 1.0 × 0.8 = 6.48%`), it is not wired into `run_quarter()`, and its module
+> docstring says so.
+
 | Model | Source | Shape |
 |---|---|---|
 | **Percentage-influence matrix** | `05-marketing-workspace.md` | `Decision → +15% Sales`, then × 4 modifiers |
@@ -51,6 +63,15 @@ validate only the power-law model.
 ---
 
 ## P1 — Brand Score → multiplier function not stated
+
+> ✅ **RESOLVED** by `docs/17-designer-resolutions.md` — the function **is** stated in source as
+> `1 + Brand Score / 50`, which is algebraically identical to the fit below (`1/50 = 0.02`), so
+> the implemented coefficient was already correct. The resolutions doc also explains the
+> ambiguity: source still contains a superseded `1 + Brand Score / 100` version alongside it.
+>
+> **Config not yet updated:** `config/profiles/default.json` still carries
+> `"status": "fitted_not_confirmed"`. Upgrading that flag to reflect designer confirmation is a
+> follow-up, deliberately not bundled into an unrelated phase.
 
 Only three data points exist:
 
@@ -322,6 +343,12 @@ producing quarter-to-quarter variation.
 ---
 
 ## P3 — Crisis Choice D offset value ambiguity
+
+> ✅ **RESOLVED** by `docs/17-designer-resolutions.md` — **Choice A (Expedite via Air Freight)
+> carries `+0.50`**, Choice B `+0.25`, Choice C `+0`. Internally consistent with Choice A's own
+> description ("Capacity Penalty Multiplier effect fully reversed"), which only works
+> arithmetically if its offset fully cancels the base 0.50 cut. Not yet implemented — the crisis
+> engine is Phase 10.
 
 `11-crisis-system.md` states the Strategic Choice offset set for Scenario D as `[0, +0.25, or
 +0.50]` but only names Choice B as `+0.25`. **Which choice carries `+0.50` is not stated.**
