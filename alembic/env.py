@@ -11,6 +11,7 @@ from app.core.db import Base
 from app.models import (  # noqa: F401
     cognitive,
     company,
+    company_state_snapshot,
     cx,
     decision,
     evidence,
@@ -20,6 +21,7 @@ from app.models import (  # noqa: F401
     operations,
     product,
     quarter,
+    quarter_allocation,
     quarter_performance,
     sales,
 )
