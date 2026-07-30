@@ -205,6 +205,12 @@ class TestQ1ToQ2CarryForwardSurvivesPersistence:
         assert abs(result.conversion_rate_pct - Decimal("27.0")) < Decimal("0.1")
         assert abs(result.units_sold - Decimal("872")) < Decimal("1")
 
+        # docs/13 §4: "Available to Sell = 300 + 729 (carried inventory) = 1,029". Q2 is the
+        # first quarter where attrition is non-zero, so this is the only carry-forward assertion
+        # that can catch the attrition discount going missing from Production Capacity again --
+        # reliability alone would give 1,052. Kept at +/-1, not widened to accommodate anything.
+        assert abs(result.available_to_sell - Decimal("1029")) < Decimal("1")
+
         # The free-repeat-units term is what the derived opening Repeat Purchase Rate feeds, and
         # it is the whole difference between this and the ~816 units the null seed produced
         # before Phase 5 closed that gap (docs/13 §4 quotes 107).
