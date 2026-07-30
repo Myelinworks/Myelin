@@ -170,10 +170,19 @@ def compute_quarter(
         allocations.innovation, opening_state.innovation_score, opening_state.feature_completeness, profile
     )
     crm_bonus = sales.crm_tools(allocations.crm_tools, profile)
+    # CX Team's Repeat Purchase Rate bonus does double duty: it carries forward as next quarter's
+    # free-repeat-unit rate (see `closing_state.advance` below) AND applies to THIS quarter's raw
+    # conversion. Not stated in docs/06.3, but it is the term that reproduces both Q2 raw-conversion
+    # figures in docs/13 §4/§5 (see the CX-in-raw-conversion entry in docs/10-implementation-gaps.md).
+    cx = hr.cx_team(allocations.cx_team, profile)
 
     base_conversion = require(seed.base_conversion_rate_pct, "base_conversion_rate_pct", seed.name)
     raw_conversion_pct = (
-        base_conversion + reps.conversion_bonus_pts + crm_bonus + buzz_payout.conversion_bonus_pts
+        base_conversion
+        + reps.conversion_bonus_pts
+        + crm_bonus
+        + cx.repeat_rate_pts
+        + buzz_payout.conversion_bonus_pts
     )
     ceiling_pct = rnd.conversion_ceiling(quality.quality_score, innovation.innovation_score, profile)
     warranty_bonus = rnd.warranty_conversion_bonus(allocations.warranty_years, profile)
@@ -228,7 +237,6 @@ def compute_quarter(
     training = hr.training_development(
         allocations.training_development, opening_state.employee_engagement, profile
     )
-    cx = hr.cx_team(allocations.cx_team, profile)
     onboarding = sales.onboarding(allocations.onboarding, profile)
 
     compliance = finance_admin.compliance_legal(

@@ -161,8 +161,11 @@ class TestGate2WarrantyIsAdditiveAfterTheCeiling:
         assert q1.conversion_rate_pct == q1.conversion_ceiling_pct + q1.warranty_bonus_pts
 
     def test_the_ceiling_binds_raw_conversion_in_q1(self, q1):
-        """Raw reaches 25.3% (19% base + 4.7 Reps + 1.7 CRM); the ceiling allows 19.1%."""
-        assert close(q1.raw_conversion_pct, "25.3", tolerance="0.1")
+        """Raw reaches 27.25% (19% base + 4.7 Reps + 1.7 CRM + 1.9 CX Team); the ceiling allows
+        19.1%. See the CX-in-raw-conversion entry in docs/10-implementation-gaps.md -- the ceiling
+        binds regardless of whether CX's term is included, which is why it went unnoticed until
+        Q2's worked variants exposed it."""
+        assert close(q1.raw_conversion_pct, "27.25", tolerance="0.1")
         assert q1.ceiling_bound is True
         assert q1.conversion_ceiling_pct < q1.raw_conversion_pct
 

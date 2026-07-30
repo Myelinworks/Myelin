@@ -68,6 +68,37 @@ asserting all three data points.
 
 ---
 
+## P1 — Raw conversion has an unstated CX Team term
+
+`docs/00-formula-index.md` states raw conversion as `base + Reps bonus + CRM bonus`. That
+composition is exact in Q1 (25.34% vs. an inferred 25.3%) but the ceiling binds in Q1, so the raw
+figure never reaches an observable output there -- the composition was never actually tested.
+
+`docs/13-quarter-2-reference.md` §4/§5 states raw conversion for both Q2 variants directly, and
+`base + Reps + CRM` alone understates both:
+
+| Variant | `base + Reps + CRM` | Doc's stated raw | Gap |
+|---|---|---|---|
+| Q2 Efficiency | 26.06% | 28.4% | +2.34 |
+| Q2 Growth | 28.81% | 31.2% | +2.39 |
+
+Both gaps match HR's CX Team `Repeat Purchase Rate` bonus (`2 × x^0.4`, `docs/12-quarter-1-reference.md`
+§6.3) for the CX spend each variant used (₹1,50,000 in both, held steady per §4/§5's "HR &
+Finance/Admin (held steady)" table): `2 × 1.50^0.4 = 2.35` pts, within 0.02-0.04 of both gaps
+(28.41% and 31.16% computed vs. 28.4% and 31.2% quoted, both single-decimal roundings). The doc's
+own inline aside also names it: "Raw uncapped conversion (**Sales+HR** alone)" -- Sales being
+Reps+CRM, HR being CX Team.
+
+**Status:** implemented (`compute_quarter` in `engines/quarter.py`) -- raw conversion now includes
+`cx.repeat_rate_pts` in addition to carrying it forward as next quarter's free-repeat-unit rate.
+Not stated in `docs/06-product-workspace.md`/`08-customer-experience-workspace.md`, so flagged
+here rather than folded into `00-formula-index.md` as confirmed. Reproduces both Q2 variants to
+within source-document rounding; the Q3 baseline (raw 29.3%, first quarter the ceiling doesn't
+bind) could not be independently verified because the Q3 baseline's CRM/Onboarding and HR-line
+split is not itemised in `docs/14-quarter-3-reference.md` §2, only department totals.
+
+---
+
 ## P1 — Momentum Score entirely unspecified
 
 `16-quarter-4-endgame.md` names seven inputs (Brand, Innovation, Quality, Supplier Reliability,
