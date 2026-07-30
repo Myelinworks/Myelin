@@ -1,6 +1,6 @@
 import uuid
 
-from app.models.decision import Decision, Workspace
+from app.models.decision import Decision, DecisionStatus, Workspace
 from app.services.quarter_engine import (
     apply_decision_based_costs,
     apply_recurring_costs,
@@ -103,3 +103,8 @@ def test_run_quarter_end_to_end_mixed_registered_and_unregistered_decisions():
     assert dimension_by_name["strategic_thinking"] == 58.0
     assert result.quarter_performance is not None
     assert result.quarter_performance.company_id == company_id
+
+    # every decision run_quarter consumed is marked PROCESSED, registered or not -- it never
+    # left DRAFT/SUBMITTED, which would make a locked quarter's decisions look unconsumed.
+    assert registered_decision.status == DecisionStatus.PROCESSED
+    assert unregistered_decision.status == DecisionStatus.PROCESSED

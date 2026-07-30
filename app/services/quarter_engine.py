@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 from app.config.rules import load_rules
 from app.models.cognitive import CognitiveScore
-from app.models.decision import Decision
+from app.models.decision import Decision, DecisionStatus
 from app.models.evidence import EvidenceRecord
 from app.models.quarter_performance import QuarterPerformance
 from app.services.cognitive_scoring_engine import build_cognitive_scores, build_quarter_performance, score_quarter
@@ -119,6 +119,10 @@ def run_quarter(
 
     for decision in decisions:
         workspace_results.setdefault(decision.workspace.value, {})
+        # In-place mutation: `decisions` are ORM objects the caller already loaded in its
+        # session, so this reaches the DB on the caller's next commit without this
+        # DB-session-agnostic module touching a session itself.
+        decision.status = DecisionStatus.PROCESSED
 
         try:
             result.evidence_records += generate_evidence(

@@ -25,6 +25,12 @@ from app.services.evidence_engine import generate_evidence
 def _state_to_dict(state: Base | None) -> dict[str, Any] | None:
     """Flattens a *State ORM row into a plain dict so decision_engine can read prerequisite
     values (e.g. FIN-002 needs cash_balance) without decision_engine touching the DB itself.
+
+    Read-only, deliberately: submitting a decision must never write to a *State row. All
+    allocations and decisions evaluate against the opening snapshot for the quarter; only
+    `run_quarter()` (`services/quarter_run_service.py`) writes closing state, once, when the
+    quarter is locked. Do not add a `session.add(state_model(...))`/write-back here -- see
+    CLAUDE.md's "No within-quarter compounding" rule.
     """
     if state is None:
         return None
