@@ -373,6 +373,38 @@ class ValuationConfig(_Frozen):
     intangible_per_customer_inr: Decimal
 
 
+class SurvivalCondition(_Frozen):
+    """One survival check: which predicate runs, and what status it produces when it fires.
+
+    `id` is the machine-usable part -- `engines/survival.py` keys its predicates off it, and an
+    id with no registered predicate is a load-time error rather than a silently skipped check.
+    `rule` is the human-readable statement of the same thing, kept alongside for the same reason
+    `BrandMultiplierConfig` keeps `formula` next to its coefficients: so a reader can see what
+    the code is supposed to be doing without reading the code.
+
+    Config decides *which* conditions are active and what each produces; the predicate itself is
+    code. A rule string is documentation, never evaluated.
+    """
+
+    id: str
+    rule: str
+    outcome: str
+
+
+class SurvivalConfig(_Frozen):
+    """When a run is failing, and when it is over.
+
+    Only three conditions, all traceable: `cash_exhausted` is the unambiguous cash-zero line,
+    and the other two are the designer's stated Distressed definition
+    (`docs/17-designer-resolutions.md`, Tier Assignment). No runway thresholds or debt covenants
+    -- nothing in the source specifies any.
+    """
+
+    status: str
+    source: str
+    conditions: list[SurvivalCondition]
+
+
 class RawConversionCompositionConfig(_Frozen):
     """`raw = base + Reps bonus + CRM bonus + CX Team repeat-rate bonus + Buzz Q+2 bonus`.
 
@@ -398,6 +430,7 @@ class SimulationProfile(_Frozen):
 
     name: str
     source: str
+    survival: SurvivalConfig
     raw_conversion_composition: RawConversionCompositionConfig
     marketing: MarketingConfig
     sales: SalesConfig

@@ -83,6 +83,11 @@ class QuarterResult:
 
     # Budget discipline
     discretionary_ceiling_inr: Decimal
+    # `spent_into_buffer` is about this quarter's *discretionary spend* eating into the buffer.
+    # It is a different question from "did closing cash end below the buffer", which is the
+    # survival engine's `buffer_breached` condition -- hence carrying the buffer itself, so
+    # `engines/survival.py` can answer that from a QuarterResult alone.
+    working_capital_buffer_inr: Decimal
     spent_into_buffer: bool
     buffer_overspend_inr: Decimal
 
@@ -343,6 +348,7 @@ def compute_quarter(
         net_cash_flow_inr=net_cash_flow,
         closing_cash_inr=closing_cash,
         discretionary_ceiling_inr=discretionary_ceiling,
+        working_capital_buffer_inr=buffer,
         spent_into_buffer=buffer_overspend > 0,
         buffer_overspend_inr=buffer_overspend,
         cash_efficiency_bonus_pct=planning.cash_efficiency_bonus_pct,

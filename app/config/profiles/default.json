@@ -1,6 +1,27 @@
 {
   "name": "default",
   "source": "docs/00-formula-index.md, cross-checked against the worked calculations in docs/12-quarter-1-reference.md",
+  "survival": {
+    "status": "designer_specified",
+    "source": "docs/17-designer-resolutions.md — Tier Assignment; cash_exhausted is the unambiguous cash-zero line rather than a stated rule",
+    "conditions": [
+      {
+        "id": "cash_exhausted",
+        "rule": "closing_cash <= 0",
+        "outcome": "FAILED"
+      },
+      {
+        "id": "buffer_breached",
+        "rule": "closing_cash < working_capital_buffer",
+        "outcome": "DISTRESSED"
+      },
+      {
+        "id": "sustained_decline",
+        "rule": "quarter_ncf < 0 AND cash fell 2+ consecutive quarters",
+        "outcome": "DISTRESSED"
+      }
+    ]
+  },
   "raw_conversion_composition": {
     "formula": "base + Reps bonus + CRM bonus + CX Team repeat-rate bonus + Buzz Q+2 bonus",
     "status": "inferred_not_confirmed",
