@@ -17,6 +17,15 @@
   "core_team_size": 14,
   "opening_inventory_units": 600,
   "opening_customers": 4000,
+  "equipment_nbv_inr": 2500000,
+  "equipment_depreciation": {
+    "per_quarter_inr": 250000,
+    "status": "inferred_from_two_data_points",
+    "note": "Rs 25,00,000 (Q1 close, docs/12 §11) -> Rs 20,00,000 (Q3 start, docs/14 §1) over two quarterly steps. No depreciation rule is stated in docs/ -- this is a straight-line fit, not a designer-confirmed formula."
+  },
+  "product_ip_inr": 800000,
+  "accounts_receivable_inr": 1000000,
+  "liabilities_inr": 1200000,
   "opening_scores": {
     "supplier_reliability": 70,
     "logistics_efficiency": 60,
@@ -39,6 +48,7 @@
     "repeat_purchase_rate_pct": "Left null. Not stated. Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near 10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs designer confirmation.",
     "attrition_rate_pct": "Zero because docs/12-quarter-1-reference.md §6.2 states attrition has no effect in Q1 -- it erodes capacity built in a prior quarter, and Q1 has none.",
     "base_conversion_rate_pct": "The starting point for raw conversion, before the R&D ceiling caps it: raw = base + Reps bonus + CRM bonus, and the final rate is MIN(raw, ceiling) + warranty bonus. In Q1 raw reaches 25.3% and the 19.11% ceiling binds.",
+    "equipment_nbv_inr": "Rs 25,00,000 is the value docs/12-quarter-1-reference.md §11's asset identity requires at Q1 close; nothing in docs/ states a separate pre-Q1 balance, so it is seeded as this quarter's opening (undepreciated-within-Q1) figure, matching how fixed_costs_inr is only discounted for the quarter that inherits it.",
     "sourced_but_not_modelled": "§1 also states a 22,000-signup waitlist and a 2,50,000/quarter market ceiling. Neither feeds any formula in the execution chain, so neither is seeded."
   }
 }

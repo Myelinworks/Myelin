@@ -39,16 +39,10 @@ Q1_ALLOCATIONS = QuarterAllocations(
     warranty_years=1,
 )
 
-# §11 quotes these directly; no formula in docs/ derives either.
-Q1_TOTAL_ASSETS = Decimal("18422586")
-Q1_LIABILITIES = Decimal("1200000")
-
 
 @pytest.fixture(scope="module")
 def q1(nadi_wear, profile):
-    opening = CompanyState.opening(
-        nadi_wear, total_assets_inr=Q1_TOTAL_ASSETS, liabilities_inr=Q1_LIABILITIES
-    )
+    opening = CompanyState.opening(nadi_wear)
     return compute_quarter(opening, Q1_ALLOCATIONS, profile, nadi_wear)
 
 
@@ -254,23 +248,33 @@ class TestQ1Valuation:
         assert close(q1.valuation.revenue_multiple_inr, "67387841", tolerance="5")
 
     def test_asset_based(self, q1):
-        assert q1.valuation.asset_based_inr == Decimal("17222586")
+        """§11's identity (`docs/12-quarter-1-reference.md`) gives Rs 1,72,22,586 using its own
+        rounded 729 units x Rs 3,087/unit inventory line. The chain carries carried inventory and
+        unit cost unrounded (729.41 units at Rs 3,086.51/unit), so the derived figure is Rs 895
+        higher -- the same category of mid-chain-precision drift `test_blended_valuation`
+        documents for the intangible term, now also present in the asset term it feeds.
+        """
+        assert close(q1.valuation.asset_based_inr, "17222586", tolerance="1000")
+        assert close(q1.valuation.asset_based_inr, "17223481", tolerance="5")
 
     def test_blended_valuation(self, q1):
-        """§11 reports Rs 5,25,07,602. Computed unrounded it is Rs 5,25,07,567 -- Rs 35 low.
+        """§11 reports Rs 5,25,07,602. Computed unrounded it is Rs 5,25,07,746 -- Rs 144 high.
 
-        The whole gap is in the intangible term, and it is two of the source's own display
-        roundings pulling in opposite directions:
+        Two drifts compound here, both mid-chain-precision vs. the source's display rounding:
 
-        - score points: §11 uses 8.7 + 7.5 + 9.95 = 26.15, unrounded 26.153874 -> we are Rs 77 high
-        - customers: §11 uses 4,562 whole customers, where the chain carries 4,561.62 because
-          units sold is 561.62 unrounded -> we are Rs 114 low
+        - intangible term (pre-existing, Rs 35 low): score points §11 rounds to 8.7+7.5+9.95=26.15
+          (unrounded 26.153874, Rs 77 high) and customers to 4,562 whole (unrounded 4,561.62, Rs 114
+          low)
+        - asset term (new with the derived Total Assets identity, Rs 895 x 0.20 weight = Rs 179
+          high): carried inventory and unit cost are unrounded in the chain, vs. §11's rounded
+          729 units x Rs 3,087/unit
 
-        Net Rs 35. Closing it would mean rounding units sold mid-chain, which would also move
-        revenue and COGS off their exact targets, so the unrounded value stands.
+        Closing either would mean rounding mid-chain, which would also move revenue, COGS and the
+        asset term off their own exact targets -- CLAUDE.md rounds at persistence and display only,
+        so the unrounded value stands.
         """
-        assert close(q1.valuation.blended_inr, "52507567", tolerance="5")
-        assert abs(q1.valuation.blended_inr - Decimal("52507602")) < Decimal("50")
+        assert close(q1.valuation.blended_inr, "52507746", tolerance="5")
+        assert abs(q1.valuation.blended_inr - Decimal("52507602")) < Decimal("150")
 
     def test_valuation_rose_despite_a_loss_making_quarter(self, q1):
         """Rs 4 Cr raised, ~Rs 5.25 Cr after Q1 -- losses bought something durable."""

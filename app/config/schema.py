@@ -421,6 +421,22 @@ class OpeningScores(_Frozen):
     attrition_rate_pct: Decimal | None = None
 
 
+class EquipmentDepreciationConfig(_Frozen):
+    """Straight-line reduction to Equipment NBV, applied once per quarter to what the NEXT
+    quarter inherits -- this quarter's own valuation uses the un-depreciated opening balance, the
+    same pattern Financial Planning uses for the Cash Efficiency Bonus (it discounts next
+    quarter's fixed costs, not this quarter's own).
+
+    Two data points only (`docs/12-quarter-1-reference.md` §11, `docs/14-quarter-3-reference.md`
+    §1): Rs 25,00,000 (Q1 close) -> Rs 20,00,000 (Q3 start, two quarterly steps later) implies Rs
+    2,50,000/quarter. No stated depreciation rule in docs/ -- see `status`.
+    """
+
+    per_quarter_inr: Decimal
+    status: str
+    note: str
+
+
 class CompanySeed(_Frozen):
     """Opening state for one company. Contains no curve shapes.
 
@@ -452,5 +468,15 @@ class CompanySeed(_Frozen):
     opening_inventory_units: int
     opening_customers: int
     opening_scores: OpeningScores
+
+    # Balance-sheet constants behind the asset-based valuation term. `docs/12-quarter-1-reference.md`
+    # §11 and `docs/14-quarter-3-reference.md` §1 quote them directly for Nadi Wear; no formula in
+    # docs/ derives any of the four, and `None` skips the asset-based valuation method rather than
+    # guessing a company's balance sheet.
+    equipment_nbv_inr: Decimal | None = None
+    equipment_depreciation: EquipmentDepreciationConfig | None = None
+    product_ip_inr: Decimal | None = None
+    accounts_receivable_inr: Decimal | None = None
+    liabilities_inr: Decimal | None = None
 
     notes: dict[str, str] = Field(default_factory=dict)

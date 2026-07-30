@@ -168,20 +168,18 @@ class CompanyState:
     # one-time conversion bonus. 0 means nothing is pending.
     buzz_quarters_since_investment: int = 0
 
-    # No formula in docs/ derives these -- the Q1 valuation quotes them directly
-    # (Rs 1,84,22,586 assets, Rs 12,00,000 liabilities). They are inputs, and the asset-based
-    # valuation method is skipped when either is absent.
-    total_assets_inr: Decimal | None = None
+    # Total Assets is derived each quarter from `closing cash + carried inventory value +
+    # equipment NBV + product IP + accounts receivable` (see `_total_assets_inr` in
+    # `engines/quarter.py`), not stored directly. Equipment NBV depreciates quarter to quarter;
+    # product IP, accounts receivable and liabilities have no stated formula and carry flat.
+    # `None` skips the asset-based valuation method rather than guessing a company's balance sheet.
+    equipment_nbv_inr: Decimal | None = None
+    product_ip_inr: Decimal | None = None
+    accounts_receivable_inr: Decimal | None = None
     liabilities_inr: Decimal | None = None
 
     @classmethod
-    def opening(
-        cls,
-        seed: CompanySeed,
-        *,
-        total_assets_inr: Decimal | None = None,
-        liabilities_inr: Decimal | None = None,
-    ) -> "CompanyState":
+    def opening(cls, seed: CompanySeed) -> "CompanyState":
         """Quarter 1 state for a seeded company.
 
         `prior_units_sold` is zero because Q1 has no prior quarter, which also makes the repeat
@@ -206,8 +204,10 @@ class CompanyState:
             # zero here, so an unstated seed value cannot change a Q1 result.
             repeat_purchase_rate_pct=scores.repeat_purchase_rate_pct or ZERO,
             attrition_rate_pct=scores.attrition_rate_pct or ZERO,
-            total_assets_inr=total_assets_inr,
-            liabilities_inr=liabilities_inr,
+            equipment_nbv_inr=seed.equipment_nbv_inr,
+            product_ip_inr=seed.product_ip_inr,
+            accounts_receivable_inr=seed.accounts_receivable_inr,
+            liabilities_inr=seed.liabilities_inr,
             **required,
         )
 

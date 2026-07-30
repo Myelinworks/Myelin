@@ -243,6 +243,15 @@ def compute_quarter(
         1 - planning.cash_efficiency_bonus_pct / 100
     )
 
+    # Depreciation, like the fixed-cost discount above, only affects what the NEXT quarter
+    # inherits -- this quarter's own valuation below uses the un-depreciated opening balance.
+    closing_equipment_nbv = (
+        opening_state.equipment_nbv_inr
+        - require(seed.equipment_depreciation, "equipment_depreciation", seed.name).per_quarter_inr
+        if opening_state.equipment_nbv_inr is not None
+        else None
+    )
+
     closing_customers = opening_state.customers + units_sold
     valuation = _value_company(
         revenue,
@@ -252,6 +261,9 @@ def compute_quarter(
         quality_score=quality.quality_score,
         customers=closing_customers,
         profile=profile,
+        closing_cash_inr=closing_cash,
+        carried_inventory_units=available_to_sell - units_sold,
+        unit_cost_inr=manufacturing.unit_cost_inr,
     )
 
     closing_state = opening_state.advance(
@@ -282,6 +294,10 @@ def compute_quarter(
         + cx.repeat_rate_pts,
         attrition_rate_pct=training.attrition_rate_pct,
         buzz_quarters_since_investment=_next_buzz_offset(opening_state, allocations),
+        equipment_nbv_inr=closing_equipment_nbv,
+        product_ip_inr=opening_state.product_ip_inr,
+        accounts_receivable_inr=opening_state.accounts_receivable_inr,
+        liabilities_inr=opening_state.liabilities_inr,
     )
 
     return QuarterResult(
@@ -337,6 +353,22 @@ def compute_quarter(
     )
 
 
+def _total_assets_inr(
+    closing_cash_inr: Decimal,
+    inventory_value_inr: Decimal,
+    equipment_nbv_inr: Decimal,
+    product_ip_inr: Decimal,
+    accounts_receivable_inr: Decimal,
+) -> Decimal:
+    """`Total Assets = closing cash + carried inventory value + equipment NBV + product IP + AR`.
+
+    Not stated as a formula anywhere in `docs/00-formula-index.md` -- derived from the balance
+    sheets in `docs/12-quarter-1-reference.md` §11 and `docs/14-quarter-3-reference.md` §1, both of
+    which this identity reproduces exactly (Rs 1,84,22,586 and Rs 1,84,41,515).
+    """
+    return closing_cash_inr + inventory_value_inr + equipment_nbv_inr + product_ip_inr + accounts_receivable_inr
+
+
 def _value_company(
     revenue: Decimal,
     opening_state: CompanyState,
@@ -346,6 +378,9 @@ def _value_company(
     quality_score: Decimal,
     customers: Decimal,
     profile: SimulationProfile,
+    closing_cash_inr: Decimal,
+    carried_inventory_units: Decimal,
+    unit_cost_inr: Decimal,
 ) -> Valuation:
     line = profile.valuation
 
@@ -354,20 +389,32 @@ def _value_company(
         customers * line.intangible_per_customer_inr
     )
 
-    if opening_state.total_assets_inr is None or opening_state.liabilities_inr is None:
+    if (
+        opening_state.equipment_nbv_inr is None
+        or opening_state.product_ip_inr is None
+        or opening_state.accounts_receivable_inr is None
+        or opening_state.liabilities_inr is None
+    ):
         return Valuation(
             revenue_multiple_inr=revenue_multiple,
             intangible_premium_inr=intangible,
             asset_based_inr=None,
             blended_inr=None,
             gap_reason=(
-                "asset-based valuation needs total assets and liabilities, and no formula in "
-                "docs/ derives either -- the Q1 reference quotes them directly, so they must be "
-                "supplied on CompanyState"
+                "asset-based valuation needs equipment NBV, product IP, accounts receivable and "
+                "liabilities, and no formula in docs/ derives any of them -- the Q1 and Q3 "
+                "references quote them directly, so they must be supplied on CompanySeed"
             ),
         )
 
-    asset_based = opening_state.total_assets_inr - opening_state.liabilities_inr
+    total_assets = _total_assets_inr(
+        closing_cash_inr,
+        carried_inventory_units * unit_cost_inr,
+        opening_state.equipment_nbv_inr,
+        opening_state.product_ip_inr,
+        opening_state.accounts_receivable_inr,
+    )
+    asset_based = total_assets - opening_state.liabilities_inr
     return Valuation(
         revenue_multiple_inr=revenue_multiple,
         intangible_premium_inr=intangible,
