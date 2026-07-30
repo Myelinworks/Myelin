@@ -10,10 +10,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from app.config.schema import CompanySeed, SimulationProfile
+from app.config.schema import CompanySeed, Scenario, SimulationProfile
 
 PROFILES_DIR = Path(__file__).parent / "profiles"
 SEEDS_DIR = Path(__file__).parent / "seeds"
+SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 
 
 def _read(directory: Path, name: str, kind: str) -> dict[str, Any]:
@@ -41,6 +42,11 @@ def _seed(name: str) -> CompanySeed:
     return CompanySeed.model_validate(_read(SEEDS_DIR, name, "seed"))
 
 
+@lru_cache
+def _scenario(name: str) -> Scenario:
+    return Scenario.model_validate(_read(SCENARIOS_DIR, name, "scenario"))
+
+
 def load_profile(name: str = DEFAULT_PROFILE) -> SimulationProfile:
     """Load a simulation profile -- curve shapes only, no company numbers."""
     return _profile(name)
@@ -49,3 +55,20 @@ def load_profile(name: str = DEFAULT_PROFILE) -> SimulationProfile:
 def load_seed(name: str) -> CompanySeed:
     """Load a company seed -- opening state only, no curve shapes."""
     return _seed(name)
+
+
+def load_scenario(name: str) -> Scenario:
+    """Load a scenario -- which seed and profile to run, for how many quarters."""
+    return _scenario(name)
+
+
+@lru_cache
+def available_scenario_ids() -> tuple[str, ...]:
+    """Every shippable scenario, sorted.
+
+    Sorted and returned as a tuple because the deterministic scenario assignment in
+    `services/company_service.py` indexes into this: an unstable order would make the same
+    company identifier resolve to a different scenario between processes, breaking replay.
+    Dropping a new JSON file into `config/scenarios/` is all it takes to add one.
+    """
+    return tuple(sorted(path.stem for path in SCENARIOS_DIR.glob("*.json")))

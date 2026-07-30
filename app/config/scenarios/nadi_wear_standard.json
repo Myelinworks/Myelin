@@ -1,0 +1,69 @@
+{
+  "scenario_id": "nadi_wear_standard",
+  "display_name": "Nadi Wear — Four-Quarter Run",
+  "source": "docs/12-quarter-1-reference.md through docs/16-quarter-4-endgame.md; crisis timing from docs/14-quarter-3-reference.md §1",
+  "seed": "nadi_wear",
+  "profile": "default",
+  "total_quarters": 4,
+  "crisis_quarter": 3,
+  "crisis_scenario": null,
+  "modifiers": {
+    "brand_strength": {
+      "value": 1.0,
+      "status": "unspecified_in_source_neutral_default"
+    },
+    "market_saturation": {
+      "value": 1.0,
+      "status": "unspecified_in_source_neutral_default"
+    },
+    "inventory_availability": {
+      "value": 1.0,
+      "status": "unspecified_in_source_neutral_default"
+    },
+    "competitor_activity": {
+      "value": 1.0,
+      "status": "unspecified_in_source_neutral_default"
+    }
+  },
+  "opening_workspace_state": {
+    "status": "partially_unspecified_in_source",
+    "note": "Three different kinds of value here, deliberately not blended together. (1) Flow counters that are zero because no quarter has run yet -- revenue, expenses, marketing_spend, leads_generated, customer_acquisition_cost, features_shipped, pipeline_value, deals_closed, fulfillment_cost, incident_count, support_tickets_resolved. These are facts, not defaults. (2) Levels with no stated opening value anywhere in docs/, defaulted to zero and NOT sourced: burn_rate, brand_awareness_score, nps_score, tech_debt_index, quota_attainment_pct, operational_efficiency_score, csat_score, churn_rate. Deliberately not mapped from similarly-named seed scores -- docs/03's Brand Awareness is a 0-100 rating while the model's Brand Score is a small accumulating quantity, and the same scale mismatch applies to the rest, so any mapping would be an invention. (3) runway_months, left null: undefined before any burn has been recorded. finance.cash_balance is absent from this block on purpose -- it comes from the seed's opening_cash_inr at materialisation time, so a company number is never duplicated into scenario config.",
+    "finance": {
+      "revenue": 0,
+      "expenses": 0,
+      "burn_rate": 0,
+      "runway_months": null
+    },
+    "marketing": {
+      "marketing_spend": 0,
+      "leads_generated": 0,
+      "customer_acquisition_cost": 0,
+      "brand_awareness_score": 0
+    },
+    "product": {
+      "features_shipped": 0,
+      "nps_score": 0,
+      "tech_debt_index": 0
+    },
+    "sales": {
+      "pipeline_value": 0,
+      "deals_closed": 0,
+      "quota_attainment_pct": 0
+    },
+    "operations": {
+      "fulfillment_cost": 0,
+      "operational_efficiency_score": 0,
+      "incident_count": 0
+    },
+    "cx": {
+      "csat_score": 0,
+      "churn_rate": 0,
+      "support_tickets_resolved": 0
+    }
+  },
+  "notes": {
+    "only_one_scenario_ships": "PulseWear cannot back a second scenario: docs/03-company-load-state.md never states 9 constants the chain needs (see tests/engines/test_quarter_company_agnostic.py::TestPulseWearCannotRunYet and the P0 baseline conflict in docs/10-implementation-gaps.md). Shipping a pulsewear scenario would produce a company that 500s on its first lock, so it is withheld rather than shipped broken.",
+    "crisis_not_wired": "crisis_quarter/crisis_scenario are recorded but not consumed -- the crisis engine is Phase 10, and compute_quarter still refuses a non-null CrisisEvent rather than silently running a quarter with the crisis dropped.",
+    "modifiers_are_legacy": "The four modifiers belong to the percentage-influence matrix model in app/engines/legacy_matrix/, which is not wired into run_quarter(). They are materialised so that path stays instantiable, not because the 22-line chain reads them -- it has no modifier stage at all."
+  }
+}

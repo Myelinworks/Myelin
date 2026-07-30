@@ -1,9 +1,15 @@
-"""Pydantic schemas for the two-config foundation.
+"""Pydantic schemas for the config layers.
 
 `SimulationProfile` holds curve shapes -- every constant, coefficient, exponent, floor and cap
 used by the 22 department spend lines, plus the valuation constants. `CompanySeed` holds opening
 company state. Per `CLAUDE.md`'s company-agnostic rule, no company number appears in a profile
 and no curve shape appears in a seed.
+
+`Scenario` composes the two into what a student is actually dropped into -- which seed, which
+profile, how many quarters, when a crisis fires -- plus the opening values for state that
+belongs to the legacy pipeline rather than the 22-line chain. It is deliberately not a synonym
+for a seed: several scenarios could run the same company with different quarter counts or crisis
+timings.
 
 Units convention (`docs/00-formula-index.md`): `x` = spend on that line in Rs lakhs. Money fields
 carry an `_inr` suffix and are always rupees; conversion to lakhs happens at the input boundary,
@@ -509,5 +515,72 @@ class CompanySeed(_Frozen):
     liabilities_inr: Decimal | None = None
 
     repeat_purchase_rate_derivation: RepeatPurchaseRateDerivationConfig | None = None
+
+    notes: dict[str, str] = Field(default_factory=dict)
+
+
+# --------------------------------------------------------------------------------------
+# Scenario -- what a student is dropped into
+# --------------------------------------------------------------------------------------
+
+
+class ScenarioModifier(_Frozen):
+    """One of the four quarter-level modifiers the legacy percentage-matrix model multiplies
+    into a decision's base impact (`app/engines/legacy_matrix/`).
+
+    Both the opening values and the derivation from company state are unspecified in source
+    (`docs/10-implementation-gaps.md`, P2 "Modifier derivation from company state not
+    specified"), so they are seeded from config with a visible `status` rather than derived by
+    invented arithmetic. `1.0` is the multiplicative identity: neutral, and obviously a
+    placeholder rather than a real calibration.
+
+    These are **not read by `compute_quarter`/`run_quarter()`** -- the 22-line chain has no
+    modifier stage. They exist so the legacy path stays instantiable.
+    """
+
+    value: Decimal
+    status: str
+
+
+class OpeningWorkspaceState(_Frozen):
+    """Opening values for the six legacy `*State` KPI snapshots.
+
+    Same standing as `ScenarioModifier`: these rows belong to the legacy per-decision pipeline
+    (`services/decision_engine.py`, the ~72-key Decision taxonomy), not to the 22-line chain,
+    which reads `CompanySeed` and `CompanyStateSnapshot` instead. They live in scenario config
+    rather than being computed at company-creation time so that no opening number is invented in
+    code -- see `status`/`note` for which of these values are sourced and which are placeholders.
+    """
+
+    status: str
+    note: str
+    finance: dict[str, Decimal | None]
+    marketing: dict[str, Decimal | None]
+    product: dict[str, Decimal | None]
+    sales: dict[str, Decimal | None]
+    operations: dict[str, Decimal | None]
+    cx: dict[str, Decimal | None]
+
+
+class Scenario(_Frozen):
+    """One runnable simulation setup. Adding a scenario is one JSON file and zero code."""
+
+    scenario_id: str
+    display_name: str
+    source: str
+
+    seed: str
+    profile: str
+
+    total_quarters: int
+    # Which quarter fires a crisis, or `None` for a scenario with no crisis. `crisis_scenario`
+    # picks the A/B/C/D branch (`docs/11-crisis-system.md`); `None` means assign at runtime.
+    # Neither is consumed yet -- the crisis engine is Phase 10 and `compute_quarter` still
+    # refuses a non-`None` CrisisEvent.
+    crisis_quarter: int | None = None
+    crisis_scenario: str | None = None
+
+    modifiers: dict[str, ScenarioModifier]
+    opening_workspace_state: OpeningWorkspaceState
 
     notes: dict[str, str] = Field(default_factory=dict)
