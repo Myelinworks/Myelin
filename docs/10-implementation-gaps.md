@@ -130,6 +130,37 @@ With this closed, the persisted Q1→Q2 chain reproduces `docs/13` §4's Efficie
 
 ---
 
+## P3 — Q2 Growth variant's stated production capacity does not match its own formula
+
+`docs/13-quarter-2-reference.md` §2.5 states the attrition discount applies to "**both** Sales
+Capacity and Production Capacity", and §4's Efficiency-Final variant confirms it exactly:
+`400 × 1.024^0.7 × 0.929 × 0.794 = 299.99`, the **300** that section quotes. The engine was
+applying supplier reliability but not attrition (giving 322.9); fixed in Phase 5.
+
+§5's Growth & Profit variant does not reconcile as cleanly. It quotes **1,315** new effective
+units for ₹8,40,000 of Manufacturing at 6.1% attrition and 79.8% reliability:
+
+| Interpretation | Result |
+|---|---|
+| capacity × attrition × reliability | 1,329.61 |
+| capacity × reliability only | 1,415.98 |
+| capacity × attrition only | 1,666.18 |
+| **§5's stated figure** | **1,315** |
+
+No combination reproduces 1,315 — the closest is the same attrition × reliability reading that
+is exact in §4, off here by 14.6 units (1.1%). Since that reading is confirmed exactly by the
+other variant and by §2.5's prose, it is the one implemented, and §5's 1,315 is treated as an
+arithmetic slip in the source rather than evidence of a different rule.
+
+**Not blocking:** in §5's own scenario, supply does not bind (2,044 available against 1,871
+demanded), so the discrepancy never reaches units sold. It would matter only in a quarter where
+production capacity is the binding constraint.
+
+**Action required:** designer confirms 1,315 is a typo for ~1,330, or states the rule that
+produces it.
+
+---
+
 ## P2 — Satisfaction Score has no stated baseline (record only; not blocking)
 
 Customer-facing **Satisfaction Score** — built by Sales Onboarding (`+3 × x^0.5`), Operations

@@ -79,12 +79,24 @@ def available_to_sell(
     production_capacity: Decimal,
     supplier_reliability: Decimal,
     carried_inventory: Decimal,
+    prior_attrition_rate_pct: Decimal,
     profile: SimulationProfile,
 ) -> Decimal:
-    """`(Production Capacity * Supplier Reliability / 100) + carried inventory`.
+    """`(Production Capacity * (1 - Attrition) * Supplier Reliability / 100) + carried inventory`.
 
     A strict ceiling on Units Sold with no exceptions.
+
+    Attrition discounts production capacity as well as Sales capacity -- `docs/13` §2.5 states
+    the rule applies to "**both** Sales Capacity (`500 x`) and Production Capacity
+    (`400 x^0.7`)", and §4's worked Efficiency-Final variant confirms it arithmetically:
+    `400 * 1.024^0.7 * 0.929 * 0.794 = 299.99`, the 300 that section quotes. Reliability alone
+    would give 322.9. Like Sales, it has no effect in Q1, where there is no prior quarter to
+    have lost anyone from.
     """
     line = profile.operations.supplier_qc
-    effective = production_capacity * (supplier_reliability / line.effective_capacity_divisor)
+    effective = (
+        production_capacity
+        * (1 - prior_attrition_rate_pct / 100)
+        * (supplier_reliability / line.effective_capacity_divisor)
+    )
     return effective + carried_inventory

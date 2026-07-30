@@ -204,6 +204,7 @@ def compute_quarter(
         manufacturing.production_capacity,
         supplier_reliability,
         opening_state.inventory_units,
+        opening_state.attrition_rate_pct,
         profile,
     )
     units_sold = min(total_units_demanded, available_to_sell)
