@@ -14,14 +14,17 @@ class Company(UUIDPkMixin, TimestampMixin, Base):
     """A student's simulated company — the root of one CEO simulation run.
 
     `seed_name`/`profile_name` select the `CompanySeed`/`SimulationProfile` config
-    `run_quarter()` loads to run `compute_quarter()`. Defaults to Nadi Wear on the default
-    profile -- the only fully-specified company -- until Phase 5's scenario system assigns
-    these from a scenario instead of the default.
+    `run_quarter()` loads to run `compute_quarter()`. They are copied from the scenario at
+    creation time rather than looked up through `scenario_id` on every run: a company that has
+    already played three quarters must keep running against the config it started on, even if
+    the scenario file is later edited. `scenario_id` records which scenario it came from, and
+    is what `total_quarters`/`crisis_quarter` are read from.
     """
 
     __tablename__ = "companies"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    scenario_id: Mapped[str] = mapped_column(String(100), nullable=False, default="nadi_wear_standard")
     seed_name: Mapped[str] = mapped_column(String(100), nullable=False, default="nadi_wear")
     profile_name: Mapped[str] = mapped_column(String(100), nullable=False, default="default")
 

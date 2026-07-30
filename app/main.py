@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routes import allocations, cx, finance, marketing, product, quarter, sales
+from app.routes import allocations, company, cx, finance, marketing, product, quarter, sales
 
 settings = get_settings()
 
@@ -19,6 +19,7 @@ app.add_middleware(
 # Operations and People workspaces have no rules config yet (see README) -- not wired
 # until operations_rules.json/people_rules.json exist, rather than shipping routers that
 # can never accept a real decision.
+app.include_router(company.router)
 app.include_router(finance.router)
 app.include_router(marketing.router)
 app.include_router(product.router)
