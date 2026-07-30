@@ -99,31 +99,56 @@ split is not itemised in `docs/14-quarter-3-reference.md` §2, only department t
 
 ---
 
-## P1 — Q1's opening Repeat Purchase Rate is null, so the chained Q2 free-repeat-unit rate falls short
+## RESOLVED — Q1's opening Repeat Purchase Rate (was P1)
 
-`config/seeds/nadi_wear.json`'s `opening_scores.repeat_purchase_rate_pct` is `null` (own note:
-*"Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near
-10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs
-designer confirmation."*). `CompanyState.opening` treats a null repeat rate as `0` for Q1, which
-is correct for Q1 itself (the free-repeat-units term is provably zero in Q1 regardless -- see
-`state.py`'s docstring) but means Q1's *closing* Repeat Purchase Rate -- carried into Q2 as its
-*opening* rate -- comes out to only `0 + 3.8 + 3.3 + 1.9 ≈ 8.99%`, not the `19.0%` §1 of
-`docs/13-quarter-2-reference.md` states directly.
+`config/seeds/nadi_wear.json`'s `opening_scores.repeat_purchase_rate_pct` was left `null`, which
+`CompanyState.opening` treats as `0`. Harmless in Q1 (free repeat units are `prior rate × prior
+units sold`, provably zero with no prior quarter) but it made Q1's *closing* rate — Q2's
+*opening* rate — come out at ~8.99% instead of the 19.0% `docs/13-quarter-2-reference.md` §1
+states, costing ~56 units in Q2.
 
-**Impact, discovered by the persisted Q1->Q2 carry-forward test in
-`tests/services/test_quarter_run_service.py`:** running the actual Nadi Wear Q1 allocation
-through `compute_quarter` and chaining its closing state into Q2 Efficiency-Final gives free
-repeat units of `8.99% × 561.62 ≈ 50.5`, not the doc's `19.0% × 562 = 107` -- a ~56-unit shortfall
-that lands directly in `units_sold` (816 computed vs. 872 quoted) and everything downstream
-(revenue, NCF, valuation). Q2's Raw Conversion, Ceiling and Conversion Rate are unaffected --
-none of them depend on Repeat Purchase Rate -- so `tests/engines/test_q2_conversion.py`'s
-pure-chain test did not surface this; it only asserts those three.
+**Resolved by back-solving it exactly.** Q1's three contributing lines at their stated §12 spends:
 
-**Action required:** designer must confirm Q1's true opening Repeat Purchase Rate (or confirm it
-really is 0, and that Q2's 19.0% comes from somewhere other than a simple opening + Q1's three
-contributions). Until then, a full Q1->Q2->Q3->Q4 chain run through the real Nadi Wear opening
-seed will not reproduce `docs/13`'s onward units/revenue/NCF figures, even though every individual
-formula in the chain is correct.
+| Line | Formula | Spend | Contribution |
+|---|---|---|---|
+| Email Marketing | `3 × x^0.5` | ₹1,60,000 | 3.794733 |
+| Sales Onboarding | `3 × x^0.4` | ₹1,25,000 | 3.280086 |
+| HR CX Team | `2 × x^0.4` | ₹90,000 | 1.917463 |
+| | | **Total** | **8.992282** |
+
+`19.0 − 8.992282 = 10.007718` — a 0.0077 residual against a round 10.0%, well inside the
+single-decimal rounding the source uses throughout.
+
+**Status:** seeded as `10.0` with a `"status": "derived_from_q2_opening"` flag. This is a
+stronger class of inference than the fitted brand multiplier or the CX conversion term — those
+fit a curve to data points, this inverts stated arithmetic and lands on a round number — but it
+is still not directly stated, hence the flag. `tests/config/test_seeds.py` asserts the
+*derivation*, not the constant, so a change to any of the three formulas fails loudly.
+
+With this closed, the persisted Q1→Q2 chain reproduces `docs/13` §4's Efficiency-Final figures:
+**872 units** and 107 free repeat units.
+
+---
+
+## P2 — Satisfaction Score has no stated baseline (record only; not blocking)
+
+Customer-facing **Satisfaction Score** — built by Sales Onboarding (`+3 × x^0.5`), Operations
+Logistics (`+0.05 × Logistics Efficiency`) and HR CX Team (`+4 × x^0.5`), and distinct from
+*Employee* Satisfaction, which has a stated baseline of 65 and drives the Productivity
+Multiplier — has no stated opening value in any source document.
+
+**Unlike the Repeat Purchase Rate above, it cannot be back-solved:** no later quarter states an
+opening value for it, so there is no equation to invert. `docs/12-quarter-1-reference.md` §5.4 and
+§6.3 quote only the per-line *contributions* (+3.4, +3.3, +3.8), never a running total.
+
+**Why it is not blocking:** nothing in the 22-line execution chain consumes it. It is an
+output-only KPI — the three contributions are computed and reported, but no gate, multiplier or
+downstream formula reads the accumulated score. So an absent baseline cannot move `units_sold`,
+cash flow or valuation the way the Repeat Purchase Rate gap did.
+
+**Action required:** designer supplies a baseline before Satisfaction Score is surfaced to
+students as an absolute number, or before any future formula consumes it. Until then it is
+meaningful only as a **delta** (how much this quarter's spend moved it), not as a level.
 
 ---
 

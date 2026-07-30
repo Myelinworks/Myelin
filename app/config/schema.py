@@ -453,6 +453,19 @@ class EquipmentDepreciationConfig(_Frozen):
     note: str
 
 
+class RepeatPurchaseRateDerivationConfig(_Frozen):
+    """Provenance for `opening_scores.repeat_purchase_rate_pct`, which no source document states
+    directly.
+
+    Carries no value of its own -- the number lives in `opening_scores`, where the engine reads
+    it -- because duplicating it here would create two sources of truth for one quantity. This
+    records only *how* that number was arrived at.
+    """
+
+    status: str
+    note: str
+
+
 class CompanySeed(_Frozen):
     """Opening state for one company. Contains no curve shapes.
 
@@ -494,5 +507,7 @@ class CompanySeed(_Frozen):
     product_ip_inr: Decimal | None = None
     accounts_receivable_inr: Decimal | None = None
     liabilities_inr: Decimal | None = None
+
+    repeat_purchase_rate_derivation: RepeatPurchaseRateDerivationConfig | None = None
 
     notes: dict[str, str] = Field(default_factory=dict)

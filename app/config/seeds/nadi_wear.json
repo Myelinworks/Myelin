@@ -40,12 +40,16 @@
     "quality_score": 0,
     "innovation_score": 0,
     "feature_completeness": 0,
-    "repeat_purchase_rate_pct": null,
+    "repeat_purchase_rate_pct": 10.0,
     "attrition_rate_pct": 0
+  },
+  "repeat_purchase_rate_derivation": {
+    "status": "derived_from_q2_opening",
+    "note": "Back-solved exactly, not curve-fitted: docs/13-quarter-2-reference.md §1 states Q2 opens at 19.0%, and Q1's three contributions at their stated spends are Email 3x1.60^0.5 = 3.7947, Onboarding 3x1.25^0.4 = 3.2801, CX Team 2x0.90^0.4 = 1.9175, summing to 8.9923. 19.0 - 8.9923 = 10.0077, a 0.0077 residual against a round 10.0. Stronger evidence than the fitted brand multiplier or the inferred CX conversion term -- those fit a curve to data points, this inverts stated arithmetic -- but still not a directly stated value, hence the flag."
   },
   "notes": {
     "cumulative_scores_open_at_zero": "brand_score, seo_asset, buzz_score, quality_score, innovation_score and feature_completeness are not stated as Q1 opening values, but are derivable: docs/13-quarter-2-reference.md §1 opens Q2 at exactly the amount Q1 built (Brand 8.7, SEO 4.5, Buzz 5.5, Quality 9.95, Innovation 7.5), so Q1 opened at zero for each.",
-    "repeat_purchase_rate_pct": "Left null. Not stated. Q2 opens at 19.0% and Q1's three contributions are +3.8, +3.3, +1.9 -- implying an opening near 10.0%, but each contribution is rounded in the source, so the residual is not exact. Needs designer confirmation.",
+    "repeat_purchase_rate_pct": "10.0, back-solved from docs/13's stated Q2 opening of 19.0% rather than stated directly -- see repeat_purchase_rate_derivation for the full arithmetic and why this is a stronger class of inference than the fitted brand multiplier.",
     "attrition_rate_pct": "Zero because docs/12-quarter-1-reference.md §6.2 states attrition has no effect in Q1 -- it erodes capacity built in a prior quarter, and Q1 has none.",
     "base_conversion_rate_pct": "The starting point for raw conversion, before the R&D ceiling caps it: raw = base + Reps bonus + CRM bonus + CX Team's repeat-rate bonus, and the final rate is MIN(raw, ceiling) + warranty bonus. In Q1 raw reaches 27.25% and the 19.11% ceiling binds -- see the CX-in-raw-conversion entry in docs/10-implementation-gaps.md.",
     "equipment_nbv_inr": "Rs 25,00,000 is the value docs/12-quarter-1-reference.md §11's asset identity requires at Q1 close; nothing in docs/ states a separate pre-Q1 balance, so it is seeded as this quarter's opening (undepreciated-within-Q1) figure, matching how fixed_costs_inr is only discounted for the quarter that inherits it.",

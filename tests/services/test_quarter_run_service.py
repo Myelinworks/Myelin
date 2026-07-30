@@ -200,15 +200,12 @@ class TestQ1ToQ2CarryForwardSurvivesPersistence:
 
         result = await run_quarter(db_session, q2.id)
 
-        # docs/13-quarter-2-reference.md §4: raw 28.4%, final Conversion Rate 27.0%. Neither
-        # depends on Repeat Purchase Rate, so both reproduce the doc exactly through persistence.
+        # docs/13-quarter-2-reference.md §4: raw 28.4%, Conversion Rate 27.0%, 872 units.
         assert abs(result.raw_conversion_pct - Decimal("28.4")) < Decimal("0.05")
         assert abs(result.conversion_rate_pct - Decimal("27.0")) < Decimal("0.1")
+        assert abs(result.units_sold - Decimal("872")) < Decimal("1")
 
-        # units_sold does NOT reproduce the doc's 872 -- the real Nadi Wear seed's opening Repeat
-        # Purchase Rate is null (see the P1 gap in docs/10-implementation-gaps.md this test
-        # discovered), so Q1's actual closing rate is ~8.99%, not the doc's assumed 19.0%, and
-        # free repeat units fall ~56 units short. This asserts the value the engine is actually,
-        # correctly producing from real opening data -- not the doc's figure, which assumes an
-        # opening rate nothing in the seed states.
-        assert abs(result.units_sold - Decimal("816")) < Decimal("1")
+        # The free-repeat-units term is what the derived opening Repeat Purchase Rate feeds, and
+        # it is the whole difference between this and the ~816 units the null seed produced
+        # before Phase 5 closed that gap (docs/13 §4 quotes 107).
+        assert abs(result.free_repeat_units - Decimal("107")) < Decimal("1")
