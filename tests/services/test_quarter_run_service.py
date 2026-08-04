@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
+from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
@@ -317,3 +318,127 @@ class TestQ1ToQ2CarryForwardSurvivesPersistence:
         # it is the whole difference between this and the ~816 units the null seed produced
         # before Phase 5 closed that gap (docs/13 §4 quotes 107).
         assert abs(result.free_repeat_units - Decimal("107")) < Decimal("1")
+
+
+class TestEvidencePersistence:
+    """Phase 8: `extract_evidence` runs inside the same lock transaction as the result and the
+    score, writing `EvidenceRecord` rows tagged `decision_id=None` -- the new pipeline's rows,
+    distinct from anything the legacy per-decision evidence engine writes."""
+
+    async def test_evidence_is_persisted_on_lock(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+
+        rows = (
+            await db_session.execute(select(EvidenceRecord).where(EvidenceRecord.quarter_id == q1_quarter.id))
+        ).scalars().all()
+
+        assert len(rows) == 22
+        assert all(row.decision_id is None for row in rows)
+        assert all(row.workspace is None for row in rows)
+        assert {row.department for row in rows if row.department is not None} == {
+            "marketing", "sales", "rnd", "operations", "hr", "finance_admin",
+        }
+
+    async def test_nadi_wear_q1_required_flags_survive_the_db_round_trip(self, db_session, q1_quarter):
+        """Same facts as tests/engines/test_evidence.py::TestNadiWearQ1RequiredFlags, checked here
+        through the persisted JSONB round-trip."""
+        await run_quarter(db_session, q1_quarter.id)
+
+        rows = (
+            await db_session.execute(select(EvidenceRecord).where(EvidenceRecord.quarter_id == q1_quarter.id))
+        ).scalars().all()
+        by_key = {row.evidence_key: row for row in rows}
+
+        assert by_key["marketing_diversification"].evidence_value["channels_funded"] == 7
+        assert by_key["marketing_cac_discipline"].evidence_value["at_cap"] is True
+        assert by_key["finance_cash_preservation"].evidence_value["buffer_preserved"] is True
+
+    async def test_evidence_does_not_enter_the_result_hash(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+        hash_before = performance.result_hash
+
+        rows = (
+            await db_session.execute(select(EvidenceRecord).where(EvidenceRecord.quarter_id == q1_quarter.id))
+        ).scalars().all()
+        assert len(rows) == 22
+
+        score_hash_input = {"trait_points": performance.trait_points, "modifiers_applied": performance.modifiers_applied}
+        assert hash_before == _result_hash(performance.engine_result, RunStatus.ACTIVE, score_hash_input)
+
+    async def test_relocking_is_idempotent_no_duplicate_evidence_rows(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+        first_rows = (
+            await db_session.execute(
+                select(EvidenceRecord).where(EvidenceRecord.quarter_id == q1_quarter.id).order_by(EvidenceRecord.evidence_key)
+            )
+        ).scalars().all()
+        first_values = {row.evidence_key: row.evidence_value for row in first_rows}
+
+        # The quarter is already CLOSED after the first call, so this is the same idempotency
+        # guard TestIdempotency proves for QuarterPerformance/CompanyStateSnapshot -- run_quarter
+        # short-circuits before recomputing anything.
+        await run_quarter(db_session, q1_quarter.id)
+
+        second_rows = (
+            await db_session.execute(
+                select(EvidenceRecord).where(EvidenceRecord.quarter_id == q1_quarter.id).order_by(EvidenceRecord.evidence_key)
+            )
+        ).scalars().all()
+        second_values = {row.evidence_key: row.evidence_value for row in second_rows}
+
+        assert len(first_rows) == len(second_rows) == 22
+        assert first_values == second_values
+
+    async def test_legacy_evidence_records_are_unaffected(self, db_session, q1_quarter, nadi_wear_company):
+        """A pre-existing legacy-pipeline EvidenceRecord (decision_id set) for the same quarter
+        must survive `run_quarter()`'s delete-and-reinsert of the new pipeline's rows untouched --
+        the delete is scoped to `decision_id IS NULL`."""
+        from app.models.decision import Decision, DecisionStatus, Workspace
+
+        decision = Decision(
+            quarter_id=q1_quarter.id,
+            workspace=Workspace.MARKETING,
+            title="legacy decision",
+            decision_key="marketing_budget_allocation",
+            payload={},
+            status=DecisionStatus.SUBMITTED,
+        )
+        db_session.add(decision)
+        await db_session.flush()
+
+        legacy_record = EvidenceRecord(
+            company_id=nadi_wear_company.id,
+            quarter_id=q1_quarter.id,
+            decision_id=decision.id,
+            workspace=Workspace.MARKETING,
+            evidence_key="diversified_investment",
+            evidence_value="YES",
+            categories=["strategic_thinking"],
+        )
+        db_session.add(legacy_record)
+        await db_session.flush()
+
+        await run_quarter(db_session, q1_quarter.id)
+        await db_session.refresh(legacy_record)
+
+        assert legacy_record.evidence_value == "YES"
+
+        new_pipeline_rows = (
+            await db_session.execute(
+                select(func.count())
+                .select_from(EvidenceRecord)
+                .where(EvidenceRecord.quarter_id == q1_quarter.id, EvidenceRecord.decision_id.is_(None))
+            )
+        ).scalar_one()
+        legacy_rows = (
+            await db_session.execute(
+                select(func.count())
+                .select_from(EvidenceRecord)
+                .where(EvidenceRecord.quarter_id == q1_quarter.id, EvidenceRecord.decision_id.is_not(None))
+            )
+        ).scalar_one()
+        assert new_pipeline_rows == 22
+        assert legacy_rows == 1
