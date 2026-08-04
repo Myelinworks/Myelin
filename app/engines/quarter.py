@@ -97,6 +97,10 @@ class QuarterResult:
     penalty_risk_pct: Decimal
     total_employees: Decimal
     referral_wasted_spend_inr: Decimal
+    # Carried so the scoring engine's perfect-channel-match modifier can ask "was this hard-capped
+    # channel funded to exactly its cap?" from a QuarterResult alone. Zero wasted spend only says
+    # it was not *over*-funded; hitting the cap exactly needs the cap itself.
+    referral_lead_cap: Decimal
 
     valuation: Valuation
     closing_state: CompanyState
@@ -363,6 +367,7 @@ def compute_quarter(
             seed=seed,
         ),
         referral_wasted_spend_inr=referral.wasted_spend_inr,
+        referral_lead_cap=referral.lead_cap,
         valuation=valuation,
         closing_state=closing_state,
     )

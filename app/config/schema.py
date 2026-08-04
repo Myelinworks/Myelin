@@ -373,6 +373,83 @@ class ValuationConfig(_Frozen):
     intangible_per_customer_inr: Decimal
 
 
+class ScoringCriterion(_Frozen):
+    """One of the 21 sub-criteria in `docs/10-scoring-methodology.md`.
+
+    `kind` is the load-bearing field. `MECHANICAL` means the criterion is decidable from the
+    quarter's numbers, and `engines/scoring.py` must hold a check keyed by `id`. `JUDGMENT` means
+    it is not -- the criterion asks about something no input carries (a *stated* thesis, whether
+    the student raised an issue unprompted, what evidence was available "at the time") -- and
+    `reason` says which. A JUDGMENT criterion is returned UNSCORED and held out of the
+    denominator; it is never inferred from spend, because a plausible-looking proxy for
+    "did they own the trade-off" is exactly the kind of invented number this project refuses.
+    """
+
+    id: str
+    trait: str
+    kind: str
+    description: str
+    reason: str | None = None
+
+
+class ScoringModifier(_Frozen):
+    """An execution-precision adjustment, applied on top of trait points.
+
+    `rule` documents the trigger; the predicate lives in `engines/scoring.py` keyed by `id`, for
+    the same reason survival conditions work that way -- a rule string is never evaluated.
+    `status` flags a modifier whose stated trigger cannot be fully checked from available inputs.
+    """
+
+    id: str
+    points: Decimal
+    rule: str
+    status: str | None = None
+    note: str | None = None
+
+
+class ScoringBand(_Frozen):
+    """`docs/10-scoring-methodology.md` score bands. `minimum` is inclusive."""
+
+    name: str
+    minimum: Decimal
+
+
+class ScoringThresholds(_Frozen):
+    """Numeric cut-offs the rubric's prose implies but does not always state.
+
+    `ceiling_undershoot_points` is stated ("exceeds roughly 3 points"). The rest are not:
+    the rubric says "a small, deliberate buffer" and "materially less investment" without
+    numbers, so each carries its own status flag rather than being presented as sourced.
+    """
+
+    ceiling_undershoot_points: Decimal
+    supply_waste_units: Decimal
+    supply_waste_status: str
+    capacity_waste_leads: Decimal
+    capacity_waste_status: str
+    compounding_cut_ratio: Decimal
+    compounding_cut_status: str
+    coordination_ratio: Decimal
+    coordination_status: str
+
+
+class ScoringConfig(_Frozen):
+    """The evaluation matrix: 7 weighted traits x 3 sub-criteria each, plus modifier sets.
+
+    `modifier_sets` is keyed by name so the crisis set (`docs/11-crisis-system.md`) and the Q4
+    set (`docs/16`, `docs/17`) register as additional entries in Phases 10 and 11 without any
+    change here -- `score_quarter` applies whichever sets it is asked for.
+    """
+
+    status: str
+    source: str
+    traits: dict[str, Decimal]
+    criteria: list[ScoringCriterion]
+    modifier_sets: dict[str, list[ScoringModifier]]
+    bands: list[ScoringBand]
+    thresholds: ScoringThresholds
+
+
 class SurvivalCondition(_Frozen):
     """One survival check: which predicate runs, and what status it produces when it fires.
 
