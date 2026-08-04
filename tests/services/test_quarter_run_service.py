@@ -95,6 +95,66 @@ class TestQ1ThroughPersistence:
         assert Decimal(snapshot.state["brand_score"]) > 0
 
 
+class TestScorePersistence:
+    """Phase 7 T3: the CEO score is computed and persisted in the same transaction as the engine
+    result, and re-locking returns the identical score and hash."""
+
+    async def test_score_is_persisted_on_lock(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+
+        assert performance.ceo_score is not None
+        assert performance.score_band is not None
+        assert performance.trait_points is not None
+        assert performance.modifiers_applied is not None
+        assert performance.unscored_criteria is not None
+
+    async def test_nadi_wear_q1_modifiers_match_the_pure_engine_test(self, db_session, q1_quarter):
+        """docs/12-quarter-1-reference.md: profitability fires negative, perfect-channel-match
+        fires positive (Referral hit its Rs 2,40,000 cap exactly). Same facts as
+        tests/engines/test_scoring.py::TestNadiWearQ1, verified here through the DB round-trip."""
+        await run_quarter(db_session, q1_quarter.id)
+
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+
+        modifiers = {m["id"]: m for m in performance.modifiers_applied}
+        assert modifiers["profitability_achieved"]["fired"] is False
+        assert modifiers["perfect_channel_match"]["fired"] is True
+        assert Decimal(modifiers["perfect_channel_match"]["applied_points"]) == 2
+
+    async def test_leadership_is_unscored_in_the_persisted_breakdown(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+
+        leadership_ids = {c["id"] for c in performance.unscored_criteria if c["trait"] == "leadership"}
+        assert leadership_ids == {"leadership_1", "leadership_2", "leadership_3"}
+
+    async def test_relocking_returns_the_identical_score_and_hash(self, db_session, q1_quarter):
+        await run_quarter(db_session, q1_quarter.id)
+        first = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
+        ).scalar_one()
+        first_score, first_band, first_hash = first.ceo_score, first.score_band, first.result_hash
+        first_traits, first_modifiers = first.trait_points, first.modifiers_applied
+
+        await run_quarter(db_session, q1_quarter.id)
+        await db_session.refresh(first)
+
+        assert first.ceo_score == first_score
+        assert first.score_band == first_band
+        assert first.result_hash == first_hash
+        assert first.trait_points == first_traits
+        assert first.modifiers_applied == first_modifiers
+
+
 class TestIdempotency:
     async def test_double_run_returns_identical_result_and_hash(self, db_session, q1_quarter):
         first = await run_quarter(db_session, q1_quarter.id)
@@ -156,8 +216,16 @@ class TestIdempotency:
             await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q1_quarter.id))
         ).scalar_one()
 
-        assert performance.result_hash != _result_hash(performance.engine_result, RunStatus.DISTRESSED)
-        assert performance.result_hash == _result_hash(performance.engine_result, RunStatus.ACTIVE)
+        score_hash_input = {
+            "trait_points": performance.trait_points,
+            "modifiers_applied": performance.modifiers_applied,
+        }
+        assert performance.result_hash != _result_hash(
+            performance.engine_result, RunStatus.DISTRESSED, score_hash_input
+        )
+        assert performance.result_hash == _result_hash(
+            performance.engine_result, RunStatus.ACTIVE, score_hash_input
+        )
 
     async def test_hash_is_stable_not_python_hash(self, db_session, q1_quarter):
         """A stable hash must be identical across separate runs, unlike Python's salted-per-process

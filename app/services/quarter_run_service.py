@@ -16,6 +16,7 @@ import types
 import uuid
 from dataclasses import fields, is_dataclass
 from decimal import Decimal
+from enum import Enum
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
 from sqlalchemy import select
@@ -24,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.loader import load_profile, load_scenario, load_seed
 from app.config.schema import Scenario
 from app.engines.quarter import QuarterResult, compute_quarter
+from app.engines.scoring import score_quarter
 from app.engines.state import CompanyState, QuarterAllocations
 from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival, tier_assignment_quarter
 from app.models.company import Company
@@ -68,13 +70,19 @@ _ALLOCATION_FIELDS = (
 
 
 def _to_jsonable(value: Any) -> Any:
-    """Decimal -> str (exact, not float-lossy), dataclasses -> dict, recursively."""
+    """Decimal -> str (exact, not float-lossy), dataclasses -> dict, tuples/lists -> list,
+    recursively. The tuple case exists for QuarterScore -- its `traits`/`modifiers`/`criteria`
+    fields are tuples, unlike anything on QuarterResult, which only ever nests dicts."""
     if isinstance(value, Decimal):
         return str(value)
+    if isinstance(value, Enum):
+        return value.value
     if is_dataclass(value) and not isinstance(value, type):
         return {f.name: _to_jsonable(getattr(value, f.name)) for f in fields(value)}
     if isinstance(value, dict):
         return {k: _to_jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_jsonable(v) for v in value]
     return value
 
 
@@ -96,15 +104,24 @@ def _from_jsonable(annotation: Any, value: Any) -> Any:
     return value  # int, str, bool round-trip through JSON as-is
 
 
-def _result_hash(result_json: dict[str, Any], run_status: RunStatus) -> str:
+def _result_hash(result_json: dict[str, Any], run_status: RunStatus, score_hash_input: dict[str, Any]) -> str:
     """sha256 over the canonical (sorted-key) serialised result -- not Python's `hash()`, which
     is salted per process and would never compare equal across two runs, let alone two processes.
 
     Run status is hashed alongside the result because it is part of what locking this quarter
     decided: the same numbers can leave a company ACTIVE or DISTRESSED depending on the history
     behind them, and a hash that ignored that would call two different outcomes identical.
+
+    The score is folded in for the same reason, per the Phase 7 spec -- but only its
+    `trait_points`/`modifiers_applied` breakdown, not the whole `QuarterScore`. Those two fully
+    determine `ceo_score` and `score_band` (pure functions of them), and they round-trip through
+    JSONB byte-exact the same way `engine_result` does. `ceo_score` itself does not: it is stored
+    in a `Numeric(6, 2)` column for display, which rounds on write, so hashing its full-precision
+    Decimal would make the hash impossible to reproduce from what is actually persisted.
     """
-    canonical = json.dumps({"result": result_json, "run_status": run_status.value}, sort_keys=True)
+    canonical = json.dumps(
+        {"result": result_json, "run_status": run_status.value, "score": score_hash_input}, sort_keys=True
+    )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -112,6 +129,27 @@ def _to_allocations(row: QuarterAllocation | None) -> QuarterAllocations:
     if row is None:
         return QuarterAllocations()
     return QuarterAllocations(**{field: getattr(row, field) for field in _ALLOCATION_FIELDS})
+
+
+async def _prior_allocations(session: AsyncSession, quarter: Quarter) -> QuarterAllocations | None:
+    """The immediately preceding quarter's allocation row, or `None` for Q1 or if that quarter
+    never had one submitted.
+
+    Distinct from `_to_allocations(None)`, which returns an all-zero `QuarterAllocations` for
+    *this* quarter's still-unsubmitted row. Here, `None` matters: `score_quarter`'s
+    compounding-asset-cut modifier treats "no prior allocations to compare against" as "the
+    modifier sits out", not as "every compounding line was cut from zero".
+    """
+    if quarter.number == 1:
+        return None
+    row = (
+        await session.execute(
+            select(QuarterAllocation)
+            .join(Quarter, Quarter.id == QuarterAllocation.quarter_id)
+            .where(Quarter.company_id == quarter.company_id, Quarter.number == quarter.number - 1)
+        )
+    ).scalar_one_or_none()
+    return _to_allocations(row) if row is not None else None
 
 
 async def _load_opening_state(session: AsyncSession, quarter: Quarter, seed: Any) -> CompanyState:
@@ -223,7 +261,8 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     # quarter being locked -- so the lock, the result and the status it produced all commit
     # together or not at all.
     scenario = load_scenario(company.scenario_id)
-    history = [*await _prior_results(session, quarter), result]
+    prior_results = await _prior_results(session, quarter)
+    history = [*prior_results, result]
     outcome = evaluate_survival(
         history, profile.survival, tier_assignment_quarter(scenario.total_quarters)
     )
@@ -233,14 +272,35 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     company.survival_condition = outcome.triggered_by
     company.survival_detail = outcome.detail
 
+    # The CEO score is computed in this same transaction, alongside survival -- it is derived
+    # from `result` and this quarter's allocations exactly like survival is derived from the
+    # result history, so it locks or doesn't lock together with everything else.
+    prior_result = prior_results[-1] if prior_results else None
+    prior_alloc = await _prior_allocations(session, quarter)
+    score = score_quarter(result, prior_result, allocations, profile.scoring, prior_allocations=prior_alloc)
+
     result_json = _to_jsonable(result)
     state_json = result_json["closing_state"]
+    score_json = _to_jsonable(score)
+    trait_points_json = score_json["traits"]
+    modifiers_applied_json = score_json["modifiers"]
+    score_hash_input = {"trait_points": trait_points_json, "modifiers_applied": modifiers_applied_json}
 
     if performance is None:
         performance = QuarterPerformance(company_id=quarter.company_id, quarter_id=quarter_id)
         session.add(performance)
-    performance.result_hash = _result_hash(result_json, run_status)
+    performance.result_hash = _result_hash(result_json, run_status, score_hash_input)
     performance.engine_result = result_json
+    performance.ceo_score = score.normalised_score
+    performance.score_band = score.band
+    performance.trait_points = trait_points_json
+    performance.modifiers_applied = modifiers_applied_json
+    performance.unscored_criteria = [
+        criterion
+        for trait in trait_points_json
+        for criterion in trait["criteria"]
+        if criterion["result"] == "unscored"
+    ]
 
     snapshot = (
         await session.execute(select(CompanyStateSnapshot).where(CompanyStateSnapshot.quarter_id == quarter_id))
