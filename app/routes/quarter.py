@@ -1,48 +1,18 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.models.decision import Decision
-from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter
 from app.models.quarter_performance import QuarterPerformance
 from app.routes.deps import get_quarter
 from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
 from app.services.quarter_run_service import run_quarter
+from app.services.report_service import QuarterNotLockedError, build_report_for_quarter
 
 router = APIRouter(prefix="/companies/{company_id}", tags=["quarter"])
-
-
-async def _report_response(
-    company_id: uuid.UUID, quarter: Quarter, performance: QuarterPerformance, session: AsyncSession
-) -> QuarterReportResponse:
-    decisions_submitted = (
-        await session.execute(select(func.count()).select_from(Decision).where(Decision.quarter_id == quarter.id))
-    ).scalar_one()
-    evidence_records_generated = (
-        await session.execute(
-            select(func.count()).select_from(EvidenceRecord).where(EvidenceRecord.quarter_id == quarter.id)
-        )
-    ).scalar_one()
-
-    engine_result = performance.engine_result or {}
-    return QuarterReportResponse(
-        company_id=company_id,
-        quarter_id=quarter.id,
-        overall_score=performance.overall_score,
-        dimension_scores=performance.dimension_scores,
-        decisions_submitted=decisions_submitted,
-        evidence_records_generated=evidence_records_generated,
-        generated_at=performance.created_at,
-        units_sold=engine_result.get("units_sold"),
-        revenue_inr=engine_result.get("revenue_inr"),
-        net_cash_flow_inr=engine_result.get("net_cash_flow_inr"),
-        closing_cash_inr=engine_result.get("closing_cash_inr"),
-        result_hash=performance.result_hash,
-    )
 
 
 @router.post("/quarters/{quarter_id}/lock", response_model=QuarterReportResponse)
@@ -52,17 +22,14 @@ async def lock_quarter(
     session: AsyncSession = Depends(get_db),
 ) -> QuarterReportResponse:
     """Runs the pure 22-line engine (`compute_quarter`, via `run_quarter`) over this quarter's
-    submitted allocations and persists the result.
+    submitted allocations, persists the result, and returns the full Phase 9 report for it.
 
     Idempotent: `run_quarter` itself is the lock guard -- an already-locked quarter returns its
     persisted result unchanged rather than recomputing or 409ing, so calling this twice is safe.
     """
     await run_quarter(session, quarter.id)
-
-    performance = (
-        await session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == quarter.id))
-    ).scalar_one()
-    return await _report_response(company_id, quarter, performance, session)
+    report = await build_report_for_quarter(session, quarter.id)
+    return QuarterReportResponse.model_validate(report)
 
 
 @router.get("/quarters/{quarter_id}/report", response_model=QuarterReportResponse)
@@ -71,14 +38,15 @@ async def get_quarter_report(
     quarter: Quarter = Depends(get_quarter),
     session: AsyncSession = Depends(get_db),
 ) -> QuarterReportResponse:
-    """Reads back the persisted QuarterPerformance row -- does not recompute anything."""
-    performance = (
-        await session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == quarter.id))
-    ).scalar_one_or_none()
-    if performance is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Quarter {quarter.id} has not been locked yet -- no report")
-
-    return await _report_response(company_id, quarter, performance, session)
+    """Reads back everything the lock transaction already persisted -- never recomputes, never
+    mutates. 409s (matching `routes/deps.py`'s convention for "wrong quarter-lock state") for a
+    quarter that hasn't been locked yet: there is no report before the quarter is run.
+    """
+    try:
+        report = await build_report_for_quarter(session, quarter.id)
+    except QuarterNotLockedError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    return QuarterReportResponse.model_validate(report)
 
 
 @router.get("/leaderboard", response_model=LeaderboardResponse)

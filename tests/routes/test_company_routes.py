@@ -94,20 +94,22 @@ class TestFullSimulationOverHttp:
         await _submit_all_departments(client, company_id, q1["id"], Q1_BY_DEPARTMENT)
         q1_report = await _lock(client, company_id, q1["id"])
 
-        assert abs(Decimal(q1_report["units_sold"]) - Decimal("562")) < Decimal("1")
-        assert abs(Decimal(q1_report["net_cash_flow_inr"]) - Decimal("-3127837")) < Decimal("1")
+        assert abs(Decimal(q1_report["outcome"]["units_sold"]["value"]) - Decimal("562")) < Decimal("1")
+        assert abs(Decimal(q1_report["outcome"]["net_cash_flow_inr"]["value"]) - Decimal("-3127837")) < Decimal("1")
 
         # ---- Q2 Efficiency-Final: docs/13 §4 -- 872 units -----------------------------------
         # Reachable only because Q1's closing state carried forward through persistence; this is
         # the first proof that compounding works across the real HTTP surface.
         q2 = await _open_quarter(client, company_id)
         assert q2["number"] == 2
-        assert Decimal(q2["cash_balance"]) == Decimal(q1_report["closing_cash_inr"])
+        assert Decimal(q2["cash_balance"]) == Decimal(q1_report["outcome"]["closing_cash_inr"]["value"])
 
         await _submit_all_departments(client, company_id, q2["id"], Q2_EFFICIENCY_BY_DEPARTMENT)
         q2_report = await _lock(client, company_id, q2["id"])
 
-        assert abs(Decimal(q2_report["units_sold"]) - Decimal("872")) < Decimal("1")
+        assert abs(Decimal(q2_report["outcome"]["units_sold"]["value"]) - Decimal("872")) < Decimal("1")
+        # Q2 has a prior quarter, so the delta is populated (Q1 above has none).
+        assert q2_report["outcome"]["units_sold"]["delta"] is not None
 
     async def test_get_company_reads_back_both_quarters(self, client):
         company = await _create_company(client)
@@ -242,8 +244,8 @@ class TestSurvivalOverHttp:
         await _submit_all_departments(client, company_id, q1["id"], Q1_BY_DEPARTMENT)
         report = await _lock(client, company_id, q1["id"])
 
-        assert Decimal(report["net_cash_flow_inr"]) < 0  # it really did lose money
-        assert Decimal(report["closing_cash_inr"]) > Decimal("11000000")
+        assert Decimal(report["outcome"]["net_cash_flow_inr"]["value"]) < 0  # it really did lose money
+        assert Decimal(report["outcome"]["closing_cash_inr"]["value"]) > Decimal("11000000")
 
         body = (await client.get(f"/companies/{company_id}")).json()
         assert body["run_status"] == "active"
