@@ -22,6 +22,233 @@
       }
     ]
   },
+  "scoring": {
+    "status": "designer_specified",
+    "source": "docs/10-scoring-methodology.md for the trait weights, sub-criteria text, modifier triggers and bands. The MECHANICAL/JUDGMENT classification and the four unsourced thresholds below are this implementation's own read (docs/19-work-split.md T1), not designer-confirmed.",
+    "traits": {
+      "systems_thinking": 20,
+      "strategic_thinking": 15,
+      "adaptability": 15,
+      "risk_management": 15,
+      "capital_allocation": 15,
+      "leadership": 10,
+      "long_term_thinking": 10
+    },
+    "criteria": [
+      {
+        "id": "strategic_thinking_1",
+        "trait": "strategic_thinking",
+        "kind": "JUDGMENT",
+        "description": "A stated, coherent thesis exists behind the allocation (not a random or default split)",
+        "reason": "'Stated' asks for the student's own reasoning. QuarterAllocations carries spend numbers, not a rationale field -- there is nothing in the pure engine's output that represents what the student said."
+      },
+      {
+        "id": "strategic_thinking_2",
+        "trait": "strategic_thinking",
+        "kind": "JUDGMENT",
+        "description": "The thesis is genuinely followed through in the actual numbers, not abandoned partway",
+        "reason": "Checking follow-through requires knowing what the thesis was (see strategic_thinking_1); with no stated thesis captured, there is nothing to check the numbers against."
+      },
+      {
+        "id": "strategic_thinking_3",
+        "trait": "strategic_thinking",
+        "kind": "JUDGMENT",
+        "description": "The thesis correctly targets wherever the quarter's real constraint actually is (demand, capacity, conversion ceiling, or cash)",
+        "reason": "QuarterResult can say which gate bound this quarter (capacity_bound/ceiling_bound/supply_bound), but the criterion asks whether the student's thesis targeted it -- that comparison needs the thesis, which isn't captured."
+      },
+      {
+        "id": "leadership_1",
+        "trait": "leadership",
+        "kind": "JUDGMENT",
+        "description": "Decisions are made without excessive hedging or indecision",
+        "reason": "Hedging and indecision are properties of how a decision was made, not of the resulting spend numbers -- no field in QuarterResult or QuarterAllocations carries process information."
+      },
+      {
+        "id": "leadership_2",
+        "trait": "leadership",
+        "kind": "JUDGMENT",
+        "description": "The student is proactive -- raising issues or opportunities themselves, not only reacting when prompted",
+        "reason": "Proactivity is about whether the student raised something unprompted. The engine only sees the final allocation, never whether or how it was prompted."
+      },
+      {
+        "id": "leadership_3",
+        "trait": "leadership",
+        "kind": "JUDGMENT",
+        "description": "The student owns the trade-offs their allocation makes, rather than ignoring or downplaying them",
+        "reason": "Ownership is expressed in what the student says about their decision, not in the decision's numbers -- nothing here is inferable from spend alone without inventing a proxy."
+      },
+      {
+        "id": "adaptability_1",
+        "trait": "adaptability",
+        "kind": "JUDGMENT",
+        "description": "The student recognises when a prior quarter's approach no longer fits the current situation",
+        "reason": "Recognition is a claim about the student's awareness, not a fact derivable from comparing two QuarterResults -- a changed allocation is consistent with recognition, drift, or coincidence alike."
+      },
+      {
+        "id": "adaptability_2",
+        "trait": "adaptability",
+        "kind": "JUDGMENT",
+        "description": "The change made is driven by evidence (results, audits, carryover data), not arbitrary impulse",
+        "reason": "Distinguishing evidence-driven from arbitrary change needs the student's stated motivation; the engine has no such field."
+      },
+      {
+        "id": "adaptability_3",
+        "trait": "adaptability",
+        "kind": "JUDGMENT",
+        "description": "The change, once made, is well-executed -- not just attempted",
+        "reason": "Identifying 'the change' at all depends on knowing what was attempted and why (adaptability_1/2), which isn't captured, so execution quality against it can't be checked either."
+      },
+      {
+        "id": "systems_thinking_1",
+        "trait": "systems_thinking",
+        "kind": "JUDGMENT",
+        "description": "Cross-department dependencies are correctly identified (e.g. leads vs. capacity, conversion vs. quality ceiling, demand vs. supply)",
+        "reason": "'Correctly identified' asks about the student's stated understanding of the dependency, not just its numeric consequence -- the consequence is checkable (systems_thinking_2/3 do), the identification claim is not."
+      },
+      {
+        "id": "systems_thinking_2",
+        "trait": "systems_thinking",
+        "kind": "MECHANICAL",
+        "description": "Departments are sized in coordination with each other, not decided in isolation",
+        "reason": "Checked from QuarterResult: effective_leads vs. effective_sales_capacity, and total_units_demanded vs. available_to_sell, must each sit within thresholds.coordination_ratio of 1.0 (built to match, not wildly over- or under-sized relative to each other)."
+      },
+      {
+        "id": "systems_thinking_3",
+        "trait": "systems_thinking",
+        "kind": "MECHANICAL",
+        "description": "No single department is left as an unaddressed bottleneck once the rest of the allocation is finalised",
+        "reason": "QuarterResult already reports capacity_bound, ceiling_bound and supply_bound. Zero or one gate binding is coordinated; every additional simultaneous gate is another bottleneck left unaddressed."
+      },
+      {
+        "id": "risk_management_1",
+        "trait": "risk_management",
+        "kind": "MECHANICAL",
+        "description": "A real cash or debt safety margin exists after the allocation is made",
+        "reason": "discretionary_ceiling_inr minus total_discretionary_inr on QuarterResult is exactly this margin; spent_into_buffer is the boolean collapse of the same fact."
+      },
+      {
+        "id": "risk_management_2",
+        "trait": "risk_management",
+        "kind": "JUDGMENT",
+        "description": "Downside exposure is bounded, not open-ended, if assumptions prove wrong",
+        "reason": "This asks about exposure under hypothetical futures that didn't happen -- QuarterResult only carries what did happen, not what the student's assumptions were or how they'd fail."
+      },
+      {
+        "id": "risk_management_3",
+        "trait": "risk_management",
+        "kind": "JUDGMENT",
+        "description": "The level of risk taken is proportionate to the evidence available at the time of the decision",
+        "reason": "Explicitly asks what was known 'at the time of the decision' -- the engine only has the outcome, not a reconstruction of what evidence preceded it."
+      },
+      {
+        "id": "capital_allocation_1",
+        "trait": "capital_allocation",
+        "kind": "JUDGMENT",
+        "description": "Marginal spend in each department roughly matches that department's marginal return",
+        "reason": "'Roughly matches' is a comparative judgment across department-specific marginal-return curves; deriving and comparing all of them would be inventing an evaluation formula docs/ does not state."
+      },
+      {
+        "id": "capital_allocation_2",
+        "trait": "capital_allocation",
+        "kind": "MECHANICAL",
+        "description": "No channel or department is funded past the point where extra spend stops producing extra usable output (a hard cap, a capacity ceiling, or a demand ceiling)",
+        "reason": "Checked from QuarterResult: referral_wasted_spend_inr > 0 means Referral was funded past its hard cap; capacity_bound means Marketing was funded past what Sales Capacity can use."
+      },
+      {
+        "id": "capital_allocation_3",
+        "trait": "capital_allocation",
+        "kind": "MECHANICAL",
+        "description": "No channel or department is left funded below the level that proven demand or a known constraint would justify",
+        "reason": "Checked from QuarterResult: capacity_bound means Sales Capacity was funded below the demand Marketing proved; supply_bound means Operations was funded below proven demand; ceiling_bound means R&D was funded below what Sales/Marketing's raw conversion could use."
+      },
+      {
+        "id": "long_term_thinking_1",
+        "trait": "long_term_thinking",
+        "kind": "MECHANICAL",
+        "description": "At least one investment is made whose payoff is not this quarter's (e.g. a compounding score, a long-horizon mechanic)",
+        "reason": "Checked from QuarterAllocations: any spend on the compounding lines (meta_ads, social_influencer, events_pr, content_seo, prelaunch_buzz, innovation) qualifies -- all build a cumulative score that pays out in a later quarter."
+      },
+      {
+        "id": "long_term_thinking_2",
+        "trait": "long_term_thinking",
+        "kind": "JUDGMENT",
+        "description": "That investment is not sacrificed entirely for short-term gain when the two compete for the same budget",
+        "reason": "'When the two compete' asks about a trade-off the student faced; the engine sees the resulting split, not whether a competing short-term option was passed over for it."
+      },
+      {
+        "id": "long_term_thinking_3",
+        "trait": "long_term_thinking",
+        "kind": "JUDGMENT",
+        "description": "The long-term investment is sized proportionately to the company's current stage and cash position",
+        "reason": "'Current stage' is an interpretive read of where the company is in its trajectory, not a field in CompanyState -- there is no stated formula mapping cash/history to a 'stage'."
+      }
+    ],
+    "modifier_sets": {
+      "standard": [
+        {
+          "id": "profitability_achieved",
+          "points": 3,
+          "rule": "net_cash_flow_inr > 0"
+        },
+        {
+          "id": "perfect_channel_match",
+          "points": 2,
+          "rule": "the hard-capped Referral channel hit its lead cap exactly: channel_leads['referral'] == referral_lead_cap AND referral_wasted_spend_inr == 0"
+        },
+        {
+          "id": "zero_capacity_waste",
+          "points": 2,
+          "rule": "leads_used == effective_leads"
+        },
+        {
+          "id": "zero_supply_waste",
+          "points": 2,
+          "rule": "(available_to_sell - units_sold) <= thresholds.supply_waste_units"
+        },
+        {
+          "id": "compounding_asset_cut",
+          "points": -2,
+          "rule": "this quarter's spend on a compounding line (Brand-building: meta_ads+social_influencer+events_pr; SEO: content_seo; Buzz: prelaunch_buzz; Innovation: innovation) is below thresholds.compounding_cut_ratio of that line's prior-quarter spend",
+          "note": "Needs prior_allocations, not just prior_result -- QuarterResult carries derived leads/scores, not the raw spend figures a fair quarter-over-quarter investment comparison needs. See engines/scoring.py."
+        },
+        {
+          "id": "ceiling_undershot",
+          "points": -2,
+          "rule": "raw_conversion_pct - conversion_ceiling_pct > thresholds.ceiling_undershoot_points"
+        },
+        {
+          "id": "cash_buffer_breached",
+          "points": -3,
+          "rule": "spent_into_buffer is true"
+        },
+        {
+          "id": "debt_without_justification",
+          "points": -2,
+          "rule": "a loan or credit line is used without a stated reason tied to a specific, funded growth plan",
+          "status": "cannot_fire_no_debt_mechanic",
+          "note": "The 22-line chain has no debt/loan mechanic at all -- FIN-005 lives only in the parked legacy percentage-influence pipeline (app/engines/legacy_matrix/). This modifier is configured so its absence is visible rather than silently missing, but engines/scoring.py's predicate always returns 'did not fire'."
+        }
+      ]
+    },
+    "bands": [
+      {"name": "Exceptional", "minimum": 90},
+      {"name": "Strong", "minimum": 75},
+      {"name": "Competent", "minimum": 60},
+      {"name": "Weak", "minimum": 40},
+      {"name": "Poor", "minimum": -1000000}
+    ],
+    "thresholds": {
+      "ceiling_undershoot_points": 3,
+      "supply_waste_units": 25,
+      "supply_waste_status": "inferred_not_confirmed",
+      "capacity_waste_leads": 0,
+      "capacity_waste_status": "designer_specified",
+      "compounding_cut_ratio": 0.80,
+      "compounding_cut_status": "inferred_not_confirmed",
+      "coordination_ratio": 1.30,
+      "coordination_status": "inferred_not_confirmed"
+    }
+  },
   "raw_conversion_composition": {
     "formula": "base + Reps bonus + CRM bonus + CX Team repeat-rate bonus + Buzz Q+2 bonus",
     "status": "inferred_not_confirmed",

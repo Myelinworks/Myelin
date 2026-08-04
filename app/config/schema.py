@@ -508,6 +508,7 @@ class SimulationProfile(_Frozen):
     name: str
     source: str
     survival: SurvivalConfig
+    scoring: ScoringConfig
     raw_conversion_composition: RawConversionCompositionConfig
     marketing: MarketingConfig
     sales: SalesConfig
