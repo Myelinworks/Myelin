@@ -3,7 +3,9 @@
 Loads opening state, calls the pure function, writes closing state, returns the result. No
 business logic lives here -- every number in the result comes from
 `app.engines.quarter.compute_quarter`; this module's only job is loading its inputs from the DB
-and persisting its output.
+and persisting its output. It also drives `app.engines.scoring.score_quarter` and (Phase 8)
+`app.engines.evidence.extract_evidence` in the same transaction -- three independently-pure
+engines, one persistence wrapper.
 
 Distinct from `app.services.quarter_engine.run_quarter`, which orchestrates the legacy per-decision
 Business Impact / Evidence / Cognitive Scoring pipeline -- a genuinely different system (CLAUDE.md:
@@ -19,17 +21,19 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.loader import load_profile, load_scenario, load_seed
 from app.config.schema import Scenario
+from app.engines.evidence import extract_evidence
 from app.engines.quarter import QuarterResult, compute_quarter
 from app.engines.scoring import score_quarter
 from app.engines.state import CompanyState, QuarterAllocations
 from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival, tier_assignment_quarter
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
+from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
@@ -285,6 +289,35 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     trait_points_json = score_json["traits"]
     modifiers_applied_json = score_json["modifiers"]
     score_hash_input = {"trait_points": trait_points_json, "modifiers_applied": modifiers_applied_json}
+
+    # Evidence is generated in this same transaction, from the same `allocations`/`opening_state`
+    # that fed `result` -- but it is computed independently by `extract_evidence`, which never
+    # reads `result` itself (see engines/evidence.py's module docstring on pipeline independence).
+    # It does NOT enter `_result_hash`: nothing scores it yet (Phase 8 builds only the producer),
+    # so folding it in would add hash surface with no corresponding score to protect.
+    # Idempotent re-lock: delete this quarter's producer-owned rows (decision_id IS NULL leaves
+    # the legacy per-decision pipeline's rows alone) and reinsert the freshly computed set --
+    # content-identical every time, since `extract_evidence` is a pure function of the same inputs.
+    facts = extract_evidence(allocations, opening_state, profile, seed, prior_allocations=prior_alloc)
+    await session.execute(
+        delete(EvidenceRecord).where(EvidenceRecord.quarter_id == quarter_id, EvidenceRecord.decision_id.is_(None))
+    )
+    for fact in facts:
+        session.add(
+            EvidenceRecord(
+                company_id=quarter.company_id,
+                quarter_id=quarter_id,
+                decision_id=None,
+                workspace=None,
+                department=fact.department,
+                evidence_key=fact.evidence_key,
+                evidence_value=_to_jsonable(fact.value),
+                categories=list(fact.categories),
+                weight=fact.weight,
+                weight_status=fact.weight_status,
+                detail=fact.detail,
+            )
+        )
 
     if performance is None:
         performance = QuarterPerformance(company_id=quarter.company_id, quarter_id=quarter_id)
