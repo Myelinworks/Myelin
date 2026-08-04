@@ -105,6 +105,17 @@ def _from_jsonable(annotation: Any, value: Any) -> Any:
     if origin is dict:
         _, value_type = get_args(annotation)
         return {k: _from_jsonable(value_type, v) for k, v in value.items()}
+    if origin in (tuple, list):
+        # Every tuple/list-typed field in this codebase's dataclasses is variable-length and
+        # homogeneous (`tuple[CriterionScore, ...]`, `tuple[str, ...]`, ...), so the first type
+        # argument is always the element type. Reconstructs QuarterScore's `traits`/`modifiers`/
+        # `criteria` -- `_to_jsonable` already flattens these to plain lists; without this branch
+        # they silently came back as lists of dicts instead of dataclass instances.
+        element_type = get_args(annotation)[0]
+        elements = (_from_jsonable(element_type, v) for v in value)
+        return tuple(elements) if origin is tuple else list(elements)
+    if isinstance(annotation, type) and issubclass(annotation, Enum):
+        return annotation(value)
     return value  # int, str, bool round-trip through JSON as-is
 
 
