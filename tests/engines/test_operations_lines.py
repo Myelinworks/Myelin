@@ -62,3 +62,53 @@ class TestOperations:
     def test_pulsewear_has_no_cost_floor_and_says_so(self, profile, pulsewear):
         with pytest.raises(NotImplementedError, match="manufacturing_cost_floor_inr"):
             operations.manufacturing(L("3.30"), pulsewear, profile)
+
+
+class TestBothDiscountsAreLoadBearingOnProductionCapacity:
+    """docs/13 §4: `400 * 1.024^0.7 * 0.929 * 0.794 = 300`. Two audit errors already happened by
+    dropping one of these two factors (docs/13 §2.5, `39af328`) -- this fixes the regression test
+    that only checked the correct value, which cannot tell "both factors present" apart from
+    "one factor present and the other silently compensating". Each factor going missing must
+    produce its own distinct, wrong number, not just any number that isn't 300.
+    """
+
+    CAPACITY = Decimal("400") * (Decimal("1.024") ** Decimal("0.7"))
+    ATTRITION_PCT = Decimal("7.1")
+    RELIABILITY = Decimal("79.4")
+
+    def test_both_factors_present_gives_the_documented_300(self, profile):
+        available = operations.available_to_sell(
+            self.CAPACITY, self.RELIABILITY, Decimal(0), self.ATTRITION_PCT, profile
+        )
+        assert close(available, "300", tolerance="0.5")
+
+    def test_dropping_reliability_alone_overstates_capacity(self, profile):
+        """Reliability missing (treated as 100, i.e. no discount) leaves only the attrition
+        factor -- capacity comes out higher than 300, and distinctly different from what
+        dropping attrition instead would give."""
+        available = operations.available_to_sell(
+            self.CAPACITY, Decimal(100), Decimal(0), self.ATTRITION_PCT, profile
+        )
+        assert not close(available, "300", tolerance="0.5")
+        assert close(available, "377.8", tolerance="0.5")
+
+    def test_dropping_attrition_alone_overstates_capacity_differently(self, profile):
+        """Attrition missing (treated as 0%, i.e. no discount) leaves only the reliability
+        factor -- this is the historical bug docs/13 §2.5 warns about (322.9 instead of 300,
+        the ~1,052-vs-1,029 discrepancy at the Q2 available-to-sell level)."""
+        available = operations.available_to_sell(
+            self.CAPACITY, self.RELIABILITY, Decimal(0), Decimal(0), profile
+        )
+        assert not close(available, "300", tolerance="0.5")
+        assert close(available, "322.9", tolerance="0.5")
+
+    def test_the_two_wrong_values_are_distinct_from_each_other(self, profile):
+        """Guards against a broken implementation where both factors silently collapse into the
+        same discount -- if they did, the two "one factor missing" cases above would coincide."""
+        reliability_only = operations.available_to_sell(
+            self.CAPACITY, Decimal(100), Decimal(0), self.ATTRITION_PCT, profile
+        )
+        attrition_only = operations.available_to_sell(
+            self.CAPACITY, self.RELIABILITY, Decimal(0), Decimal(0), profile
+        )
+        assert abs(reliability_only - attrition_only) > Decimal(50)
