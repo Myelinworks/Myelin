@@ -185,6 +185,56 @@ EXIT_GROWTH_CRITERIA: tuple[ScoringCriterion, ...] = (
 )
 
 
+def build_endgame_facts(
+    path: str,
+    term_sheet_name: str,
+    tier_outcome: TierOutcome,
+    q1_result: QuarterResult,
+    q3_result: QuarterResult,
+    q4_units_sold: Decimal,
+    config: EndgameConfig,
+) -> EndgameFacts:
+    """Combine an `EndgameDecision` + Q1/Q3 history + Q4's own `units_sold` into the flat facts
+    `engines/scoring.py`'s 6 Q4 modifier predicates need. Pure -- no I/O, no DB; the orchestration
+    layer (`services/quarter_run_service.py`) loads the decision row and results, this just does
+    the arithmetic.
+    """
+    if path not in ("A", "B", "C"):
+        raise NotImplementedError(f"endgame path {path!r} is not one of A/B/C")
+
+    momentum = momentum_score(q1_result.units_sold, q3_result.units_sold)
+
+    covenant_hit = None
+    if path == "A":
+        covenant = covenant_units(q3_result.units_sold, momentum, config)
+        covenant_hit = q4_units_sold >= covenant
+
+    offer_known = False
+    tcv_exceeds_offer = None
+    if path == "B":
+        if q3_result.valuation.blended_inr is None:
+            raise NotImplementedError(
+                "true continuation value needs Q3's blended valuation, which is None -- this "
+                "seed doesn't supply the asset-based valuation inputs"
+            )
+        true_value = true_continuation_value_inr(q3_result.valuation.blended_inr, momentum)
+        try:
+            offer = acquisition_offer_inr(term_sheet_name, tier_outcome.tier, true_value, config)
+            offer_known = True
+            tcv_exceeds_offer = true_value > offer
+        except NotImplementedError:
+            offer_known = False
+
+    return EndgameFacts(
+        path=path,
+        tier=tier_outcome.tier,
+        covenant_hit=covenant_hit,
+        path_b_accepted=(path == "B"),
+        offer_known=offer_known,
+        true_continuation_value_exceeds_offer=tcv_exceeds_offer,
+    )
+
+
 def build_q4_rubric(rubric: ScoringConfig) -> ScoringConfig:
     """Splice the Exit & Growth Judgment trait onto `rubric` at call time (`docs/16` section 4) --
     never persisted into the standard 100-point rubric, so the standard rubric's own

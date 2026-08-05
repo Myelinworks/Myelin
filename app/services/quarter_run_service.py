@@ -3,9 +3,9 @@
 Loads opening state, calls the pure function, writes closing state, returns the result. No
 business logic lives here -- every number in the result comes from
 `app.engines.quarter.compute_quarter`; this module's only job is loading its inputs from the DB
-and persisting its output. It also drives `app.engines.scoring.score_quarter` and (Phase 8)
-`app.engines.evidence.extract_evidence` in the same transaction -- three independently-pure
-engines, one persistence wrapper.
+and persisting its output. It also drives `app.engines.scoring.score_quarter`, (Phase 8)
+`app.engines.evidence.extract_evidence`, and (Phase 11, Q4 only) `app.engines.endgame` in the same
+transaction -- independently-pure engines, one persistence wrapper.
 
 Distinct from `app.services.quarter_engine.run_quarter`, which orchestrates the legacy per-decision
 Business Impact / Evidence / Cognitive Scoring pipeline -- a genuinely different system (CLAUDE.md:
@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.loader import load_profile, load_scenario, load_seed
 from app.config.schema import Scenario
+from app.engines import endgame
 from app.engines.evidence import extract_evidence
 from app.engines.quarter import QuarterResult, compute_quarter
 from app.engines.scoring import score_quarter
@@ -33,6 +34,7 @@ from app.engines.state import CompanyState, CrisisEvent, QuarterAllocations
 from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival, tier_assignment_quarter
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
+from app.models.endgame_decision import EndgameDecision
 from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
@@ -223,6 +225,14 @@ async def _prior_results(session: AsyncSession, quarter: Quarter) -> list[Quarte
     return [_from_jsonable(QuarterResult, row) for row in rows]
 
 
+def _result_by_number(results: list[QuarterResult], number: int) -> QuarterResult:
+    """`results` is oldest-first with no gaps (the immutability guard on quarter creation only
+    ever allows sequential locking), so quarter `number`'s result sits at index `number - 1`."""
+    if number < 1 or number > len(results):
+        raise ValueError(f"no locked quarter {number} in a history of length {len(results)}")
+    return results[number - 1]
+
+
 def _run_status(outcome: SurvivalOutcome, quarter: Quarter, scenario: Scenario) -> RunStatus:
     """Fold the survival outcome and the scenario's length into one persisted status.
 
@@ -308,10 +318,41 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     # result history, so it locks or doesn't lock together with everything else.
     prior_result = prior_results[-1] if prior_results else None
     prior_alloc = await _prior_allocations(session, quarter)
-    modifier_sets = ("standard", "crisis") if crisis_event is not None else ("standard",)
+    modifier_sets = ["crisis"] if crisis_event is not None else []
+    rubric = profile.scoring
+    endgame_facts = None
+
+    # Q4 endgame (Phase 11, docs/16/17): only when this is the scenario's last quarter AND the
+    # company submitted an EndgameDecision -- reuses `outcome` (this same transaction's survival
+    # evaluation) for Tier Assignment's Distressed check, per docs/19's "reuse it, don't
+    # reimplement it". No decision submitted scores normally with just the standard set, per the
+    # approved Phase 11 plan.
+    if quarter.number == scenario.total_quarters:
+        decision = (
+            await session.execute(select(EndgameDecision).where(EndgameDecision.company_id == quarter.company_id))
+        ).scalar_one_or_none()
+        if decision is not None:
+            tier_quarter = tier_assignment_quarter(scenario.total_quarters)
+            q1_result = _result_by_number(prior_results, 1)
+            q2_result = _result_by_number(prior_results, 2)
+            q3_result = _result_by_number(prior_results, tier_quarter)
+            tier_outcome = endgame.assign_tier(q1_result, q2_result, q3_result, outcome)
+            endgame_facts = endgame.build_endgame_facts(
+                decision.path,
+                decision.term_sheet_name,
+                tier_outcome,
+                q1_result,
+                q3_result,
+                result.units_sold,
+                profile.endgame,
+            )
+            rubric = endgame.build_q4_rubric(profile.scoring)
+            modifier_sets.append("q4")
+
+    modifier_sets = ("standard", *modifier_sets)
     score = score_quarter(
-        result, prior_result, allocations, profile.scoring, prior_allocations=prior_alloc,
-        modifier_sets=modifier_sets,
+        result, prior_result, allocations, rubric, prior_allocations=prior_alloc,
+        modifier_sets=modifier_sets, endgame_facts=endgame_facts,
     )
 
     result_json = _to_jsonable(result)
