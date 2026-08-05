@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
+from app.models.endgame_decision import EndgameDecision
 from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
@@ -541,3 +542,112 @@ class TestCrisisPersistence:
         assert row.crisis_choice == "C"
         assert row.comparison_ads == Decimal("5.0000")
         assert row.emergency_supply_fund == Decimal("1.0000")
+
+
+class TestEndgamePersistence:
+    """Phase 11: the Q4 endgame, wired into run_quarter() only on the scenario's last quarter."""
+
+    @pytest.fixture
+    async def q4_quarter(self, db_session, nadi_wear_company):
+        """Plays Q1 -> Q2 -> Q3 (crisis choice C, universally valid) through run_quarter(), then
+        opens Q4 with allocations submitted but not yet locked -- so each test can attach its own
+        EndgameDecision (or none) before locking."""
+        for number in (1, 2):
+            quarter = Quarter(
+                company_id=nadi_wear_company.id, number=number, status=QuarterStatus.IN_PROGRESS,
+                cash_balance=0, revenue=0,
+            )
+            db_session.add(quarter)
+            await db_session.flush()
+            db_session.add(
+                QuarterAllocation(company_id=nadi_wear_company.id, quarter_id=quarter.id, **Q1_ALLOCATION_FIELDS)
+            )
+            await db_session.flush()
+            await run_quarter(db_session, quarter.id)
+
+        q3 = Quarter(
+            company_id=nadi_wear_company.id, number=3, status=QuarterStatus.IN_PROGRESS, cash_balance=0, revenue=0,
+        )
+        db_session.add(q3)
+        await db_session.flush()
+        db_session.add(
+            QuarterAllocation(
+                company_id=nadi_wear_company.id, quarter_id=q3.id,
+                crisis_choice="C", comparison_ads=Decimal("5.0"), emergency_supply_fund=Decimal("1.0"),
+                **Q1_ALLOCATION_FIELDS,
+            )
+        )
+        await db_session.flush()
+        await run_quarter(db_session, q3.id)
+
+        q4 = Quarter(
+            company_id=nadi_wear_company.id, number=4, status=QuarterStatus.IN_PROGRESS, cash_balance=0, revenue=0,
+        )
+        db_session.add(q4)
+        await db_session.flush()
+        db_session.add(QuarterAllocation(company_id=nadi_wear_company.id, quarter_id=q4.id, **Q1_ALLOCATION_FIELDS))
+        await db_session.flush()
+        return q4
+
+    async def test_endgame_decision_persists_and_survives_the_lock(self, db_session, nadi_wear_company, q4_quarter):
+        decision = EndgameDecision(
+            company_id=nadi_wear_company.id, quarter_id=q4_quarter.id,
+            path="A", term_sheet_name="Growth Investor", reasoning="Q1-Q3 growth supports this.",
+        )
+        db_session.add(decision)
+        await db_session.flush()
+
+        await run_quarter(db_session, q4_quarter.id)
+        await db_session.refresh(decision)
+
+        assert decision.path == "A"
+        assert decision.term_sheet_name == "Growth Investor"
+        assert decision.reasoning == "Q1-Q3 growth supports this."
+
+    async def test_q4_modifiers_and_exit_growth_trait_apply_when_a_decision_exists(
+        self, db_session, nadi_wear_company, q4_quarter
+    ):
+        decision = EndgameDecision(
+            company_id=nadi_wear_company.id, quarter_id=q4_quarter.id,
+            path="A", term_sheet_name="Growth Investor", reasoning=None,
+        )
+        db_session.add(decision)
+        await db_session.flush()
+
+        await run_quarter(db_session, q4_quarter.id)
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q4_quarter.id))
+        ).scalar_one()
+
+        modifiers = {m["id"]: m for m in performance.modifiers_applied}
+        assert "covenant_hit" in modifiers and "covenant_missed" in modifiers
+        # Path A always resolves covenant_hit exactly one way -- see build_endgame_facts.
+        assert modifiers["covenant_hit"]["fired"] != modifiers["covenant_missed"]["fired"]
+
+        traits = {t["trait"]: t for t in performance.trait_points}
+        assert "exit_growth" in traits
+        assert Decimal(traits["exit_growth"]["weight"]) == 15
+        assert Decimal(traits["exit_growth"]["weight_scored"]) == 0
+        assert {c["id"] for c in traits["exit_growth"]["criteria"]} == {
+            "exit_growth_1", "exit_growth_2", "exit_growth_3",
+        }
+        assert all(c["result"] == "unscored" for c in traits["exit_growth"]["criteria"])
+
+    async def test_q4_locks_normally_with_no_decision_submitted(self, db_session, q4_quarter):
+        """A student who never reaches the Q4 decision screen still locks the quarter, scored with
+        just the standard modifier set -- no Q4 modifiers, no Exit & Growth trait."""
+        result = await run_quarter(db_session, q4_quarter.id)
+        assert result is not None
+
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q4_quarter.id))
+        ).scalar_one()
+
+        modifier_ids = {m["id"] for m in performance.modifiers_applied}
+        assert modifier_ids.isdisjoint(
+            {
+                "covenant_hit", "covenant_missed", "correct_rejection",
+                "correct_acceptance", "value_left_on_table", "deliberate_independence",
+            }
+        )
+        assert "exit_growth" not in {t["trait"] for t in performance.trait_points}

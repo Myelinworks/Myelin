@@ -25,6 +25,7 @@ from app.models import (  # noqa: F401
     company_state_snapshot,
     cx,
     decision,
+    endgame_decision,
     evidence,
     finance,
     marketing,
