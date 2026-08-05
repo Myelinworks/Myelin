@@ -83,6 +83,19 @@ class QuarterAllocations:
 
     warranty_years: int = 0
 
+    # Crisis response (Phase 10, docs/11-crisis-system.md) -- only meaningful in the quarter a
+    # crisis actually fires (`CrisisEvent.scenario` is not `None`); all-zero/`None` otherwise.
+    # One `crisis_choice_d_spend` field, not one per scenario: only one crisis ever fires in a
+    # given quarter, so it always means "this quarter's active scenario's own Choice-D line"
+    # (Contract Sales/Promo Surge for A, Contract Marketing Agency Surge for B, Contract R&D
+    # Sprint for C, Contract Manufacturing for D).
+    crisis_choice: str | None = None  # "A" | "B" | "C" | "D"
+    price_match_fund: Decimal = ZERO
+    comparison_ads: Decimal = ZERO
+    retention_offers: Decimal = ZERO
+    emergency_supply_fund: Decimal = ZERO
+    crisis_choice_d_spend: Decimal = ZERO
+
     @property
     def marketing_total(self) -> Decimal:
         return (
@@ -117,8 +130,24 @@ class QuarterAllocations:
         return self.compliance_legal + self.financial_planning + self.audit_prep
 
     @property
+    def crisis_total(self) -> Decimal:
+        """Crisis response spend, in Rs lakhs -- zero in every non-crisis quarter."""
+        return (
+            self.price_match_fund
+            + self.comparison_ads
+            + self.retention_offers
+            + self.emergency_supply_fund
+            + self.crisis_choice_d_spend
+        )
+
+    @property
     def total_discretionary(self) -> Decimal:
-        """Total discretionary spend for the quarter, in Rs lakhs."""
+        """Total discretionary spend for the quarter, in Rs lakhs.
+
+        Crisis response is real cash spend added on top of the 6 departments' own totals -- every
+        Q3 worked P&L in `docs/14-quarter-3-reference.md` adds it straight into Discretionary
+        Spend (e.g. "Rs 58,85,980 + Rs 10,00,000 crisis").
+        """
         return (
             self.marketing_total
             + self.sales_total
@@ -126,6 +155,7 @@ class QuarterAllocations:
             + self.operations_total
             + self.hr_total
             + self.finance_admin_total
+            + self.crisis_total
         )
 
 

@@ -138,11 +138,25 @@ class TestFourProblemFlagsResolved:
         assert fact.weight_status == WEIGHT_CONFIRMED
 
 
+# Not one of the 22 spend lines: `warranty_years` is the strategic choice CLAUDE.md calls out as
+# separate, and the Phase 10 crisis-response fields (`crisis_choice` + 5 response-line amounts)
+# are a different category the evidence producer was never scoped to cover.
+_NON_LINE_FIELDS = {
+    "warranty_years",
+    "crisis_choice",
+    "price_match_fund",
+    "comparison_ads",
+    "retention_offers",
+    "emergency_supply_fund",
+    "crisis_choice_d_spend",
+}
+
+
 class TestEveryLineProducesEvidence:
     """Zeroing any one of the 22 lines must change the evidence set -- mechanical proof that every
     line is actually read by something, not just asserted by name."""
 
-    _LINE_FIELDS = [f.name for f in dataclasses.fields(QuarterAllocations) if f.name != "warranty_years"]
+    _LINE_FIELDS = [f.name for f in dataclasses.fields(QuarterAllocations) if f.name not in _NON_LINE_FIELDS]
 
     @pytest.mark.parametrize("line", _LINE_FIELDS)
     def test_zeroing_one_line_changes_the_evidence(self, line, opening, profile, nadi_wear, q1_facts):
