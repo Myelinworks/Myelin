@@ -298,46 +298,78 @@ def compute_quarter(
         allocations.supplier_qc, opening_state.supplier_reliability, profile
     )
 
-    # ---- Crisis: Supply Shock (D) -- Capacity Multiplier feeds Available to Sell; Choice D
-    # (Contract Manufacturing) bypasses the multiplier for its own separate capacity source.
+    # ---- Crisis: Supply Shock (D) -- Capacity Multiplier feeds Available to Sell. The multiplier
+    # already carries its own Supplier-Reliability-based offset term (`0.005*(Reliability-50)`),
+    # so it *replaces* the normal formula's separate reliability%-based reduction rather than
+    # stacking with it -- confirmed against docs/15's novice worked example (Available to Sell
+    # 1,707): stacking both terms lands at ~1,469, visibly short; dropping the normal reliability%
+    # factor and applying only attrition + the multiplier lands at ~1,714, matching. Choice D
+    # (Contract Manufacturing) bypasses the multiplier for its own separate capacity source,
+    # added on top of the existing line's own (unaddressed, multiplier-free) capacity.
     crisis_capacity = None
     crisis_contract = None
     production_capacity = manufacturing.production_capacity
     unit_cost_inr = manufacturing.unit_cost_inr
     supplier_reliability_for_carry_forward = supplier_reliability
+    available_to_sell_override = None
     if scenario == "D":
+        # docs/14 §6: the event unconditionally raises Manufacturing Cost/Unit by Rs 500,
+        # confirmed identical (Rs 2,938 -> Rs 3,438) in both the expert and novice worked cases.
+        unit_cost_inr = unit_cost_inr + profile.crisis.supply_shock.manufacturing_cost_surcharge_inr
         if allocations.crisis_choice == "D":
             crisis_contract = crisis.supply_shock_contract_manufacturing(
                 allocations.crisis_choice_d_spend, production_capacity, profile.crisis.supply_shock
             )
-            production_capacity = production_capacity + crisis_contract.extra_capacity
             unit_cost_inr = unit_cost_inr + crisis_contract.blended_cost_premium_inr
+            # The existing line still takes the automatic cut (no A/B/C choice addressed it) --
+            # same offset as "no choice submitted" (see supply_shock_capacity_multiplier).
+            base_multiplier = crisis.supply_shock_capacity_multiplier(
+                None, supplier_reliability, ZERO, profile.crisis.supply_shock
+            )
+            available_to_sell_override = (
+                production_capacity * (1 - opening_state.attrition_rate_pct / 100) * base_multiplier.multiplier
+                + crisis_contract.extra_capacity
+                + opening_state.inventory_units
+            )
         else:
             crisis_capacity = crisis.supply_shock_capacity_multiplier(
                 allocations.crisis_choice, supplier_reliability, allocations.emergency_supply_fund,
                 profile.crisis.supply_shock,
             )
-            production_capacity = production_capacity * crisis_capacity.multiplier
-        # docs/14 §6: the event unconditionally raises Manufacturing Cost/Unit by Rs 500,
-        # confirmed identical (Rs 2,938 -> Rs 3,438) in both the expert and novice worked cases.
-        unit_cost_inr = unit_cost_inr + profile.crisis.supply_shock.manufacturing_cost_surcharge_inr
+            available_to_sell_override = (
+                production_capacity * (1 - opening_state.attrition_rate_pct / 100) * crisis_capacity.multiplier
+                + opening_state.inventory_units
+            )
         if allocations.crisis_choice == "B":
             # docs/14 §6: "Permanent Supplier Reliability gain: 79.8 -> 94.7 (+10, forever)".
             supplier_reliability_for_carry_forward = (
                 supplier_reliability + profile.crisis.supply_shock.choice_b_permanent_reliability_gain
             )
 
-    available_to_sell = operations.available_to_sell(
-        production_capacity,
-        supplier_reliability,
-        opening_state.inventory_units,
-        opening_state.attrition_rate_pct,
-        profile,
+    available_to_sell = (
+        available_to_sell_override
+        if available_to_sell_override is not None
+        else operations.available_to_sell(
+            production_capacity,
+            supplier_reliability,
+            opening_state.inventory_units,
+            opening_state.attrition_rate_pct,
+            profile,
+        )
     )
     units_sold = min(total_units_demanded, available_to_sell)
 
+    # ---- Crisis: Choice A price cut (A/B only -- Scenario C's Choice A has no stated price
+    # anywhere, already refused at the top of this function) -- overrides the selling price for
+    # this quarter alone, never the seed's own constant.
+    selling_price_inr = seed.selling_price_inr
+    if scenario == "A" and allocations.crisis_choice == "A":
+        selling_price_inr = profile.crisis.price_warrior.choice_a_price_inr
+    elif scenario == "B" and allocations.crisis_choice == "A":
+        selling_price_inr = profile.crisis.marketing_blitz.choice_a_price_inr
+
     # ---- P&L --------------------------------------------------------------------------------
-    revenue = units_sold * seed.selling_price_inr
+    revenue = units_sold * selling_price_inr
     cogs = units_sold * unit_cost_inr
     gross_profit = revenue - cogs
 
