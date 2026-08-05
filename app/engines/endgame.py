@@ -247,3 +247,56 @@ def build_q4_rubric(rubric: ScoringConfig) -> ScoringConfig:
             "criteria": [*rubric.criteria, *EXIT_GROWTH_CRITERIA],
         }
     )
+
+
+@dataclass(frozen=True)
+class EndgamePreview:
+    """What `GET .../endgame` shows before any decision is submitted: what tier this company
+    landed in, and what each path is worth *today*, computed straight off already-locked Q1-Q3
+    results -- no decision required to see it, since docs/16's whole design point is that these
+    numbers are a consequence of Q1-Q3, not something Q4 lets a team negotiate."""
+
+    tier: Tier
+    tier_detail: str
+    momentum_score: Decimal
+    term_sheet_menu: TierTermSheetConfig
+    covenant_units: Decimal
+    true_continuation_value_inr: Decimal
+    acquisition_trap_offer_inr: Decimal | None  # known only for the Thriving tier's Acquisition Trap term sheet
+
+
+def build_endgame_preview(
+    q1_result: QuarterResult,
+    q2_result: QuarterResult,
+    q3_result: QuarterResult,
+    survival_outcome: SurvivalOutcome,
+    config: EndgameConfig,
+) -> EndgamePreview:
+    """Pure assembly of every `engines/endgame.py` formula against one company's Q1-Q3 history --
+    the read-through `GET .../endgame` route calls once its inputs are loaded."""
+    tier_outcome = assign_tier(q1_result, q2_result, q3_result, survival_outcome)
+    momentum = momentum_score(q1_result.units_sold, q3_result.units_sold)
+    menu = term_sheet_menu(tier_outcome.tier, config)
+    covenant = covenant_units(q3_result.units_sold, momentum, config)
+
+    if q3_result.valuation.blended_inr is None:
+        raise NotImplementedError(
+            "true continuation value needs Q3's blended valuation, which is None -- this seed "
+            "doesn't supply the asset-based valuation inputs"
+        )
+    true_value = true_continuation_value_inr(q3_result.valuation.blended_inr, momentum)
+
+    try:
+        offer = acquisition_offer_inr(menu.path_b_name, tier_outcome.tier, true_value, config)
+    except NotImplementedError:
+        offer = None
+
+    return EndgamePreview(
+        tier=tier_outcome.tier,
+        tier_detail=tier_outcome.detail,
+        momentum_score=momentum,
+        term_sheet_menu=menu,
+        covenant_units=covenant,
+        true_continuation_value_inr=true_value,
+        acquisition_trap_offer_inr=offer,
+    )
