@@ -498,6 +498,122 @@ class RawConversionCompositionConfig(_Frozen):
 
 
 # --------------------------------------------------------------------------------------
+# Crisis system -- Phase 10, docs/11-crisis-system.md
+# --------------------------------------------------------------------------------------
+
+
+class CrisisResponseLinesConfig(_Frozen):
+    """Price-Match Fund / Comparison Ads / Retention Offers -- shared across Scenarios A and B
+    (docs/11 §3's table, confirmed identical for B by the docs/14 §4 worked example, which applies
+    the same three formulas against B's own 0.60 dampening baseline). Scenario C has no documented
+    recovery mechanism for its dampening or conversion penalty at all -- these lines don't apply
+    there.
+
+    `price_match_fund_rate` is the coefficient on `x^0.5` only -- the additive intercept is each
+    scenario's own dampening multiplier, not a fixed 0.75 (confirmed by Scenario B's own Choice-D
+    worked example, which starts from 0.60: `0.60 + 0.25 * x^0.5`).
+    """
+
+    price_match_fund_rate: Decimal
+    comparison_ads_rate: Decimal
+    comparison_ads_cap_pts: Decimal
+    retention_base_pct: Decimal
+    retention_rate: Decimal
+
+
+class PriceWarriorConfig(_Frozen):
+    """Scenario A (docs/11 §3). Choice A's price is the one crisis price-cut number stated
+    explicitly anywhere in the source (docs/11 line 77: "Cut Price to Match (Rs 9,999 -> Rs
+    7,999)")."""
+
+    dampening_multiplier: Decimal
+    conversion_penalty_pts: Decimal
+    brand_erosion_pts: Decimal
+    choice_a_price_inr: Decimal
+    choice_d_dampening_rate: Decimal  # Contract Sales/Promo Surge
+
+
+class MarketingBlitzConfig(_Frozen):
+    """Scenario B (docs/11 §4). Two flagged special cases, neither a confirmed general rule:
+
+    - `choice_a_price_inr` (Rs 8,149) appears only in `docs/15`'s worked novice example, never in
+      `docs/11` (the spec of record) -- used because it is a real, stated number from a real
+      source document, not invented, but flagged since the spec of record doesn't restate it.
+    - `choice_b_qualified_penalty_pts` (-1.2, when Quality Score >= 25) is the "Choice B
+      Qualification" that appears only in `docs/14` section 4's single worked instance, with no
+      general formula stated anywhere -- implemented as the exact stated pair, not generalised to
+      other Quality Score values.
+    """
+
+    dampening_multiplier: Decimal
+    conversion_penalty_pts: Decimal
+    brand_erosion_pts: Decimal
+    choice_a_price_inr: Decimal
+    choice_a_price_status: str
+    choice_b_quality_threshold: Decimal
+    choice_b_qualified_penalty_pts: Decimal
+    choice_b_qualification_status: str
+    choice_d_dampening_rate: Decimal  # Contract Marketing Agency Surge
+
+
+class FeatureLeapfrogConfig(_Frozen):
+    """Scenario C (docs/11 §5). Choice A's price cut is stated nowhere in any source document --
+    not even reliably back-solvable from `docs/15`'s worked NCF (source-doc rounding drift of
+    ~Rs 1,300 is already visible elsewhere, e.g. `docs/12` section 11's asset-based valuation).
+    `engines/crisis.py` raises `NotImplementedError` for this specific combination rather than
+    invent a price.
+    """
+
+    dampening_multiplier: Decimal
+    conversion_penalty_pts: Decimal
+    conversion_penalty_reduced_pts: Decimal
+    ceiling_penalty_pts: Decimal
+    innovation_threshold: Decimal
+    choice_d_innovation_rate: Decimal  # Contract R&D Sprint
+
+
+class SupplyShockConfig(_Frozen):
+    """Scenario D (docs/11 §6) -- "the most important single formula in the entire crisis
+    system". `choice_a_offset` is 0, confirmed by `docs/15`'s own novice worked arithmetic
+    (`0.50 + 0.174 + 0 + 0 = 0.674`), which contradicts `docs/17-designer-resolutions.md`'s claim
+    that Choice A carries +0.50 -- see `engines/crisis.py`'s module docstring for the full
+    derivation. No worked example anywhere exercises a +0.50 branch, so which choice (if any)
+    carries it stays genuinely unassigned; `choice_unassigned_high_tier_status` records that
+    rather than silently picking one.
+    """
+
+    base_cut: Decimal
+    reliability_coefficient: Decimal
+    reliability_centre: Decimal
+    choice_a_offset: Decimal
+    choice_a_offset_status: str
+    choice_b_offset: Decimal
+    choice_c_offset: Decimal
+    choice_unassigned_high_tier: Decimal
+    choice_unassigned_high_tier_status: str
+    emergency_fund_rate: Decimal
+    floor: Decimal
+    cap: Decimal
+    manufacturing_cost_surcharge_inr: Decimal
+    choice_d_contract_penalty: Decimal
+    choice_d_capacity_constant: Decimal
+    choice_d_capacity_exponent: Decimal
+    choice_d_cost_premium_inr: Decimal
+
+
+class CrisisConfig(_Frozen):
+    """Scenario-specific constants for the four Q3 crisis events (`docs/11-crisis-system.md`)."""
+
+    status: str
+    source: str
+    price_warrior: PriceWarriorConfig
+    marketing_blitz: MarketingBlitzConfig
+    feature_leapfrog: FeatureLeapfrogConfig
+    supply_shock: SupplyShockConfig
+    response_lines: CrisisResponseLinesConfig
+
+
+# --------------------------------------------------------------------------------------
 # Top-level profile
 # --------------------------------------------------------------------------------------
 
@@ -517,6 +633,7 @@ class SimulationProfile(_Frozen):
     hr: HrConfig
     finance_admin: FinanceAdminConfig
     valuation: ValuationConfig
+    crisis: CrisisConfig
 
 
 # --------------------------------------------------------------------------------------
