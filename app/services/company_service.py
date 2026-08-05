@@ -63,6 +63,23 @@ def assign_scenario_id(company_id: uuid.UUID) -> str:
     return random.Random(int.from_bytes(digest, "big")).choice(scenario_ids)
 
 
+_CRISIS_SCENARIOS = ("A", "B", "C", "D")
+
+
+def assign_crisis_scenario(company_id: uuid.UUID) -> str:
+    """Pick which of the four crisis events (docs/11-crisis-system.md) fires for this company,
+    deterministically from its own identifier -- the 1-in-4 random split docs/11 §2 calls for,
+    made reproducible the same way `assign_scenario_id` is: seeded from a SHA-256 of the company
+    id into `random.Random`, never `random.choice()` on the global RNG or Python's salted `hash()`.
+
+    A different digest than `assign_scenario_id`'s (mixed with a fixed salt) so a company that
+    happens to get scenario index N and crisis letter index N isn't a coincidence of reusing the
+    same random stream for two different assignments.
+    """
+    digest = hashlib.sha256(f"crisis:{company_id}".encode("utf-8")).digest()
+    return random.Random(int.from_bytes(digest, "big")).choice(_CRISIS_SCENARIOS)
+
+
 def _coerce(model: type[Base], field: str, value: Any) -> Any:
     """Match the column's Python type.
 

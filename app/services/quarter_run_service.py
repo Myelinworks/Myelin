@@ -29,7 +29,7 @@ from app.config.schema import Scenario
 from app.engines.evidence import extract_evidence
 from app.engines.quarter import QuarterResult, compute_quarter
 from app.engines.scoring import score_quarter
-from app.engines.state import CompanyState, QuarterAllocations
+from app.engines.state import CompanyState, CrisisEvent, QuarterAllocations
 from app.engines.survival import RunStatus, SurvivalOutcome, evaluate_survival, tier_assignment_quarter
 from app.models.company import Company
 from app.models.company_state_snapshot import CompanyStateSnapshot
@@ -37,6 +37,7 @@ from app.models.evidence import EvidenceRecord
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
+from app.services.company_service import assign_crisis_scenario
 
 # Mirrors QuarterAllocations' fields exactly (see app/engines/state.py) so a QuarterAllocation
 # row converts to the dataclass with no per-field mapping to keep in sync by hand.
@@ -270,12 +271,21 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
 
     opening_state = await _load_opening_state(session, quarter, seed)
 
-    result = compute_quarter(opening_state, allocations, profile, seed)
+    # Crisis (Phase 10): fires only on the scenario's own crisis_quarter. `crisis_scenario` in
+    # config picks the branch when the scenario pins one; `None` means assign deterministically
+    # per company, same SHA-256-seeded-random.Random pattern `assign_scenario_id` already uses,
+    # so replaying a run lands on the same scenario every time.
+    scenario = load_scenario(company.scenario_id)
+    crisis_event = None
+    if quarter.number == scenario.crisis_quarter:
+        letter = scenario.crisis_scenario or assign_crisis_scenario(company.id)
+        crisis_event = CrisisEvent(scenario=letter)
+
+    result = compute_quarter(opening_state, allocations, profile, seed, crisis_event)
 
     # Survival is evaluated inside this same transaction, over the whole run including the
     # quarter being locked -- so the lock, the result and the status it produced all commit
     # together or not at all.
-    scenario = load_scenario(company.scenario_id)
     prior_results = await _prior_results(session, quarter)
     history = [*prior_results, result]
     outcome = evaluate_survival(
@@ -292,7 +302,11 @@ async def run_quarter(session: AsyncSession, quarter_id: uuid.UUID) -> QuarterRe
     # result history, so it locks or doesn't lock together with everything else.
     prior_result = prior_results[-1] if prior_results else None
     prior_alloc = await _prior_allocations(session, quarter)
-    score = score_quarter(result, prior_result, allocations, profile.scoring, prior_allocations=prior_alloc)
+    modifier_sets = ("standard", "crisis") if crisis_event is not None else ("standard",)
+    score = score_quarter(
+        result, prior_result, allocations, profile.scoring, prior_allocations=prior_alloc,
+        modifier_sets=modifier_sets,
+    )
 
     result_json = _to_jsonable(result)
     state_json = result_json["closing_state"]
