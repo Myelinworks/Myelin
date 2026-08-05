@@ -1,9 +1,9 @@
 """`engines/scoring.py` against `docs/10-scoring-methodology.md` and the Phase 7 acceptance list.
 
-Q4 (docs/16/17) modifier set isn't implemented yet, so the mechanical half -- the 8 standard
-modifiers, the 4 crisis modifiers (Phase 10), and the 6 MECHANICAL sub-criteria -- is what's
-asserted here. The JUDGMENT sub-criteria (Leadership entirely, plus most of Strategic/
-Adaptability/Risk/Capital/Long-Term) come back UNSCORED by design; no test here should ever
+The mechanical half -- the 8 standard modifiers, the 4 crisis modifiers (Phase 10), the 6 Q4
+modifiers (Phase 11), and the 6 MECHANICAL sub-criteria -- is what's asserted here. The JUDGMENT
+sub-criteria (Leadership entirely, plus most of Strategic/Adaptability/Risk/Capital/Long-Term,
+plus all of Q4's Exit & Growth trait) come back UNSCORED by design; no test here should ever
 assert a numeric score for one.
 """
 
@@ -13,6 +13,7 @@ from decimal import Decimal
 import pytest
 
 from app.config.schema import ScoringCriterion, ScoringModifier
+from app.engines.endgame import EndgameFacts, Tier
 from app.engines.quarter import compute_quarter
 from app.engines.scoring import (
     CriterionKind,
@@ -413,3 +414,128 @@ class TestCrisisModifiers:
             mods[k].fired is False
             for k in ("crisis_fully_neutralized", "crisis_proofed_by_prior_investment", "structural_improvement_made", "crisis_ignored")
         )
+
+
+class TestQ4Modifiers:
+    """docs/16 section 5's 6 Q4 modifiers, registered under `modifier_sets.q4` (Phase 11).
+    `score_quarter`'s own math needed no change to support them -- only the predicates and an
+    `endgame_facts` parameter, per that module's own docstring."""
+
+    @staticmethod
+    def _modifiers(q1, rubric, endgame_facts):
+        score = score_quarter(
+            q1, None, Q1_ALLOCATIONS, rubric, modifier_sets=("standard", "q4"), endgame_facts=endgame_facts
+        )
+        return {m.id: m for m in score.modifiers}
+
+    def test_all_six_q4_modifiers_are_registered(self, rubric):
+        assert {m.id for m in rubric.modifier_sets["q4"]} == {
+            "covenant_hit",
+            "covenant_missed",
+            "correct_rejection",
+            "correct_acceptance",
+            "value_left_on_table",
+            "deliberate_independence",
+        }
+
+    def test_no_q4_modifier_fires_without_endgame_facts(self, q1, rubric):
+        """A student who never reaches the Q4 decision screen still locks the quarter -- see
+        quarter_run_service.py -- with every Q4 modifier configured but inert. (Standard-set
+        modifiers unrelated to Q4, like perfect_channel_match, can still fire on Q1's own numbers
+        -- only the 6 Q4-specific ids are asserted here.)"""
+        mods = self._modifiers(q1, rubric, endgame_facts=None)
+        q4_ids = {m.id for m in rubric.modifier_sets["q4"]}
+        assert all(not mods[q4_id].fired for q4_id in q4_ids)
+
+    def test_covenant_hit_fires_for_path_a_when_covenant_was_hit(self, q1, rubric):
+        facts = EndgameFacts(
+            path="A", tier=Tier.THRIVING, covenant_hit=True, path_b_accepted=None,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["covenant_hit"].fired is True
+        assert mods["covenant_hit"].applied_points == 5
+        assert mods["covenant_missed"].fired is False
+
+    def test_covenant_missed_fires_for_path_a_when_covenant_was_missed(self, q1, rubric):
+        facts = EndgameFacts(
+            path="A", tier=Tier.STABLE, covenant_hit=False, path_b_accepted=None,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["covenant_missed"].fired is True
+        assert mods["covenant_missed"].applied_points == -8
+        assert mods["covenant_hit"].fired is False
+
+    def test_covenant_modifiers_do_not_fire_outside_path_a(self, q1, rubric):
+        facts = EndgameFacts(
+            path="C", tier=Tier.STABLE, covenant_hit=None, path_b_accepted=False,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["covenant_hit"].fired is False
+        assert mods["covenant_missed"].fired is False
+
+    def test_value_left_on_table_fires_for_thriving_tier_accepted_offer(self, q1, rubric):
+        facts = EndgameFacts(
+            path="B", tier=Tier.THRIVING, covenant_hit=None, path_b_accepted=True,
+            offer_known=True, true_continuation_value_exceeds_offer=True,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["value_left_on_table"].fired is True
+        assert mods["value_left_on_table"].applied_points == -3
+
+    def test_value_left_on_table_does_not_fire_when_the_offer_is_unknown(self, q1, rubric):
+        """Stable/Distressed tiers' Path B offers have no stated ratio -- offer_known is False,
+        so there is nothing to compare against, regardless of what the caller guesses."""
+        facts = EndgameFacts(
+            path="B", tier=Tier.STABLE, covenant_hit=None, path_b_accepted=True,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["value_left_on_table"].fired is False
+
+    def test_value_left_on_table_does_not_fire_when_path_b_was_rejected(self, q1, rubric):
+        facts = EndgameFacts(
+            path="C", tier=Tier.THRIVING, covenant_hit=None, path_b_accepted=False,
+            offer_known=True, true_continuation_value_exceeds_offer=True,
+        )
+        mods = self._modifiers(q1, rubric, facts)
+        assert mods["value_left_on_table"].fired is False
+
+    def test_reasoning_gated_modifiers_never_fire_even_when_every_other_condition_is_met(self, q1, rubric):
+        """correct_rejection, correct_acceptance, and deliberate_independence all name a
+        'correct'/'explicit' reasoning condition this engine has no signal for. Crafted here to
+        look like they satisfy every checkable half of their own rule -- and still must not fire,
+        proving these are genuinely gated on reasoning, not just untested."""
+        rejection_leaning = EndgameFacts(
+            path="C", tier=Tier.THRIVING, covenant_hit=None, path_b_accepted=False,
+            offer_known=True, true_continuation_value_exceeds_offer=True,
+        )
+        acceptance_leaning = EndgameFacts(
+            path="B", tier=Tier.STABLE, covenant_hit=None, path_b_accepted=True,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        independence_leaning = EndgameFacts(
+            path="C", tier=Tier.STABLE, covenant_hit=None, path_b_accepted=False,
+            offer_known=False, true_continuation_value_exceeds_offer=None,
+        )
+        assert self._modifiers(q1, rubric, rejection_leaning)["correct_rejection"].fired is False
+        assert self._modifiers(q1, rubric, acceptance_leaning)["correct_acceptance"].fired is False
+        assert self._modifiers(q1, rubric, independence_leaning)["deliberate_independence"].fired is False
+
+    def test_exit_growth_trait_is_entirely_judgment_when_spliced_onto_the_rubric(self, q1, rubric):
+        """`endgame.build_q4_rubric` is what actually splices this trait on (see
+        test_endgame.py) -- confirms score_quarter treats it exactly like Leadership: zero
+        MECHANICAL criteria, so it contributes nothing to mechanical_points_available and every
+        sub-criterion comes back UNSCORED."""
+        from app.engines.endgame import build_q4_rubric
+
+        q4_rubric = build_q4_rubric(rubric)
+        score = score_quarter(q1, None, Q1_ALLOCATIONS, q4_rubric, modifier_sets=("standard", "q4"))
+        exit_growth = next(t for t in score.traits if t.trait == "exit_growth")
+
+        assert exit_growth.weight == 15
+        assert exit_growth.weight_scored == 0
+        assert exit_growth.points_earned == 0
+        assert all(c.result == CriterionResult.UNSCORED for c in exit_growth.criteria)
