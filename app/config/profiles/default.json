@@ -457,6 +457,7 @@
       "choice_a_offset_status": "confirmed_by_docs_15_worked_arithmetic_0.50_plus_0.174_plus_0_plus_0_equals_0.674_contradicts_docs_17s_claim_of_plus_0.50",
       "choice_b_offset": 0.25,
       "choice_c_offset": 0,
+      "choice_b_permanent_reliability_gain": 10,
       "choice_unassigned_high_tier": 0.50,
       "choice_unassigned_high_tier_status": "no_letter_confirmed_anywhere_no_worked_example_exercises_it_not_exposed_by_engines_crisis_py",
       "emergency_fund_rate": 0.10,

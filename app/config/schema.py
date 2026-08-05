@@ -589,6 +589,10 @@ class SupplyShockConfig(_Frozen):
     choice_a_offset_status: str
     choice_b_offset: Decimal
     choice_c_offset: Decimal
+    # docs/14 §6: "Permanent Supplier Reliability gain: 79.8 -> 94.7 (+10, forever)" when Choice B
+    # is picked -- a flat addition on top of whatever this quarter's own Ops spend already
+    # produced (84.7), confirmed exactly by 84.7 + 10 = 94.7, carried forward permanently.
+    choice_b_permanent_reliability_gain: Decimal
     choice_unassigned_high_tier: Decimal
     choice_unassigned_high_tier_status: str
     emergency_fund_rate: Decimal
