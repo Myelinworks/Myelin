@@ -1,6 +1,7 @@
 """One POST route per department, each upserting that department's columns onto the quarter's
-single QuarterAllocation row. Six calls build up one row -- the 22-line spend model, not the
-legacy per-decision submission flow `routes/_factory.py` serves.
+single QuarterAllocation row. Six calls build up the 22-line spend model, plus a 7th for crisis
+response (Phase 10, only meaningful in the quarter a crisis fires) -- not the legacy per-decision
+submission flow `routes/_factory.py` serves.
 
 Allocations are pure inputs to `compute_quarter()`; nothing here computes or writes a `*State`
 row. Only `run_quarter()` does that, and only once the quarter is locked (see the design-rule
@@ -20,6 +21,7 @@ from app.models.quarter import Quarter
 from app.models.quarter_allocation import QuarterAllocation
 from app.routes.deps import get_open_quarter
 from app.schemas.allocation import (
+    CrisisAllocationSubmit,
     FinanceAdminAllocationSubmit,
     HrAllocationSubmit,
     MarketingAllocationSubmit,
@@ -69,3 +71,6 @@ _add_department_route("rnd", RndAllocationSubmit)
 _add_department_route("operations", OperationsAllocationSubmit)
 _add_department_route("hr", HrAllocationSubmit)
 _add_department_route("finance_admin", FinanceAdminAllocationSubmit)
+# Not one of the 6 CLAUDE.md departments -- crisis response (Phase 10) is its own category, only
+# meaningful in the quarter a crisis fires. Reuses the same upsert-onto-one-row factory unchanged.
+_add_department_route("crisis", CrisisAllocationSubmit)

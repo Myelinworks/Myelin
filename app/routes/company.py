@@ -29,9 +29,15 @@ from app.services.company_service import ScenarioAssignmentError, create_company
 
 router = APIRouter(tags=["company"])
 
-# Columns on QuarterAllocation that are not Rs-lakh spend lines: bookkeeping, plus the warranty
-# choice, which is surfaced as its own integer field rather than as a 23rd "spend line".
-_NON_ALLOCATION_COLUMNS = {"id", "company_id", "quarter_id", "created_at", "warranty_years"}
+# Columns on QuarterAllocation that are not Rs-lakh spend lines: bookkeeping, the warranty
+# choice (surfaced as its own integer field, not a 23rd "spend line"), and the Phase 10 crisis
+# response columns (surfaced as their own `crisis` field -- a different category, only meaningful
+# in the quarter a crisis actually fires, same reasoning as warranty).
+_CRISIS_COLUMNS = {
+    "crisis_choice", "price_match_fund", "comparison_ads", "retention_offers",
+    "emergency_supply_fund", "crisis_choice_d_spend",
+}
+_NON_ALLOCATION_COLUMNS = {"id", "company_id", "quarter_id", "created_at", "warranty_years", *_CRISIS_COLUMNS}
 
 
 async def _load_company(company_id: uuid.UUID, session: AsyncSession) -> Company:
@@ -138,4 +144,7 @@ async def _quarter_detail(quarter: Quarter, session: AsyncSession) -> QuarterDet
             if column.key not in _NON_ALLOCATION_COLUMNS
         },
         warranty_years=None if allocation is None else allocation.warranty_years,
+        crisis=None
+        if allocation is None
+        else {column: getattr(allocation, column) for column in _CRISIS_COLUMNS},
     )

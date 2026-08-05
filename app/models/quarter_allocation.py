@@ -1,7 +1,7 @@
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Integer, Numeric, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -62,3 +62,14 @@ class QuarterAllocation(UUIDPkMixin, TimestampMixin, Base):
     compliance_legal: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
     financial_planning: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
     audit_prep: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
+
+    # Crisis response (Phase 10, docs/11-crisis-system.md) -- only meaningful in the quarter a
+    # crisis fires; all-zero/null otherwise. crisis_choice_d_spend is generic on purpose (see
+    # app/engines/state.py's QuarterAllocations docstring): only one crisis fires per quarter, so
+    # one column always means "this quarter's active scenario's own Choice-D line".
+    crisis_choice: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    price_match_fund: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
+    comparison_ads: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
+    retention_offers: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
+    emergency_supply_fund: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)
+    crisis_choice_d_spend: Mapped[Decimal] = mapped_column(_LAKHS, nullable=False, default=0)

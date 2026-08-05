@@ -71,3 +71,7 @@ class QuarterDetailResponse(BaseModel):
     # count as a money string.
     allocations: dict[str, Decimal] | None
     warranty_years: int | None
+    # Crisis response (Phase 10) -- only meaningful in the quarter a crisis fires, kept out of
+    # `allocations` the same way warranty_years is: a different category, not a 23rd-28th spend
+    # line. `None` alongside `allocations` when no department has submitted yet.
+    crisis: dict[str, Decimal | str | None] | None

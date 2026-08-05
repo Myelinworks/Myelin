@@ -65,6 +65,12 @@ _ALLOCATION_FIELDS = (
     "financial_planning",
     "audit_prep",
     "warranty_years",
+    "crisis_choice",
+    "price_match_fund",
+    "comparison_ads",
+    "retention_offers",
+    "emergency_supply_fund",
+    "crisis_choice_d_spend",
 )
 
 

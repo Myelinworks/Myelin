@@ -220,10 +220,12 @@ def supply_shock_capacity_multiplier(
     `MIN(1.0, MAX(0.10, 0.50 + 0.005*(Reliability-50) + choice_offset + 0.10*fund^0.5))`.
 
     Choice offsets: A=0, B=+0.25, C=0 -- all three confirmed against worked arithmetic (see this
-    module's docstring on the Choice-A-offset finding). Choice D bypasses this formula entirely
-    (`supply_shock_contract_manufacturing` below), so it is not a valid input here.
+    module's docstring on the Choice-A-offset finding). `None` (no choice submitted -- a real,
+    legitimate way to reach the crisis quarter, not an error) defaults to the same 0 offset as A/C:
+    doing nothing is exactly what "Absorb the shock" already means. Choice D bypasses this formula
+    entirely (`supply_shock_contract_manufacturing` below), so it is not a valid input here.
     """
-    offsets = {"A": config.choice_a_offset, "B": config.choice_b_offset, "C": config.choice_c_offset}
+    offsets = {None: config.choice_a_offset, "A": config.choice_a_offset, "B": config.choice_b_offset, "C": config.choice_c_offset}
     if choice not in offsets:
         raise NotImplementedError(
             f"Supply Shock choice {choice!r} has no capacity-multiplier offset -- Choice D uses "

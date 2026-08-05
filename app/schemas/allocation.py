@@ -56,6 +56,21 @@ class FinanceAdminAllocationSubmit(BaseModel):
     audit_prep: Decimal = ZERO
 
 
+class CrisisAllocationSubmit(BaseModel):
+    """Crisis response (Phase 10, docs/11-crisis-system.md) -- only meaningful in the quarter a
+    crisis actually fires. `crisis_choice` is one of "A"/"B"/"C"/"D"; `crisis_choice_d_spend` is
+    generic on purpose (see `app.engines.state.QuarterAllocations`'s docstring): only one crisis
+    fires per quarter, so it always means whichever scenario's own Choice-D line is active.
+    """
+
+    crisis_choice: str | None = None
+    price_match_fund: Decimal = ZERO
+    comparison_ads: Decimal = ZERO
+    retention_offers: Decimal = ZERO
+    emergency_supply_fund: Decimal = ZERO
+    crisis_choice_d_spend: Decimal = ZERO
+
+
 class QuarterAllocationResponse(QuarterScopedBase):
     """The full current allocation row -- every department's submitted lines, not just the one
     just posted, so a caller can see the whole quarter's spend picture after each submission."""
@@ -83,3 +98,9 @@ class QuarterAllocationResponse(QuarterScopedBase):
     compliance_legal: Decimal
     financial_planning: Decimal
     audit_prep: Decimal
+    crisis_choice: str | None
+    price_match_fund: Decimal
+    comparison_ads: Decimal
+    retention_offers: Decimal
+    emergency_supply_fund: Decimal
+    crisis_choice_d_spend: Decimal
