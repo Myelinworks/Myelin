@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.engines.run_state import Move
 from app.models.quarter import Quarter
-from app.routes.deps import get_open_quarter, get_quarter
+from app.routes.deps import get_quarter, require_quarter_move
 from app.schemas.endgame import EndgameDecisionResponse, EndgameDecisionSubmit, EndgamePreviewResponse
 from app.services.endgame_service import (
     EndgameNotReadyError,
@@ -41,12 +42,19 @@ async def get_endgame(
 async def post_endgame(
     company_id: uuid.UUID,
     submission: EndgameDecisionSubmit,
-    quarter: Quarter = Depends(get_open_quarter),
+    quarter: Quarter = Depends(require_quarter_move(Move.SUBMIT_ENDGAME_DECISION)),
     session: AsyncSession = Depends(get_db),
 ) -> EndgameDecisionResponse:
     """Records this company's Q4 strategic decision -- one row per company, upserted until Q4
     locks. The outcome (covenant hit/missed, correct/incorrect acceptance) is scored later, at Q4's
-    own lock, not here; `get_open_quarter` 409s once that lock has happened.
+    own lock, not here.
+
+    Phase 12: the single gatekeeper (`engines/run_state.py`) now guards this route instead of the
+    bare `get_open_quarter` lock check -- it 409s once Q4 has locked (same as before), and closes
+    a real gap `get_open_quarter` alone never covered: nothing previously stopped this route from
+    accepting a decision at any other open quarter (e.g. Q2). `GET .../endgame` above keeps its
+    own pre-existing Q4-only check (`NotEndgameQuarterError` -> 404) unchanged, since it predates
+    this gatekeeper and already enforced the same rule correctly for reads.
     """
     decision = await submit_endgame_decision(
         session, quarter, submission.path, submission.term_sheet_name, submission.reasoning
