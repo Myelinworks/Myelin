@@ -6,12 +6,22 @@ place a collection is summed iterates it in sorted key order.
 The order below is load-bearing. Each department produces a number that feeds another
 department's formula, and calculating them out of order is exactly how the two audit errors in
 `docs/12-quarter-1-reference.md` §9 happened.
+
+**Phase 10 crisis application** (`docs/11-crisis-system.md`) is threaded into this same order
+rather than bolted on at the end -- `app/engines/crisis.py` holds the pure per-effect formulas;
+this function calls them at the four specific points the spec names: demand dampening before the
+Brand/HR multipliers, the conversion penalty at the ceiling step, the ceiling penalty before
+warranty, and the Capacity Multiplier feeding the supply gate. See `crisis.py`'s module docstring
+for the two flagged formula gaps (Marketing Blitz's "Choice B Qualification", Feature Leapfrog's
+unstated Choice-A price) and the Scenario D Choice-A-offset finding that overrides
+`docs/17-designer-resolutions.md`.
 """
 
 from dataclasses import dataclass
 from decimal import Decimal
 
 from app.config.schema import CompanySeed, SimulationProfile
+from app.engines import crisis
 from app.engines.lines import finance_admin, hr, marketing, operations, rnd, sales
 from app.engines.lines._shared import require
 from app.engines.state import ZERO, CompanyState, CrisisEvent, QuarterAllocations
@@ -102,6 +112,16 @@ class QuarterResult:
     # it was not *over*-funded; hitting the cap exactly needs the cap itself.
     referral_lead_cap: Decimal
 
+    # Crisis (Phase 10) -- `None`/`False`/`0` in every non-crisis quarter. Plain facts, computed
+    # once here (where the scenario-specific context already lives) so `engines/scoring.py`'s
+    # crisis modifiers stay simple field reads, exactly like every existing modifier.
+    crisis_scenario: str | None
+    crisis_choice: str | None
+    crisis_fully_neutralized: bool
+    crisis_proofed_by_prior_investment: bool
+    crisis_structural_improvement: bool
+    crisis_response_spend_inr: Decimal
+
     valuation: Valuation
     closing_state: CompanyState
 
@@ -116,14 +136,27 @@ def compute_quarter(
     """Run one quarter end to end.
 
     `seed` carries the company constants the lines need (selling price, cost floor, warranty claim
-    cost, referral cap). `crisis_event` exists so the signature is stable for Phase 10; passing a
-    non-`None` value raises rather than silently returning a quarter with the crisis ignored.
+    cost, referral cap). `crisis_event` fires the corresponding scenario's effects from
+    `app/engines/crisis.py` at the points `docs/11-crisis-system.md` specifies.
     """
-    if crisis_event is not None:
+    scenario = crisis_event.scenario if crisis_event is not None else None
+    if scenario is not None and scenario not in ("A", "B", "C", "D"):
+        raise NotImplementedError(f"crisis scenario {scenario!r} is not one of A/B/C/D")
+    if scenario == "C" and allocations.crisis_choice == "A":
         raise NotImplementedError(
-            f"crisis scenario '{crisis_event.scenario}' is not implemented until Phase 10; "
-            f"running the quarter would silently ignore it"
+            "Scenario C (Feature Leapfrog) + Choice A (Cut Price) has no stated selling price "
+            "anywhere in docs/ -- not in docs/11 (only Scenario A's Rs 7,999 is given there) and "
+            "not reliably back-solvable from docs/15's worked NCF (~Rs 1,300 of rounding drift "
+            "already present in the source arithmetic). Refusing rather than inventing a price."
         )
+
+    # ---- Crisis: customer churn (A/B), applied before Referral reads the customer base ------
+    # docs/11 §3/§4: Retention Offers claws back churn -- independent of which Choice was picked.
+    effective_customers = opening_state.customers
+    if scenario in ("A", "B"):
+        response = profile.crisis.response_lines
+        churn_pct = crisis.customer_churn_pct(allocations.retention_offers, response)
+        effective_customers = opening_state.customers * (1 - churn_pct / 100)
 
     # ---- Marketing: raw leads from all 8 channels -----------------------------------------
     meta = marketing.meta_ads(allocations.meta_ads, profile)
@@ -131,7 +164,7 @@ def compute_quarter(
     seo = marketing.content_seo(allocations.content_seo, profile)
     events = marketing.events_pr(allocations.events_pr, profile)
     email = marketing.email_marketing(allocations.email_marketing, profile)
-    referral = marketing.referral(allocations.referral, opening_state.customers, seed)
+    referral = marketing.referral(allocations.referral, effective_customers, seed)
     buzz = marketing.prelaunch_buzz(allocations.prelaunch_buzz, profile)
 
     channel_leads = {
@@ -144,7 +177,27 @@ def compute_quarter(
         "referral": referral.leads,
         "prelaunch_buzz": buzz.leads,
     }
-    raw_leads = sum((channel_leads[key] for key in sorted(channel_leads)), start=ZERO)
+    raw_leads_before_crisis = sum((channel_leads[key] for key in sorted(channel_leads)), start=ZERO)
+
+    # ---- Crisis: Demand Dampening (A/B/C), before SEO/Buzz free leads and the Brand/HR --------
+    # multipliers -- docs/11 is explicit that dampening applies before them, not after.
+    crisis_dampening = None
+    raw_leads = raw_leads_before_crisis
+    if scenario == "A":
+        crisis_dampening = crisis.price_warrior_dampening(
+            raw_leads_before_crisis, allocations.crisis_choice, allocations.price_match_fund,
+            allocations.crisis_choice_d_spend, profile.crisis.price_warrior, profile.crisis.response_lines,
+        )
+        raw_leads = crisis_dampening.dampened_raw_leads
+    elif scenario == "B":
+        crisis_dampening = crisis.marketing_blitz_dampening(
+            raw_leads_before_crisis, allocations.crisis_choice, allocations.price_match_fund,
+            allocations.crisis_choice_d_spend, profile.crisis.marketing_blitz, profile.crisis.response_lines,
+        )
+        raw_leads = crisis_dampening.dampened_raw_leads
+    elif scenario == "C":
+        crisis_dampening = crisis.feature_leapfrog_dampening(raw_leads_before_crisis, profile.crisis.feature_leapfrog)
+        raw_leads = crisis_dampening.dampened_raw_leads
 
     # ---- Deferred payouts: read prior-quarter state, never recomputed from spend -----------
     seo_payout_leads = marketing.seo_asset_payout(opening_state.seo_asset, profile)
@@ -193,12 +246,47 @@ def compute_quarter(
         + cx.repeat_rate_pts
         + buzz_payout.conversion_bonus_pts
     )
-    ceiling_pct = rnd.conversion_ceiling(quality.quality_score, innovation.innovation_score, profile)
+
+    # ---- Crisis: Feature Leapfrog (C) -- Innovation Score after this quarter's regular R&D AND
+    # any Choice D Contract R&D Sprint boost decides both the conversion and ceiling penalties.
+    crisis_feature_leapfrog = None
+    innovation_score_for_ceiling = innovation.innovation_score
+    crisis_conversion_penalty_pts = ZERO
+    crisis_ceiling_penalty_pts = ZERO
+    if scenario == "C":
+        crisis_feature_leapfrog = crisis.feature_leapfrog_penalties(
+            allocations.crisis_choice, innovation.innovation_score, allocations.crisis_choice_d_spend,
+            profile.crisis.feature_leapfrog,
+        )
+        innovation_score_for_ceiling = crisis_feature_leapfrog.innovation_score_after_crisis
+        crisis_conversion_penalty_pts = crisis_feature_leapfrog.conversion_penalty_pts
+        crisis_ceiling_penalty_pts = crisis_feature_leapfrog.ceiling_penalty_pts
+
+    ceiling_pct = (
+        rnd.conversion_ceiling(quality.quality_score, innovation_score_for_ceiling, profile)
+        - crisis_ceiling_penalty_pts
+    )
     warranty_bonus = rnd.warranty_conversion_bonus(allocations.warranty_years, profile)
 
+    # ---- Crisis: conversion penalty (A/B), at the ceiling step, same point warranty applies ---
+    crisis_conversion_outcome = None
+    if scenario == "A":
+        crisis_conversion_outcome = crisis.price_warrior_conversion_penalty(
+            allocations.crisis_choice, allocations.comparison_ads, profile.crisis.price_warrior,
+            profile.crisis.response_lines,
+        )
+        crisis_conversion_penalty_pts = crisis_conversion_outcome.net_penalty_pts
+    elif scenario == "B":
+        crisis_conversion_outcome = crisis.marketing_blitz_conversion_penalty(
+            allocations.crisis_choice, allocations.comparison_ads, quality.quality_score,
+            profile.crisis.marketing_blitz, profile.crisis.response_lines,
+        )
+        crisis_conversion_penalty_pts = crisis_conversion_outcome.net_penalty_pts
+
     # Warranty is additive AFTER the ceiling, never bounded by it: the ceiling is a build-quality
-    # limit, warranty is a trust signal layering on top.
-    conversion_rate_pct = min(raw_conversion_pct, ceiling_pct) + warranty_bonus
+    # limit, warranty is a trust signal layering on top. The crisis penalty is subtracted at this
+    # same step, never past zero (`crisis.py`'s conversion-penalty functions already floor it).
+    conversion_rate_pct = min(raw_conversion_pct, ceiling_pct) - crisis_conversion_penalty_pts + warranty_bonus
 
     # ---- GATE 3: supply --------------------------------------------------------------------
     units_from_funnel = leads_used * conversion_rate_pct / 100
@@ -209,8 +297,38 @@ def compute_quarter(
     supplier_reliability = operations.supplier_qc(
         allocations.supplier_qc, opening_state.supplier_reliability, profile
     )
+
+    # ---- Crisis: Supply Shock (D) -- Capacity Multiplier feeds Available to Sell; Choice D
+    # (Contract Manufacturing) bypasses the multiplier for its own separate capacity source.
+    crisis_capacity = None
+    crisis_contract = None
+    production_capacity = manufacturing.production_capacity
+    unit_cost_inr = manufacturing.unit_cost_inr
+    supplier_reliability_for_carry_forward = supplier_reliability
+    if scenario == "D":
+        if allocations.crisis_choice == "D":
+            crisis_contract = crisis.supply_shock_contract_manufacturing(
+                allocations.crisis_choice_d_spend, production_capacity, profile.crisis.supply_shock
+            )
+            production_capacity = production_capacity + crisis_contract.extra_capacity
+            unit_cost_inr = unit_cost_inr + crisis_contract.blended_cost_premium_inr
+        else:
+            crisis_capacity = crisis.supply_shock_capacity_multiplier(
+                allocations.crisis_choice, supplier_reliability, allocations.emergency_supply_fund,
+                profile.crisis.supply_shock,
+            )
+            production_capacity = production_capacity * crisis_capacity.multiplier
+        # docs/14 §6: the event unconditionally raises Manufacturing Cost/Unit by Rs 500,
+        # confirmed identical (Rs 2,938 -> Rs 3,438) in both the expert and novice worked cases.
+        unit_cost_inr = unit_cost_inr + profile.crisis.supply_shock.manufacturing_cost_surcharge_inr
+        if allocations.crisis_choice == "B":
+            # docs/14 §6: "Permanent Supplier Reliability gain: 79.8 -> 94.7 (+10, forever)".
+            supplier_reliability_for_carry_forward = (
+                supplier_reliability + profile.crisis.supply_shock.choice_b_permanent_reliability_gain
+            )
+
     available_to_sell = operations.available_to_sell(
-        manufacturing.production_capacity,
+        production_capacity,
         supplier_reliability,
         opening_state.inventory_units,
         opening_state.attrition_rate_pct,
@@ -220,7 +338,7 @@ def compute_quarter(
 
     # ---- P&L --------------------------------------------------------------------------------
     revenue = units_sold * seed.selling_price_inr
-    cogs = units_sold * manufacturing.unit_cost_inr
+    cogs = units_sold * unit_cost_inr
     gross_profit = revenue - cogs
 
     warranty_cost = rnd.warranty_cost(
@@ -270,18 +388,26 @@ def compute_quarter(
         else None
     )
 
-    closing_customers = opening_state.customers + units_sold
+    # ---- Crisis: Brand Erosion (A/B) -- a one-time cut to this quarter's total built Brand
+    # Score, only if nothing was spent on this scenario's response lines.
+    total_brand_score = opening_state.brand_score + meta.brand_score + social.brand_score + events.brand_score
+    if scenario in ("A", "B"):
+        crisis_cfg = profile.crisis.price_warrior if scenario == "A" else profile.crisis.marketing_blitz
+        response_spend = crisis.response_spend_total(scenario, allocations)
+        total_brand_score -= crisis.brand_erosion_pts(response_spend, crisis_cfg.brand_erosion_pts)
+
+    closing_customers = effective_customers + units_sold
     valuation = _value_company(
         revenue,
         opening_state,
-        brand_score=opening_state.brand_score + meta.brand_score + social.brand_score + events.brand_score,
+        brand_score=total_brand_score,
         innovation_score=innovation.innovation_score,
         quality_score=quality.quality_score,
         customers=closing_customers,
         profile=profile,
         closing_cash_inr=closing_cash,
         carried_inventory_units=available_to_sell - units_sold,
-        unit_cost_inr=manufacturing.unit_cost_inr,
+        unit_cost_inr=unit_cost_inr,
     )
 
     closing_state = opening_state.advance(
@@ -290,21 +416,18 @@ def compute_quarter(
         inventory_units=available_to_sell - units_sold,
         customers=closing_customers,
         prior_units_sold=units_sold,
-        supplier_reliability=supplier_reliability,
+        supplier_reliability=supplier_reliability_for_carry_forward,
         logistics_efficiency=logistics.logistics_efficiency,
         employee_satisfaction=culture.employee_satisfaction,
         employee_engagement=training.employee_engagement,
         compliance_score=compliance,
         forecast_accuracy=planning.forecast_accuracy,
         audit_readiness=audit,
-        brand_score=opening_state.brand_score
-        + meta.brand_score
-        + social.brand_score
-        + events.brand_score,
+        brand_score=total_brand_score,
         seo_asset=seo.seo_asset,
         buzz_score=buzz.buzz_score if allocations.prelaunch_buzz > 0 else opening_state.buzz_score,
         quality_score=quality.quality_score,
-        innovation_score=innovation.innovation_score,
+        innovation_score=innovation_score_for_ceiling,
         feature_completeness=innovation.feature_completeness,
         repeat_purchase_rate_pct=opening_state.repeat_purchase_rate_pct
         + email.repeat_rate_pts
@@ -317,6 +440,18 @@ def compute_quarter(
         accounts_receivable_inr=opening_state.accounts_receivable_inr,
         liabilities_inr=opening_state.liabilities_inr,
     )
+
+    # ---- Crisis: reduce the per-effect outcomes to the plain facts scoring reads -------------
+    crisis_response_spend_lakhs = crisis.response_spend_total(scenario, allocations)
+    crisis_fully_neutralized = crisis.is_fully_neutralized(
+        scenario, conversion=crisis_conversion_outcome, dampening=crisis_dampening,
+        feature_leapfrog=crisis_feature_leapfrog, capacity=crisis_capacity,
+    )
+    crisis_proofed_by_prior_investment = crisis.is_proofed_by_prior_investment(
+        scenario, feature_leapfrog=crisis_feature_leapfrog, capacity=crisis_capacity,
+        choice_d_spend=allocations.crisis_choice_d_spend,
+    )
+    crisis_structural_improvement = crisis.is_structural_improvement(scenario, allocations.crisis_choice)
 
     return QuarterResult(
         channel_leads=channel_leads,
@@ -368,6 +503,12 @@ def compute_quarter(
         ),
         referral_wasted_spend_inr=referral.wasted_spend_inr,
         referral_lead_cap=referral.lead_cap,
+        crisis_scenario=scenario,
+        crisis_choice=allocations.crisis_choice if scenario is not None else None,
+        crisis_fully_neutralized=crisis_fully_neutralized,
+        crisis_proofed_by_prior_investment=crisis_proofed_by_prior_investment,
+        crisis_structural_improvement=crisis_structural_improvement,
+        crisis_response_spend_inr=crisis_response_spend_lakhs * RUPEES_PER_LAKH,
         valuation=valuation,
         closing_state=closing_state,
     )

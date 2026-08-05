@@ -299,10 +299,25 @@ class TestDeterminism:
         )
 
 
-class TestCrisisIsDeferredNotIgnored:
-    def test_a_crisis_event_refuses_rather_than_running_without_it(self, nadi_wear, profile):
-        """Silently running a crisis quarter with the crisis dropped would be a wrong number."""
+class TestCrisisAppliesForReal:
+    """Phase 10 replaced the "always refuses" stub with real application -- see
+    tests/engines/test_crisis.py and test_quarter_q3.py for the full scenario suite. These two
+    checks stay here because they're specifically about `compute_quarter`'s own guard behaviour,
+    proven against the same Q1 fixture the rest of this file already validates.
+    """
+
+    def test_crisis_free_is_unaffected_by_the_crisis_being_implemented(self, nadi_wear, profile, q1):
+        """The load-bearing non-regression: crisis_event=None must still be a complete no-op --
+        Q1 stays 562 units regardless of how much crisis machinery now exists in the chain."""
+        opening = CompanyState.opening(nadi_wear)
+        rerun = compute_quarter(opening, Q1_ALLOCATIONS, profile, nadi_wear, crisis_event=None)
+        assert rerun == q1
+        assert close(rerun.units_sold, "562")
+
+    def test_an_unknown_scenario_letter_still_refuses(self, nadi_wear, profile):
+        """Only A/B/C/D are implemented; anything else is a wrong number waiting to happen, not a
+        silently-ignored crisis."""
         opening = CompanyState.opening(nadi_wear)
 
-        with pytest.raises(NotImplementedError, match="Phase 10"):
-            compute_quarter(opening, Q1_ALLOCATIONS, profile, nadi_wear, CrisisEvent(scenario="A"))
+        with pytest.raises(NotImplementedError, match="A/B/C/D"):
+            compute_quarter(opening, Q1_ALLOCATIONS, profile, nadi_wear, CrisisEvent(scenario="E"))
