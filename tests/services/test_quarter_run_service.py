@@ -16,6 +16,7 @@ from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
 from app.engines.survival import RunStatus
+from app.services.company_service import assign_crisis_scenario
 from app.services.quarter_run_service import _result_hash, run_quarter
 
 # docs/12-quarter-1-reference.md §12: Rs 45,00,000 across six departments.
@@ -442,3 +443,101 @@ class TestEvidencePersistence:
         ).scalar_one()
         assert new_pipeline_rows == 22
         assert legacy_rows == 1
+
+
+class TestCrisisPersistence:
+    """Phase 10: crisis application persists through the DB round trip, inside the same lock
+    transaction and result_hash as everything else."""
+
+    @pytest.fixture
+    async def q3_locked(self, db_session, nadi_wear_company):
+        """Plays Q1 -> Q2 -> Q3 for a fresh company through run_quarter(), submitting a
+        universally-valid crisis choice ("C", never the blocked Choice-A/Feature-Leapfrog
+        combination) on whichever scenario this company's id deterministically assigns."""
+        for number in (1, 2):
+            quarter = Quarter(
+                company_id=nadi_wear_company.id, number=number, status=QuarterStatus.IN_PROGRESS,
+                cash_balance=0, revenue=0,
+            )
+            db_session.add(quarter)
+            await db_session.flush()
+            db_session.add(
+                QuarterAllocation(company_id=nadi_wear_company.id, quarter_id=quarter.id, **Q1_ALLOCATION_FIELDS)
+            )
+            await db_session.flush()
+            await run_quarter(db_session, quarter.id)
+
+        q3 = Quarter(
+            company_id=nadi_wear_company.id, number=3, status=QuarterStatus.IN_PROGRESS, cash_balance=0, revenue=0,
+        )
+        db_session.add(q3)
+        await db_session.flush()
+        db_session.add(
+            QuarterAllocation(
+                company_id=nadi_wear_company.id, quarter_id=q3.id,
+                crisis_choice="C", comparison_ads=Decimal("5.0"), emergency_supply_fund=Decimal("1.0"),
+                **Q1_ALLOCATION_FIELDS,
+            )
+        )
+        await db_session.flush()
+        await run_quarter(db_session, q3.id)
+        return q3
+
+    async def test_crisis_scenario_and_choice_persist_in_engine_result(
+        self, db_session, nadi_wear_company, q3_locked
+    ):
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q3_locked.id))
+        ).scalar_one()
+        expected_scenario = assign_crisis_scenario(nadi_wear_company.id)
+
+        assert performance.engine_result["crisis_scenario"] == expected_scenario
+        assert performance.engine_result["crisis_choice"] == "C"
+
+    async def test_crisis_modifiers_are_persisted(self, db_session, q3_locked):
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q3_locked.id))
+        ).scalar_one()
+        modifier_ids = {m["id"] for m in performance.modifiers_applied}
+
+        assert {
+            "crisis_fully_neutralized", "crisis_proofed_by_prior_investment",
+            "structural_improvement_made", "crisis_ignored",
+        }.issubset(modifier_ids)
+
+    async def test_result_hash_covers_the_crisis_outcome(self, db_session, nadi_wear_company, q3_locked):
+        performance = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q3_locked.id))
+        ).scalar_one()
+        await db_session.refresh(nadi_wear_company)
+        score_hash_input = {"trait_points": performance.trait_points, "modifiers_applied": performance.modifiers_applied}
+
+        assert performance.result_hash == _result_hash(
+            performance.engine_result, nadi_wear_company.run_status, score_hash_input
+        )
+        # Tampering with the crisis outcome must move the hash -- proves it's actually inside the
+        # hashed surface, not just persisted alongside it.
+        tampered = dict(performance.engine_result)
+        tampered["crisis_fully_neutralized"] = not tampered["crisis_fully_neutralized"]
+        assert _result_hash(tampered, nadi_wear_company.run_status, score_hash_input) != performance.result_hash
+
+    async def test_relocking_the_crisis_quarter_is_idempotent(self, db_session, q3_locked):
+        first = (
+            await db_session.execute(select(QuarterPerformance).where(QuarterPerformance.quarter_id == q3_locked.id))
+        ).scalar_one()
+        first_hash, first_result = first.result_hash, first.engine_result
+
+        await run_quarter(db_session, q3_locked.id)
+        await db_session.refresh(first)
+
+        assert first.result_hash == first_hash
+        assert first.engine_result == first_result
+
+    async def test_crisis_allocation_fields_round_trip(self, db_session, q3_locked):
+        row = (
+            await db_session.execute(select(QuarterAllocation).where(QuarterAllocation.quarter_id == q3_locked.id))
+        ).scalar_one()
+
+        assert row.crisis_choice == "C"
+        assert row.comparison_ads == Decimal("5.0000")
+        assert row.emergency_supply_fund == Decimal("1.0000")
