@@ -1,9 +1,10 @@
 """`engines/scoring.py` against `docs/10-scoring-methodology.md` and the Phase 7 acceptance list.
 
-Crisis (docs/11) and Q4 (docs/16/17) modifier sets aren't implemented yet, so only the mechanical
-half -- the 8 standard modifiers and the 6 MECHANICAL sub-criteria -- is asserted here. The
-JUDGMENT sub-criteria (Leadership entirely, plus most of Strategic/Adaptability/Risk/Capital/
-Long-Term) come back UNSCORED by design; no test here should ever assert a numeric score for one.
+Q4 (docs/16/17) modifier set isn't implemented yet, so the mechanical half -- the 8 standard
+modifiers, the 4 crisis modifiers (Phase 10), and the 6 MECHANICAL sub-criteria -- is what's
+asserted here. The JUDGMENT sub-criteria (Leadership entirely, plus most of Strategic/
+Adaptability/Risk/Capital/Long-Term) come back UNSCORED by design; no test here should ever
+assert a numeric score for one.
 """
 
 from dataclasses import replace
@@ -20,8 +21,13 @@ from app.engines.scoring import (
     _band,
     score_quarter,
 )
-from app.engines.state import CompanyState
+from app.engines.state import CompanyState, CrisisEvent
 from tests.engines.test_quarter_q1 import Q1_ALLOCATIONS
+from tests.engines.test_quarter_q3 import (  # noqa: F401 -- q2_growth/q3_opening are fixture imports
+    Q3_BASELINE,
+    q2_growth,
+    q3_opening,
+)
 
 
 @pytest.fixture(scope="module")
@@ -299,3 +305,111 @@ class TestPureAndDeterministic:
         second = score_quarter(q1, None, Q1_ALLOCATIONS, rubric)
 
         assert first == second
+
+
+@pytest.fixture(scope="module")
+def crisis_result_a(q3_opening, profile, nadi_wear):
+    allocations = replace(Q3_BASELINE, crisis_choice="C", comparison_ads=Decimal("10.0"))
+    return compute_quarter(q3_opening, allocations, profile, nadi_wear, CrisisEvent(scenario="A"))
+
+
+@pytest.fixture(scope="module")
+def crisis_result_b(q3_opening, profile, nadi_wear):
+    allocations = replace(
+        Q3_BASELINE, crisis_choice="B",
+        price_match_fund=Decimal("1.0"), comparison_ads=Decimal("4.0"), retention_offers=Decimal("1.0"),
+    )
+    return compute_quarter(q3_opening, allocations, profile, nadi_wear, CrisisEvent(scenario="B"))
+
+
+@pytest.fixture(scope="module")
+def crisis_result_c(q3_opening, profile, nadi_wear):
+    allocations = replace(Q3_BASELINE, crisis_choice="C")
+    return compute_quarter(q3_opening, allocations, profile, nadi_wear, CrisisEvent(scenario="C"))
+
+
+@pytest.fixture(scope="module")
+def crisis_result_d(q3_opening, profile, nadi_wear):
+    allocations = replace(Q3_BASELINE, crisis_choice="B", emergency_supply_fund=Decimal("2.0"))
+    return compute_quarter(q3_opening, allocations, profile, nadi_wear, CrisisEvent(scenario="D"))
+
+
+class TestCrisisModifiers:
+    """docs/14 §7's modifier table, scenario by scenario -- registering `modifier_sets.crisis`
+    (Phase 10) needed no change to `score_quarter` itself, exactly per Phase 7's own design."""
+
+    @staticmethod
+    def _modifiers(result, rubric, allocations):
+        score = score_quarter(
+            result, None, allocations, rubric, modifier_sets=("standard", "crisis")
+        )
+        return {m.id: m for m in score.modifiers}
+
+    def test_scenario_a_no_crisis_modifier_fires_net_zero(self, crisis_result_a, rubric):
+        mods = self._modifiers(
+            crisis_result_a, rubric, replace(Q3_BASELINE, crisis_choice="C", comparison_ads=Decimal("10.0"))
+        )
+        assert mods["crisis_fully_neutralized"].fired is False
+        assert mods["crisis_proofed_by_prior_investment"].fired is False
+        assert mods["structural_improvement_made"].fired is False
+        assert mods["crisis_ignored"].fired is False
+        net = sum((m.applied_points for k, m in mods.items() if k.startswith("crisis") or k == "structural_improvement_made"), Decimal(0))
+        assert net == 0  # docs/14 §7: Net Modifier = 0
+
+    def test_scenario_b_is_the_documented_binary_residual(self, crisis_result_b, rubric):
+        """docs/14 gives B a 'Partial (+1)' -- docs/11 states no such tier, so
+        crisis_fully_neutralized is strictly binary here and does not fire (see
+        default.json's status: binary_only note). Net modifier is 0, not the doc's +1."""
+        mods = self._modifiers(
+            crisis_result_b, rubric,
+            replace(
+                Q3_BASELINE, crisis_choice="B",
+                price_match_fund=Decimal("1.0"), comparison_ads=Decimal("4.0"), retention_offers=Decimal("1.0"),
+            ),
+        )
+        assert mods["crisis_fully_neutralized"].fired is False
+        assert mods["crisis_proofed_by_prior_investment"].fired is False
+        assert mods["structural_improvement_made"].fired is False
+        assert mods["crisis_ignored"].fired is False
+
+    def test_scenario_c_neutralized_and_proofed_net_plus_six(self, crisis_result_c, rubric):
+        mods = self._modifiers(crisis_result_c, rubric, replace(Q3_BASELINE, crisis_choice="C"))
+        assert mods["crisis_fully_neutralized"].fired is True
+        assert mods["crisis_proofed_by_prior_investment"].fired is True
+        assert mods["structural_improvement_made"].fired is False
+        assert mods["crisis_ignored"].fired is False
+        net = mods["crisis_fully_neutralized"].applied_points + mods["crisis_proofed_by_prior_investment"].applied_points
+        assert net == 6  # docs/14 §7: Net Modifier = +6
+
+    def test_scenario_d_all_three_positive_modifiers_net_plus_eight(self, crisis_result_d, rubric):
+        mods = self._modifiers(
+            crisis_result_d, rubric, replace(Q3_BASELINE, crisis_choice="B", emergency_supply_fund=Decimal("2.0"))
+        )
+        assert mods["crisis_fully_neutralized"].fired is True
+        assert mods["crisis_proofed_by_prior_investment"].fired is True
+        assert mods["structural_improvement_made"].fired is True
+        assert mods["crisis_ignored"].fired is False
+        net = (
+            mods["crisis_fully_neutralized"].applied_points
+            + mods["crisis_proofed_by_prior_investment"].applied_points
+            + mods["structural_improvement_made"].applied_points
+        )
+        assert net == 8  # docs/14 §7: Net Modifier = +8
+
+    def test_crisis_ignored_fires_when_nothing_is_spent_and_nothing_is_proofed(self, q3_opening, profile, nadi_wear, rubric):
+        # Choice C ("Hold Price") does nothing automatically for Scenario A (unlike Choice A,
+        # which removes the conversion penalty by itself) -- zero response spend on top leaves
+        # the crisis genuinely unaddressed, the case crisis_ignored exists to catch.
+        allocations = replace(Q3_BASELINE, crisis_choice="C")
+        result = compute_quarter(q3_opening, allocations, profile, nadi_wear, CrisisEvent(scenario="A"))
+        mods = self._modifiers(result, rubric, allocations)
+        assert mods["crisis_ignored"].fired is True
+        assert mods["crisis_ignored"].applied_points == -4
+
+    def test_crisis_modifiers_are_inert_off_the_crisis_quarter(self, q1, rubric):
+        """None of the four crisis modifiers should ever fire for a crisis-free QuarterResult."""
+        mods = self._modifiers(q1, rubric, Q1_ALLOCATIONS)
+        assert all(
+            mods[k].fired is False
+            for k in ("crisis_fully_neutralized", "crisis_proofed_by_prior_investment", "structural_improvement_made", "crisis_ignored")
+        )
