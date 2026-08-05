@@ -32,6 +32,7 @@ from typing import Callable
 
 from app.config.schema import ScoringConfig, ScoringCriterion, ScoringModifier
 from app.engines import crisis
+from app.engines.endgame import EndgameFacts, Tier
 from app.engines.quarter import QuarterResult
 from app.engines.state import QuarterAllocations
 
@@ -244,13 +245,23 @@ _CRITERION_PREDICATES: dict[
 
 
 def _profitability_achieved(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     return result.net_cash_flow_inr > 0, f"net_cash_flow_inr = Rs {result.net_cash_flow_inr:,.2f}"
 
 
 def _perfect_channel_match(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     referral_leads = result.channel_leads.get("referral", ZERO)
     hit_cap = referral_leads == result.referral_lead_cap
@@ -263,7 +274,12 @@ def _perfect_channel_match(
 
 
 def _zero_capacity_waste(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     gap = abs(result.effective_leads - result.leads_used)
     detail = f"effective_leads={result.effective_leads}, leads_used={result.leads_used}, gap={gap}"
@@ -271,7 +287,12 @@ def _zero_capacity_waste(
 
 
 def _zero_supply_waste(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     gap = result.available_to_sell - result.units_sold
     detail = f"available_to_sell - units_sold = {gap} (threshold {rubric.thresholds.supply_waste_units})"
@@ -293,6 +314,7 @@ def _compounding_asset_cut(
     allocations: QuarterAllocations,
     prior_allocations: QuarterAllocations | None,
     rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     if prior_allocations is None:
         return False, "no prior_allocations available -- nothing to compare against (e.g. Q1)"
@@ -314,7 +336,12 @@ def _compounding_asset_cut(
 
 
 def _ceiling_undershot(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     gap = result.raw_conversion_pct - result.conversion_ceiling_pct
     detail = f"raw_conversion_pct - conversion_ceiling_pct = {gap} pts (threshold {rubric.thresholds.ceiling_undershoot_points})"
@@ -322,13 +349,23 @@ def _ceiling_undershot(
 
 
 def _cash_buffer_breached(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     return result.spent_into_buffer, f"buffer_overspend_inr = Rs {result.buffer_overspend_inr:,.2f}"
 
 
 def _debt_without_justification(
-    _result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     return False, "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today"
 
@@ -341,14 +378,24 @@ def _debt_without_justification(
 
 
 def _crisis_fully_neutralized(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     detail = f"crisis_scenario={result.crisis_scenario}, crisis_fully_neutralized={result.crisis_fully_neutralized}"
     return result.crisis_fully_neutralized, detail
 
 
 def _crisis_proofed_by_prior_investment(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     detail = (
         f"crisis_scenario={result.crisis_scenario}, "
@@ -358,7 +405,12 @@ def _crisis_proofed_by_prior_investment(
 
 
 def _structural_improvement_made(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     detail = (
         f"crisis_scenario={result.crisis_scenario}, crisis_choice={result.crisis_choice}, "
@@ -368,7 +420,12 @@ def _structural_improvement_made(
 
 
 def _crisis_ignored(
-    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+    result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
 ) -> tuple[bool, str]:
     if result.crisis_scenario is None:
         return False, "no crisis this quarter"
@@ -384,10 +441,120 @@ def _crisis_ignored(
     return ignored, detail
 
 
+# ---- Q4 endgame modifiers (Phase 11, docs/16-quarter-4-endgame.md §5) -----------------------
+# Only Path A's two modifiers are unconditionally mechanical: covenant_units/units_sold are both
+# plain numbers once an EndgameFacts is built. The other four all name a condition this project's
+# inputs cannot check today -- either "correct/explicit reasoning" (no reasoning-quality signal
+# exists anywhere in this engine) or an offer amount that is only ever known for the Thriving
+# tier's "Acquisition Trap" term sheet (engines/endgame.py's acquisition_offer_inr), which can
+# never co-occur with the weak/flat-momentum tier correct_acceptance requires. These four are
+# registered with a `status` flag and a predicate that always returns "did not fire", exactly like
+# `debt_without_justification` above -- a configured, visible gap rather than an invented proxy.
+
+
+def _covenant_hit(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    if endgame is None or endgame.path != "A":
+        return False, "Path A was not chosen this run"
+    return bool(endgame.covenant_hit), f"covenant_hit={endgame.covenant_hit}"
+
+
+def _covenant_missed(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    if endgame is None or endgame.path != "A":
+        return False, "Path A was not chosen this run"
+    return endgame.covenant_hit is False, f"covenant_hit={endgame.covenant_hit}"
+
+
+def _correct_rejection(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    return (
+        False,
+        "'correct reasoning' cannot be verified mechanically -- no reasoning-quality signal exists "
+        "in this engine's inputs; this modifier can never fire today",
+    )
+
+
+def _correct_acceptance(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    return (
+        False,
+        "requires a known offer for a weak/flat-momentum (Stable/Distressed) company, but an offer "
+        "amount is only ever known for the Thriving tier's Acquisition Trap term sheet -- the two "
+        "conditions can never co-occur with today's data; this modifier can never fire today",
+    )
+
+
+def _value_left_on_table(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    if endgame is None or endgame.path != "B" or not endgame.path_b_accepted:
+        return False, "Path B was not accepted this run"
+    if not endgame.offer_known:
+        return False, "offer amount unknown for this tier's term sheet -- cannot compare against true continuation value"
+    fired = endgame.tier == Tier.THRIVING and bool(endgame.true_continuation_value_exceeds_offer)
+    detail = (
+        f"tier={endgame.tier}, "
+        f"true_continuation_value_exceeds_offer={endgame.true_continuation_value_exceeds_offer}"
+    )
+    return fired, detail
+
+
+def _deliberate_independence(
+    _result: QuarterResult,
+    _prior: QuarterResult | None,
+    _alloc,
+    _prior_alloc,
+    _rubric: ScoringConfig,
+    _endgame: EndgameFacts | None,
+) -> tuple[bool, str]:
+    return (
+        False,
+        "'explicit, stated reasoning' cannot be verified mechanically -- no reasoning-quality "
+        "signal exists in this engine's inputs; this modifier can never fire today",
+    )
+
+
 _MODIFIER_PREDICATES: dict[
     str,
     Callable[
-        [QuarterResult, QuarterResult | None, QuarterAllocations, QuarterAllocations | None, ScoringConfig],
+        [
+            QuarterResult,
+            QuarterResult | None,
+            QuarterAllocations,
+            QuarterAllocations | None,
+            ScoringConfig,
+            EndgameFacts | None,
+        ],
         tuple[bool, str],
     ],
 ] = {
@@ -403,6 +570,12 @@ _MODIFIER_PREDICATES: dict[
     "crisis_proofed_by_prior_investment": _crisis_proofed_by_prior_investment,
     "structural_improvement_made": _structural_improvement_made,
     "crisis_ignored": _crisis_ignored,
+    "covenant_hit": _covenant_hit,
+    "covenant_missed": _covenant_missed,
+    "correct_rejection": _correct_rejection,
+    "correct_acceptance": _correct_acceptance,
+    "value_left_on_table": _value_left_on_table,
+    "deliberate_independence": _deliberate_independence,
 }
 
 
@@ -493,6 +666,7 @@ def _score_modifier(
     allocations: QuarterAllocations,
     prior_allocations: QuarterAllocations | None,
     rubric: ScoringConfig,
+    endgame_facts: EndgameFacts | None,
 ) -> ModifierOutcome:
     predicate = _MODIFIER_PREDICATES.get(modifier.id)
     if predicate is None:
@@ -502,7 +676,7 @@ def _score_modifier(
             f"one that is absent"
         )
 
-    fired, detail = predicate(result, prior_result, allocations, prior_allocations, rubric)
+    fired, detail = predicate(result, prior_result, allocations, prior_allocations, rubric, endgame_facts)
     return ModifierOutcome(
         id=modifier.id,
         points=modifier.points,
@@ -529,12 +703,17 @@ def score_quarter(
     rubric: ScoringConfig,
     prior_allocations: QuarterAllocations | None = None,
     modifier_sets: tuple[str, ...] = ("standard",),
+    endgame_facts: EndgameFacts | None = None,
 ) -> QuarterScore:
     """Score one quarter's allocation decisions against `rubric`.
 
-    `modifier_sets` selects which configured modifier groups apply -- only `"standard"` exists
-    today; `docs/11-crisis-system.md`'s and `docs/16-quarter-4-endgame.md`'s sets register the
-    same way once Phases 10/11 add them to config, with no change needed here.
+    `modifier_sets` selects which configured modifier groups apply -- `"standard"`,
+    `docs/11-crisis-system.md`'s `"crisis"`, and `docs/16-quarter-4-endgame.md`'s `"q4"` all
+    register the same way, entirely through config, with no change needed here.
+
+    `endgame_facts` is `None` outside Q4 (and in Q4 whenever no `EndgameDecision` was submitted);
+    the 6 Q4 modifier predicates degrade to "did not fire" rather than erroring when it's absent,
+    the same way the crisis modifiers are naturally inert outside a crisis quarter.
     """
     traits: list[TraitScore] = []
     for trait_name, weight in rubric.traits.items():
@@ -552,7 +731,9 @@ def score_quarter(
             )
         for modifier in configured:
             modifiers.append(
-                _score_modifier(modifier, result, prior_result, allocations, prior_allocations, rubric)
+                _score_modifier(
+                    modifier, result, prior_result, allocations, prior_allocations, rubric, endgame_facts
+                )
             )
 
     mechanical_points_available = sum((t.weight_scored for t in traits), start=ZERO)

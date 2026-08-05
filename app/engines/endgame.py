@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
-from app.config.schema import EndgameConfig, TierTermSheetConfig
+from app.config.schema import EndgameConfig, ScoringConfig, ScoringCriterion, TierTermSheetConfig
 from app.engines.quarter import QuarterResult
 from app.engines.survival import RunStatus, SurvivalOutcome
 
@@ -125,4 +125,75 @@ def acquisition_offer_inr(
         f"source-stated ratio (docs/17-designer-resolutions.md's own worked example); "
         f"{config.stable.path_b_name!r} and {config.distressed.path_b_name!r} have no ratio "
         f"stated anywhere"
+    )
+
+
+@dataclass(frozen=True)
+class EndgameFacts:
+    """What the 6 Q4 scoring modifiers (`docs/16` section 5) need to fire -- computed once by the
+    orchestration layer from an `EndgameDecision` row, Q1/Q3 history, and Q4's own `QuarterResult`.
+    Never derivable from a single quarter's result alone, unlike Phase 10's crisis fields (which
+    `compute_quarter` threads directly), which is why these are passed to `score_quarter` as their
+    own parameter rather than folded into `QuarterResult`.
+    """
+
+    path: str  # "A" | "B" | "C"
+    tier: Tier
+    covenant_hit: bool | None  # only meaningful when path == "A"
+    path_b_accepted: bool | None  # only meaningful when path == "B"
+    offer_known: bool
+    true_continuation_value_exceeds_offer: bool | None  # only meaningful when offer_known
+
+
+EXIT_GROWTH_WEIGHT = Decimal(15)
+
+EXIT_GROWTH_CRITERIA: tuple[ScoringCriterion, ...] = (
+    ScoringCriterion(
+        id="exit_growth_1",
+        trait="exit_growth",
+        kind="JUDGMENT",
+        description="Reasoning references the actual Q1-Q3 trend, not just a headline number",
+        reason=(
+            "docs/17 P1's first Exit & Growth sub-criterion asks whether the student's stated "
+            "reasoning engages with the trajectory across quarters -- that's the content of a "
+            "reasoning field, not a fact QuarterResult/QuarterAllocations carries."
+        ),
+    ),
+    ScoringCriterion(
+        id="exit_growth_2",
+        trait="exit_growth",
+        kind="JUDGMENT",
+        description="The chosen path matches what the trajectory actually supports",
+        reason=(
+            "Whether a path 'matches' the trajectory is an interpretive judgment about the "
+            "student's stated case, not a mechanical comparison -- Tier already encodes the "
+            "trajectory mechanically (assign_tier), but whether the student's chosen path was "
+            "justified by it is a distinct question about their reasoning, which isn't captured."
+        ),
+    ),
+    ScoringCriterion(
+        id="exit_growth_3",
+        trait="exit_growth",
+        kind="JUDGMENT",
+        description="Consequences are owned in the student's stated reasoning, not attributed to luck",
+        reason=(
+            "Ownership vs. attribution-to-luck is a property of what the student wrote, not of any "
+            "number in QuarterResult -- the same reason leadership_3 (ownership of trade-offs) is "
+            "unscored today."
+        ),
+    ),
+)
+
+
+def build_q4_rubric(rubric: ScoringConfig) -> ScoringConfig:
+    """Splice the Exit & Growth Judgment trait onto `rubric` at call time (`docs/16` section 4) --
+    never persisted into the standard 100-point rubric, so the standard rubric's own
+    `test_traits_sum_to_exactly_100` stays untouched. A trait with zero MECHANICAL criteria
+    contributes 0 to `mechanical_points_available`, exactly like `leadership` already does, so no
+    change to `engines/scoring.py`'s math is needed to support it."""
+    return rubric.model_copy(
+        update={
+            "traits": {**rubric.traits, "exit_growth": EXIT_GROWTH_WEIGHT},
+            "criteria": [*rubric.criteria, *EXIT_GROWTH_CRITERIA],
+        }
     )

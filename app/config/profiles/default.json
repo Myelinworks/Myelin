@@ -252,6 +252,45 @@
           "points": -4,
           "rule": "Rs 0 spent on the relevant response line during a crisis quarter, and the crisis was not otherwise neutralized or proofed by prior investment"
         }
+      ],
+      "q4": [
+        {
+          "id": "covenant_hit",
+          "points": 5,
+          "rule": "Path A chosen AND Q4 units_sold >= covenant_units (engines/endgame.py)"
+        },
+        {
+          "id": "covenant_missed",
+          "points": -8,
+          "rule": "Path A chosen AND Q4 units_sold < covenant_units (engines/endgame.py)"
+        },
+        {
+          "id": "correct_rejection",
+          "points": 4,
+          "rule": "Path B rejected with correct reasoning, by a company whose true continuation value exceeds the offer",
+          "status": "cannot_fire_no_reasoning_signal",
+          "note": "'Correct reasoning' is a property of the student's stated case, not a number QuarterResult/QuarterAllocations carries. No reasoning-quality signal exists anywhere in this engine (same gap as every JUDGMENT criterion). Registered so its absence is visible; engines/scoring.py's predicate always returns 'did not fire'."
+        },
+        {
+          "id": "correct_acceptance",
+          "points": 4,
+          "rule": "Path B accepted by a company whose momentum was weak/flat (Stable/Distressed tier), where the offer was actually fair or generous",
+          "status": "cannot_fire_offer_unavailable_for_this_tier",
+          "note": "An offer amount is only ever known for the Thriving tier's Acquisition Trap term sheet (the one term sheet with a source-stated ratio, see config.endgame.acquisition_trap_offer_ratio) -- Stable/Distressed tiers' Path B offers (Fair-Value Acquisition, Fire-Sale) have no stated formula. The weak/flat-momentum precondition this modifier names can therefore never co-occur with a known offer. Registered so its absence is visible; engines/scoring.py's predicate always returns 'did not fire'."
+        },
+        {
+          "id": "value_left_on_table",
+          "points": -3,
+          "rule": "Path B accepted by a company with strong momentum (Thriving tier), where the true continuation value exceeds the known Acquisition Trap offer",
+          "note": "Only checkable when tier is Thriving, the one tier with a known offer amount. Given the Acquisition Trap ratio is fixed at ~0.719 (< 1), the true continuation value exceeds the offer by construction whenever this fires at all -- see engines/scoring.py's _value_left_on_table."
+        },
+        {
+          "id": "deliberate_independence",
+          "points": 2,
+          "rule": "Path C chosen with explicit, stated reasoning for rejecting A and B",
+          "status": "cannot_fire_no_reasoning_signal",
+          "note": "'Explicit, stated reasoning' is a property of the student's stated case, not a number QuarterResult/QuarterAllocations carries. Registered so its absence is visible; engines/scoring.py's predicate always returns 'did not fire'."
+        }
       ]
     },
     "bands": [
