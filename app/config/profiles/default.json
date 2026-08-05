@@ -500,5 +500,27 @@
       "retention_base_pct": 8,
       "retention_rate": 1.5
     }
+  },
+  "endgame": {
+    "status": "partially_specified",
+    "source": "docs/16-quarter-4-endgame.md + docs/17-designer-resolutions.md",
+    "covenant_momentum_multiplier": 1.3,
+    "thriving": {
+      "path_a_name": "Growth Investor",
+      "path_b_name": "Acquisition Trap",
+      "path_c_name": "Independent"
+    },
+    "stable": {
+      "path_a_name": "Bridge Financing",
+      "path_b_name": "Fair-Value Acquisition",
+      "path_c_name": "Prove Stability"
+    },
+    "distressed": {
+      "path_a_name": "Rescue Financing",
+      "path_b_name": "Fire-Sale",
+      "path_c_name": "High-Risk Independent"
+    },
+    "acquisition_trap_offer_ratio": 0.719030,
+    "acquisition_trap_offer_ratio_status": "single_instance_sourced_back_solved_from_docs_17s_worked_example_rs_148256189_over_rs_206189028_no_ratio_stated_for_fair_value_acquisition_or_fire_sale"
   }
 }

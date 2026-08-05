@@ -618,6 +618,43 @@ class CrisisConfig(_Frozen):
 
 
 # --------------------------------------------------------------------------------------
+# Q4 endgame -- Phase 11, docs/16-quarter-4-endgame.md + docs/17-designer-resolutions.md
+# --------------------------------------------------------------------------------------
+
+
+class TierTermSheetConfig(_Frozen):
+    """The three named term sheets offered for one Momentum tier (docs/17 line 63) -- Path A's
+    debt product, Path B's acquisition offer, and Path C's "stay independent" framing. Names only;
+    no formula lives here. Path A/B's actual numbers come from `covenant_units`/
+    `true_continuation_value_inr` (scenario-agnostic), not from the term sheet's name."""
+
+    path_a_name: str
+    path_b_name: str
+    path_c_name: str
+
+
+class EndgameConfig(_Frozen):
+    """Q4 endgame constants. Momentum Score itself is the narrower, validated 2-input formula
+    (`docs/17`'s P1 resolution) -- the full 7-input weighted composite `docs/16` names stays
+    unbuilt (`app/engines/gaps.py`'s `momentum_score()` stub documents why, and is untouched by
+    this phase, which implements a differently-named, differently-scoped function).
+    """
+
+    status: str
+    source: str
+    covenant_momentum_multiplier: Decimal  # 1.3, in `Covenant = Prior Units * (1 + 1.3*Momentum)`
+    thriving: TierTermSheetConfig
+    stable: TierTermSheetConfig
+    distressed: TierTermSheetConfig
+    # The one sourced acquisition-offer ratio (Thriving tier's "Acquisition Trap"), back-solved
+    # from docs/17's own worked example (Rs 14,82,56,189 / Rs 20,61,89,028 ~= 0.7190). No ratio is
+    # stated anywhere for the other two Path-B term sheets (Fair-Value Acquisition, Fire-Sale) --
+    # `engines/endgame.py` raises `NotImplementedError` for those rather than invent one.
+    acquisition_trap_offer_ratio: Decimal
+    acquisition_trap_offer_ratio_status: str
+
+
+# --------------------------------------------------------------------------------------
 # Top-level profile
 # --------------------------------------------------------------------------------------
 
@@ -638,6 +675,7 @@ class SimulationProfile(_Frozen):
     finance_admin: FinanceAdminConfig
     valuation: ValuationConfig
     crisis: CrisisConfig
+    endgame: EndgameConfig
 
 
 # --------------------------------------------------------------------------------------
