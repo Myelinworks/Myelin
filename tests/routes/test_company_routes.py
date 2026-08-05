@@ -194,8 +194,16 @@ class TestQuarterCreationLimits:
 
         response = await client.post(f"/companies/{company_id}/quarters")
 
-        assert response.status_code == 422
-        assert "4 quarters" in response.json()["detail"]
+        # Phase 12: routed through the single legal-move gatekeeper -- 409 with the consistent
+        # illegal_move envelope, not this route's own former 422/detail shape. Locking quarter 4
+        # of 4 already marks the run COMPLETED, so the gatekeeper's terminal-run check (checked
+        # once, for every write move, ahead of each move's own predicate -- see
+        # engines/run_state.py::check) is what actually fires here, not a "5 > 4" comparison.
+        assert response.status_code == 409
+        body = response.json()
+        assert body["error"] == "illegal_move"
+        assert body["attempted_move"] == "open_next_quarter"
+        assert "completed" in body["reason"]
 
     async def test_opening_a_quarter_before_locking_the_prior_one_is_rejected(self, client):
         """Otherwise the new quarter would silently restart from the seed instead of carrying
@@ -205,8 +213,10 @@ class TestQuarterCreationLimits:
 
         response = await client.post(f"/companies/{company['id']}/quarters")
 
-        assert response.status_code == 422
-        assert "has not been locked" in response.json()["detail"]
+        assert response.status_code == 409
+        body = response.json()
+        assert body["error"] == "illegal_move"
+        assert "lock it before opening the next one" in body["reason"]
 
     async def test_unknown_scenario_is_rejected(self, client):
         response = await client.post("/companies", json={"name": "X", "scenario_id": "does_not_exist"})
@@ -267,8 +277,10 @@ class TestSurvivalOverHttp:
 
         response = await client.post(f"/companies/{company_id}/quarters")
 
-        assert response.status_code == 422
-        assert "failed" in response.json()["detail"]
+        assert response.status_code == 409
+        body = response.json()
+        assert body["error"] == "illegal_move"
+        assert "failed" in body["reason"]
 
     async def test_below_buffer_but_positive_is_distressed_and_keeps_playing(self, client):
         """Rs 1,20,00,000 of spend leaves Rs 5,60,000 -- under the Rs 10,00,000 buffer, above

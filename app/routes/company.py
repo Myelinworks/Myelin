@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.loader import load_scenario
 from app.core.db import get_db
+from app.engines.run_state import Move
 from app.models.company import Company
 from app.models.quarter import Quarter
 from app.models.quarter_allocation import QuarterAllocation
@@ -26,6 +27,7 @@ from app.schemas.company import (
     ScenarioResponse,
 )
 from app.services.company_service import ScenarioAssignmentError, create_company, create_quarter
+from app.services.run_service import require_move
 
 router = APIRouter(tags=["company"])
 
@@ -101,8 +103,18 @@ async def create_quarter_route(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
 ) -> QuarterDetailResponse:
-    """Open the company's next quarter, carrying forward the prior quarter's closing state."""
+    """Open the company's next quarter, carrying forward the prior quarter's closing state.
+
+    Phase 12: consults `require_move(OPEN_NEXT_QUARTER)` first, so "past the scenario's last
+    quarter", "the run is terminal", and "the prior quarter isn't locked yet" all raise the same
+    `IllegalMoveError` (409, one consistent JSON body) every other write route now raises for its
+    own ordering violations -- this route no longer holds its own, differently-shaped 422 copy of
+    the same three rules. `create_quarter` keeps its own equivalent checks as a safety net for
+    non-HTTP callers (e.g. tests that call it directly); the `except ValueError` below stays for
+    the same reason.
+    """
     company = await _load_company(company_id, session)
+    await require_move(session, company, Move.OPEN_NEXT_QUARTER)
     try:
         quarter = await create_quarter(session, company)
     except ValueError as exc:
