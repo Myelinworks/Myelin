@@ -114,24 +114,33 @@ async def _prior_result(session: AsyncSession, quarter: Quarter) -> QuarterResul
     return _from_jsonable(QuarterResult, prior_performance.engine_result)
 
 
-async def _run_summary(session: AsyncSession, company: Company, result: QuarterResult) -> RunSummary | None:
-    """Only attached once the run has reached a terminal status. Just the aggregation of quarters
-    that already exist -- no Q4 endgame content (Phase 11, blocked)."""
-    if not is_terminal(company.run_status):
-        return None
-
+async def score_trajectory(session: AsyncSession, company_id: uuid.UUID) -> tuple[ScoreTrajectoryPoint, ...]:
+    """Every locked quarter's CEO score so far, oldest first -- a plain read, available at any
+    point in a run, not gated on terminal status. `_run_summary` below reuses this unchanged for
+    the terminal-only `RunSummary`; Phase 12's `services/run_service.py` reuses it for the
+    mid-run "score trajectory so far" on the run-state read, so there is one query for this, not
+    two independently-written copies of it."""
     rows = (
         await session.execute(
             select(QuarterPerformance.ceo_score, QuarterPerformance.score_band, Quarter.number)
             .join(Quarter, Quarter.id == QuarterPerformance.quarter_id)
-            .where(QuarterPerformance.company_id == company.id, QuarterPerformance.ceo_score.is_not(None))
+            .where(QuarterPerformance.company_id == company_id, QuarterPerformance.ceo_score.is_not(None))
             .order_by(Quarter.number)
         )
     ).all()
-    trajectory = tuple(
+    return tuple(
         ScoreTrajectoryPoint(quarter_number=number, ceo_score=ceo_score, band=band)
         for ceo_score, band, number in rows
     )
+
+
+async def _run_summary(session: AsyncSession, company: Company, result: QuarterResult) -> RunSummary | None:
+    """Only attached once the run has reached a terminal status. Just the aggregation of quarters
+    that already exist."""
+    if not is_terminal(company.run_status):
+        return None
+
+    trajectory = await score_trajectory(session, company.id)
     return RunSummary(
         score_trajectory=trajectory,
         final_valuation_inr=result.valuation.blended_inr,

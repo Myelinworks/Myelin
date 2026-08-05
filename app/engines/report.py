@@ -213,11 +213,16 @@ def _company_outcome(result: QuarterResult, prior_result: QuarterResult | None) 
     )
 
 
-def _binding_constraints(result: QuarterResult) -> tuple[BindingConstraint, ...]:
+def binding_constraints(result: QuarterResult) -> tuple[BindingConstraint, ...]:
     """All three gates are checked independently -- more than one can bind in the same quarter
     (Q1 does: Sales Capacity and the Conversion Ceiling both bind), which is exactly what Systems
     Thinking sub-criterion 3 (`engines/scoring.py`) is built to catch. An empty tuple is a
-    genuinely good outcome: nothing left demand on the table."""
+    genuinely good outcome: nothing left demand on the table.
+
+    Public (not `_`-prefixed) because Phase 12's `services/run_service.py` reuses it directly for
+    the "binding-gate hint from the prior quarter" on the run-state read -- the same computation,
+    not a second implementation of it.
+    """
     constraints: list[BindingConstraint] = []
 
     if result.capacity_bound:
@@ -322,7 +327,7 @@ def build_quarter_report(
         quarter_id=quarter_id,
         quarter_number=quarter_number,
         outcome=_company_outcome(result, prior_result),
-        binding_constraints=_binding_constraints(result),
+        binding_constraints=binding_constraints(result),
         decision_quality=_decision_quality(score),
         evidence=evidence,
         run_status=run_status,
