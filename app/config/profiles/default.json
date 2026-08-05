@@ -228,6 +228,30 @@
           "status": "cannot_fire_no_debt_mechanic",
           "note": "The 22-line chain has no debt/loan mechanic at all -- FIN-005 lives only in the parked legacy percentage-influence pipeline (app/engines/legacy_matrix/). This modifier is configured so its absence is visible rather than silently missing, but engines/scoring.py's predicate always returns 'did not fire'."
         }
+      ],
+      "crisis": [
+        {
+          "id": "crisis_fully_neutralized",
+          "points": 3,
+          "rule": "the crisis event's core mechanism (scenario-specific: A/B's conversion penalty, C's Innovation-threshold conversion+ceiling complex, D's Capacity Multiplier) was reduced to zero net effect",
+          "status": "binary_only",
+          "note": "docs/14 section 7's own worked scoring table gives Scenario B a 'Partial (+1)' tier that docs/11 (the spec of record) never states a rule for -- this predicate is strictly binary (docs/11's stated definition), so B's expert case returns 'did not fire' rather than a guessed partial-credit amount. A documented, reported residual, not a bug."
+        },
+        {
+          "id": "crisis_proofed_by_prior_investment",
+          "points": 3,
+          "rule": "the crisis was substantially handled by investment made before this quarter's crisis-specific response, not by the expensive reactive spend -- scenario-specific signal (Innovation Score for Feature Leapfrog, Supplier Reliability for Supply Shock's Capacity Multiplier >= 0.90); no documented prior-investment-alone path exists for Price Warrior or Marketing Blitz"
+        },
+        {
+          "id": "structural_improvement_made",
+          "points": 2,
+          "rule": "Choice B on Supply Shock, converting the crisis into a permanent Supplier Reliability gain (docs/14 section 6: +10, forever) -- the only scenario/choice combination with a stated permanent-asset outcome"
+        },
+        {
+          "id": "crisis_ignored",
+          "points": -4,
+          "rule": "Rs 0 spent on the relevant response line during a crisis quarter, and the crisis was not otherwise neutralized or proofed by prior investment"
+        }
       ]
     },
     "bands": [

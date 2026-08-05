@@ -31,6 +31,7 @@ from enum import StrEnum
 from typing import Callable
 
 from app.config.schema import ScoringConfig, ScoringCriterion, ScoringModifier
+from app.engines import crisis
 from app.engines.quarter import QuarterResult
 from app.engines.state import QuarterAllocations
 
@@ -332,6 +333,57 @@ def _debt_without_justification(
     return False, "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today"
 
 
+# ---- Crisis modifiers (Phase 10, docs/11-crisis-system.md §7) -------------------------------
+# All four read straight off QuarterResult's crisis fields -- app/engines/crisis.py already
+# reduced the scenario-specific logic down to plain facts when compute_quarter ran, so these
+# predicates stay simple field reads, exactly like every standard modifier above. All four are
+# naturally `False`/inert in a non-crisis quarter (`crisis_scenario` is `None`).
+
+
+def _crisis_fully_neutralized(
+    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+) -> tuple[bool, str]:
+    detail = f"crisis_scenario={result.crisis_scenario}, crisis_fully_neutralized={result.crisis_fully_neutralized}"
+    return result.crisis_fully_neutralized, detail
+
+
+def _crisis_proofed_by_prior_investment(
+    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+) -> tuple[bool, str]:
+    detail = (
+        f"crisis_scenario={result.crisis_scenario}, "
+        f"crisis_proofed_by_prior_investment={result.crisis_proofed_by_prior_investment}"
+    )
+    return result.crisis_proofed_by_prior_investment, detail
+
+
+def _structural_improvement_made(
+    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+) -> tuple[bool, str]:
+    detail = (
+        f"crisis_scenario={result.crisis_scenario}, crisis_choice={result.crisis_choice}, "
+        f"crisis_structural_improvement={result.crisis_structural_improvement}"
+    )
+    return result.crisis_structural_improvement, detail
+
+
+def _crisis_ignored(
+    result: QuarterResult, _prior: QuarterResult | None, _alloc, _prior_alloc, _rubric: ScoringConfig
+) -> tuple[bool, str]:
+    if result.crisis_scenario is None:
+        return False, "no crisis this quarter"
+    ignored = crisis.is_ignored(
+        result.crisis_response_spend_inr, result.crisis_fully_neutralized, result.crisis_proofed_by_prior_investment
+    )
+    detail = (
+        f"crisis_scenario={result.crisis_scenario}, "
+        f"crisis_response_spend_inr=Rs {result.crisis_response_spend_inr:,.2f}, "
+        f"fully_neutralized={result.crisis_fully_neutralized}, "
+        f"proofed_by_prior_investment={result.crisis_proofed_by_prior_investment}"
+    )
+    return ignored, detail
+
+
 _MODIFIER_PREDICATES: dict[
     str,
     Callable[
@@ -347,6 +399,10 @@ _MODIFIER_PREDICATES: dict[
     "ceiling_undershot": _ceiling_undershot,
     "cash_buffer_breached": _cash_buffer_breached,
     "debt_without_justification": _debt_without_justification,
+    "crisis_fully_neutralized": _crisis_fully_neutralized,
+    "crisis_proofed_by_prior_investment": _crisis_proofed_by_prior_investment,
+    "structural_improvement_made": _structural_improvement_made,
+    "crisis_ignored": _crisis_ignored,
 }
 
 
