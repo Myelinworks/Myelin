@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
-from app.routes import allocations, company, cx, endgame, finance, marketing, product, quarter, sales
+from app.routes import allocations, company, cx, endgame, finance, marketing, product, quarter, run, sales
 from app.services.run_service import IllegalMoveError
 
 settings = get_settings()
@@ -48,6 +48,7 @@ app.include_router(cx.router)
 app.include_router(allocations.router)
 app.include_router(quarter.router)
 app.include_router(endgame.router)
+app.include_router(run.router)
 
 
 @app.get("/health")

@@ -60,7 +60,7 @@ class RunState:
     current_quarter_id: uuid.UUID | None
     current_quarter_number: int | None
     current_quarter_status: QuarterStatus | None
-    legal_moves: frozenset[Move]
+    legal_moves: tuple[Move, ...]
     binding_constraint_hint: tuple[BindingConstraint, ...]
     score_trajectory: tuple[ScoreTrajectoryPoint, ...]
     endgame_preview: EndgamePreview | None
@@ -131,7 +131,9 @@ async def get_run_state(session: AsyncSession, company: Company) -> RunState:
         current_quarter_id=latest.id if latest else None,
         current_quarter_number=facts.current_quarter_number,
         current_quarter_status=facts.current_quarter_status,
-        legal_moves=compute_legal_moves(facts),
+        # Sorted, not the frozenset's own iteration order -- a stable, alphabetised list is what
+        # makes the read genuinely byte-identical on repeat for a client, not just set-equal.
+        legal_moves=tuple(sorted(compute_legal_moves(facts), key=lambda m: m.value)),
         binding_constraint_hint=hint,
         score_trajectory=await score_trajectory(session, company.id),
         endgame_preview=endgame_preview,
