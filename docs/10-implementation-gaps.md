@@ -182,6 +182,44 @@ produces it.
 
 ---
 
+## RESOLVED — docs/15's B-novice printed Net Cash Flow is an arithmetic slip in the source
+
+`15-q3-noob-vs-expert.md`'s Scenario B novice run showed only Revenue and a final NCF for its
+worked example (unlike every other novice/expert pairing in the same document, which shows the
+full COGS/warranty/holding/fixed-costs breakdown). The engine's computed NCF for this exact run
+(-₹7,69,993) disagreed with the doc's printed figure (-₹9,45,220) by ~₹1,75,000 — a much larger
+gap than the ~₹27,000-29,000 residual every other reproducible run in the same document showed
+(all traceable to a known ~₹15/unit COGS reconstruction gap; see `tests/engines/test_quarter_q3.py`
+module docstring). Flagged during Phase 10 as reported-but-unexplained; root-caused in Phase 13.
+
+**Diagnosis:** reconstructing the missing breakdown from numbers docs/15 *itself* states and
+validates elsewhere in the same document — the ₹2,938/unit COGS and ₹3,23,513 warranty+holding
+the adjacent A-novice worked example shows in full (same 1,493 units sold, same crisis-untouched
+cost formula for Scenario A/B choice A), the ₹22,67,393 shared-baseline fixed costs, and B-novice's
+own stated discretionary spend (₹58,85,980 + ₹1,00,000 Comparison Ads) — reproduces the doc's own
+printed Revenue exactly (1,493 × ₹8,149 = ₹1,21,66,457) but a Net Cash Flow of **-₹7,96,863, not
+-₹9,45,220**. The same reconstruction method applied to A-novice (which *does* show its full
+breakdown) reproduces that run's printed NCF to within ₹1,200 — proof the method is sound, not
+just a second guess. Only B-novice's printed total fails to follow from its own stated inputs, by
+₹1,48,357, with no formula, constant, or reading of docs/11 that produces that specific gap.
+
+**Not an engine defect:** the engine's actual B-novice output (-₹7,69,993) sits ~₹26,900 from the
+reconciled figure above — the same small residual class as every other run in the set (A-novice:
+~₹27,900; D-novice and all four experts: similarly small), not a distinct failure mode. No
+constant, exponent, formula, or order-of-operations in `app/engines/crisis.py` or
+`app/engines/quarter.py` changed to reach this conclusion — see the same precedent set by the
+"Q2 Growth variant's stated production capacity" entry above (a source arithmetic slip identified
+by the same technique: reconstruct from the document's own internally-consistent numbers, not by
+adjusting the engine to chase a printed total).
+
+**Status:** treated as a documentation defect, not a designer decision — no engine change made.
+`tests/engines/test_quarter_q3.py::TestScenarioBNovice::test_net_cash_flow` pins the engine's
+value against the reconciled figure (derived inline from docs/15's own numbers, in the test
+itself) at the same tolerance every other Q3 crisis run in that module uses, replacing the wider
+placeholder tolerance Phase 10 used while this was still unexplained.
+
+---
+
 ## P2 — Satisfaction Score has no stated baseline (record only; not blocking)
 
 Customer-facing **Satisfaction Score** — built by Sales Onboarding (`+3 × x^0.5`), Operations
