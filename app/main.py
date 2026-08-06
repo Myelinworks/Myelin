@@ -3,12 +3,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
-from app.routes import allocations, company, cx, endgame, finance, marketing, product, quarter, run, sales
+from app.routes import allocations, auth, company, cx, endgame, finance, marketing, product, quarter, run, sales
+from app.routes.deps import NotAuthenticatedError
+from app.services.authorization_service import NotPermittedError
 from app.services.run_service import IllegalMoveError
 
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name)
+
+
+@app.exception_handler(NotAuthenticatedError)
+async def not_authenticated_handler(_request: Request, _exc: NotAuthenticatedError) -> JSONResponse:
+    """401: the request carries no usable identity at all -- distinct from `not_permitted`
+    (we know who you are, you just can't touch this) and from `illegal_move` (you can touch
+    this, just not right now)."""
+    return JSONResponse(status_code=401, content={"error": "not_authenticated"})
+
+
+@app.exception_handler(NotPermittedError)
+async def not_permitted_handler(_request: Request, exc: NotPermittedError) -> JSONResponse:
+    """403: authenticated, but not this run's owner (write) or not owner-or-instructor
+    (read). Distinct from `illegal_move`'s 409 and from a plain 404 -- a client can tell
+    "not your run" apart from "not a legal move right now" apart from "doesn't exist"."""
+    return JSONResponse(status_code=403, content={"error": "not_permitted", "reason": exc.reason})
 
 
 @app.exception_handler(IllegalMoveError)
@@ -39,6 +57,7 @@ app.add_middleware(
 # Operations and People workspaces have no rules config yet (see README) -- not wired
 # until operations_rules.json/people_rules.json exist, rather than shipping routers that
 # can never accept a real decision.
+app.include_router(auth.router)
 app.include_router(company.router)
 app.include_router(finance.router)
 app.include_router(marketing.router)

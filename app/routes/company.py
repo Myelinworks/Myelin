@@ -17,7 +17,7 @@ from app.engines.run_state import Move
 from app.models.company import Company
 from app.models.quarter import Quarter
 from app.models.quarter_allocation import QuarterAllocation
-from app.routes.deps import get_quarter, get_quarter_modifiers
+from app.routes.deps import get_current_user, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
     CompanyCreate,
     CompanyDetailResponse,
@@ -26,6 +26,8 @@ from app.schemas.company import (
     QuarterSummary,
     ScenarioResponse,
 )
+from app.services.auth_service import CurrentUser
+from app.services.authorization_service import require_owner, require_read_access
 from app.services.company_service import ScenarioAssignmentError, create_company, create_quarter
 from app.services.run_service import require_move
 
@@ -42,10 +44,13 @@ _CRISIS_COLUMNS = {
 _NON_ALLOCATION_COLUMNS = {"id", "company_id", "quarter_id", "created_at", "warranty_years", *_CRISIS_COLUMNS}
 
 
-async def _load_company(company_id: uuid.UUID, session: AsyncSession) -> Company:
+async def _load_company(company_id: uuid.UUID, session: AsyncSession, user: CurrentUser) -> Company:
+    """404 if the company doesn't exist, then the read-access gate (owner-or-instructor) --
+    identity always checked before anything else a route does with the row."""
     company = await session.get(Company, company_id)
     if company is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Company {company_id} not found")
+    require_read_access(company, user)
     return company
 
 
@@ -67,11 +72,20 @@ def _company_detail(company: Company, quarters: list[Quarter]) -> CompanyDetailR
 async def create_company_route(
     payload: CompanyCreate,
     session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> CompanyDetailResponse:
-    """Create a company on a scenario, assigning one deterministically if none is given."""
+    """Create a company on a scenario, assigning one deterministically if none is given.
+
+    No ownership check needed -- there's nothing to own yet. The authenticated caller becomes
+    the owner, which is what every later read/write on this company checks against.
+    """
     try:
         company = await create_company(
-            session, name=payload.name, scenario_id=payload.scenario_id, company_id=payload.company_id
+            session,
+            name=payload.name,
+            scenario_id=payload.scenario_id,
+            company_id=payload.company_id,
+            owner_id=user.id,
         )
     except (ScenarioAssignmentError, FileNotFoundError) as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
@@ -84,9 +98,10 @@ async def create_company_route(
 async def get_company(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> CompanyDetailResponse:
     """Read-through of current state. Computes nothing."""
-    company = await _load_company(company_id, session)
+    company = await _load_company(company_id, session, user)
     quarters = (
         (await session.execute(select(Quarter).where(Quarter.company_id == company_id).order_by(Quarter.number)))
         .scalars()
@@ -102,6 +117,7 @@ async def get_company(
 async def create_quarter_route(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> QuarterDetailResponse:
     """Open the company's next quarter, carrying forward the prior quarter's closing state.
 
@@ -112,8 +128,12 @@ async def create_quarter_route(
     the same three rules. `create_quarter` keeps its own equivalent checks as a safety net for
     non-HTTP callers (e.g. tests that call it directly); the `except ValueError` below stays for
     the same reason.
+
+    Phase 13: this is a write, so it needs the owner-only gate on top of `_load_company`'s
+    read-access check -- 404 (exists) -> 403 (yours) -> 409 (legal right now).
     """
-    company = await _load_company(company_id, session)
+    company = await _load_company(company_id, session, user)
+    require_owner(company, user)
     await require_move(session, company, Move.OPEN_NEXT_QUARTER)
     try:
         quarter = await create_quarter(session, company)

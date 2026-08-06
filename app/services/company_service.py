@@ -122,11 +122,14 @@ async def create_company(
     name: str,
     scenario_id: str | None = None,
     company_id: uuid.UUID | None = None,
+    owner_id: uuid.UUID | None = None,
 ) -> Company:
     """Materialise a company and everything its first quarter needs.
 
     `company_id` is accepted so a run can be replayed onto the same identifier and land the same
-    scenario assignment; omitted, it is generated.
+    scenario assignment; omitted, it is generated. `owner_id` is the authenticated caller
+    (Phase 13) -- optional here only so non-HTTP callers (tests, scripts) aren't forced to
+    thread a user through; `routes/company.py::create_company_route` always passes it.
     """
     company_id = company_id or uuid.uuid4()
     scenario = load_scenario(scenario_id or assign_scenario_id(company_id))
@@ -137,6 +140,7 @@ async def create_company(
         scenario_id=scenario.scenario_id,
         seed_name=scenario.seed,
         profile_name=scenario.profile,
+        owner_id=owner_id,
     )
     session.add(company)
     await session.flush()

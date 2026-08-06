@@ -14,7 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.models.company import Company
+from app.routes.deps import get_current_user
 from app.schemas.run import RunStateResponse
+from app.services.auth_service import CurrentUser
+from app.services.authorization_service import require_read_access
 from app.services.run_service import get_run_state
 
 router = APIRouter(prefix="/companies/{company_id}", tags=["run"])
@@ -24,10 +27,12 @@ router = APIRouter(prefix="/companies/{company_id}", tags=["run"])
 async def get_run(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> RunStateResponse:
     company = await session.get(Company, company_id)
     if company is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Company {company_id} not found")
+    require_read_access(company, user)
 
     state = await get_run_state(session, company)
     return RunStateResponse.model_validate(state)

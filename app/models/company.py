@@ -1,7 +1,9 @@
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import String, Text
+from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -9,6 +11,7 @@ from app.engines.survival import RunStatus
 from app.models.mixins import TimestampMixin, UUIDPkMixin
 
 if TYPE_CHECKING:
+    from app.models.app_user import AppUser
     from app.models.quarter import Quarter
 
 
@@ -41,4 +44,14 @@ class Company(UUIDPkMixin, TimestampMixin, Base):
     survival_condition: Mapped[str | None] = mapped_column(String(100), nullable=True)
     survival_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Nullable at the schema level only because there is no real user data to backfill --
+    # every ownership check (services/authorization_service.py) treats a null owner as
+    # "nobody's," so an owner-less row is permanently unwritable/unreadable through the API
+    # rather than a bypass. `routes/company.py::create_company_route` always stamps this from
+    # the authenticated caller going forward.
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id"), nullable=True, index=True
+    )
+
     quarters: Mapped[list["Quarter"]] = relationship(back_populates="company")
+    owner: Mapped["AppUser | None"] = relationship(back_populates="companies")

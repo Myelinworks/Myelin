@@ -9,6 +9,7 @@ from alembic import context
 from app.core.config import get_settings
 from app.core.db import Base
 from app.models import (  # noqa: F401
+    app_user,
     cognitive,
     company,
     company_state_snapshot,

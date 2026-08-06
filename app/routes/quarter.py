@@ -5,10 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.models.company import Company
 from app.models.quarter import Quarter
 from app.models.quarter_performance import QuarterPerformance
-from app.routes.deps import get_quarter
+from app.routes.deps import get_current_user, get_quarter, get_quarter_for_write
 from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
+from app.services.auth_service import CurrentUser
+from app.services.authorization_service import require_read_access
 from app.services.quarter_run_service import run_quarter
 from app.services.report_service import QuarterNotLockedError, build_report_for_quarter
 
@@ -18,7 +21,7 @@ router = APIRouter(prefix="/companies/{company_id}", tags=["quarter"])
 @router.post("/quarters/{quarter_id}/lock", response_model=QuarterReportResponse)
 async def lock_quarter(
     company_id: uuid.UUID,
-    quarter: Quarter = Depends(get_quarter),
+    quarter: Quarter = Depends(get_quarter_for_write),
     session: AsyncSession = Depends(get_db),
 ) -> QuarterReportResponse:
     """Runs the pure 22-line engine (`compute_quarter`, via `run_quarter`) over this quarter's
@@ -53,8 +56,19 @@ async def get_quarter_report(
 async def get_leaderboard(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> LeaderboardResponse:
-    """Reads QuarterPerformance rollups -- never live-aggregates cognitive_scores."""
+    """Reads QuarterPerformance rollups -- never live-aggregates cognitive_scores.
+
+    Phase 13: previously had no company lookup at all -- a read side-channel around ownership.
+    Now 404s if the company doesn't exist and gates on read access (owner-or-instructor)
+    before running the query.
+    """
+    company = await session.get(Company, company_id)
+    if company is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Company {company_id} not found")
+    require_read_access(company, user)
+
     rows = (
         await session.execute(
             select(QuarterPerformance, Quarter.number)

@@ -38,6 +38,7 @@ class CompanyResponse(ORMBase):
     scenario_id: str
     seed_name: str
     profile_name: str
+    owner_id: uuid.UUID | None = None
 
     run_status: RunStatus
     # Which survival condition last fired, and the numbers behind it. Both stay populated after
