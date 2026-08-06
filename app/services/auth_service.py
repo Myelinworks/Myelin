@@ -55,7 +55,14 @@ def verify_jwt(token: str, settings: Settings) -> dict:
     the caller (`routes/deps.py::get_current_user`) is responsible for turning that into the
     401 `not_authenticated` envelope."""
     signing_key = _get_jwk_client(settings).get_signing_key_from_jwt(token)
-    return jwt.decode(token, signing_key.key, algorithms=["ES256", "RS256"], audience="authenticated")
+    # Small leeway absorbs local/clock skew vs Supabase's iat (common on Windows hosts).
+    return jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["ES256", "RS256"],
+        audience="authenticated",
+        leeway=30,
+    )
 
 
 async def get_or_create_app_user(session: AsyncSession, *, sub: uuid.UUID, email: str) -> AppUser:
