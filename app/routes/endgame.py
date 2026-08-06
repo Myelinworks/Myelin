@@ -8,6 +8,7 @@ from app.engines.run_state import Move
 from app.models.quarter import Quarter
 from app.routes.deps import get_quarter, require_quarter_move
 from app.schemas.endgame import EndgameDecisionResponse, EndgameDecisionSubmit, EndgamePreviewResponse
+from app.schemas.errors import READ_RESPONSES_WITH_PLAIN_CONFLICT, WRITE_RESPONSES
 from app.services.endgame_service import (
     EndgameNotReadyError,
     NotEndgameQuarterError,
@@ -18,7 +19,16 @@ from app.services.endgame_service import (
 router = APIRouter(prefix="/companies/{company_id}/quarters/{quarter_id}/endgame", tags=["endgame"])
 
 
-@router.get("", response_model=EndgamePreviewResponse)
+@router.get(
+    "",
+    response_model=EndgamePreviewResponse,
+    responses=READ_RESPONSES_WITH_PLAIN_CONFLICT,
+    summary="Read the Q4 endgame preview",
+    description="This company's Momentum tier, the term-sheet menu it unlocked, and Path A/B's "
+    "figures -- all read-through from Q1-Q3's already-locked results, no decision required to "
+    "see it. 409s (plain-detail) if Q3 hasn't locked yet; 404s if this quarter isn't the "
+    "scenario's last one.",
+)
 async def get_endgame(
     company_id: uuid.UUID,
     quarter: Quarter = Depends(get_quarter),
@@ -38,7 +48,16 @@ async def get_endgame(
     return EndgamePreviewResponse.model_validate(preview)
 
 
-@router.post("", response_model=EndgameDecisionResponse)
+@router.post(
+    "",
+    response_model=EndgameDecisionResponse,
+    responses=WRITE_RESPONSES,
+    summary="Submit the Q4 strategic decision",
+    description="Records this run's Q4 strategic decision (Path A/B/C plus a term-sheet choice "
+    "from the preview's menu). Upserted until Q4 locks -- calling it again before lock replaces "
+    "the prior submission. Legal only in the scenario's last quarter, before it locks; otherwise "
+    "returns `illegal_move` (409). Outcome scoring happens at `POST .../lock`, not here.",
+)
 async def post_endgame(
     company_id: uuid.UUID,
     submission: EndgameDecisionSubmit,

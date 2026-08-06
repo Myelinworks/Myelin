@@ -9,6 +9,8 @@ from app.schemas.decision import DecisionSubmitBase
 
 
 class MarketingDecisionSubmit(DecisionSubmitBase):
+    """Legacy per-decision submission for the Marketing workspace -- see `DecisionSubmitBase`."""
+
     workspace = Workspace.MARKETING
 
     # Rs 0.01: a paisa is the smallest real currency unit here, so this absorbs a rupee split's
@@ -45,6 +47,8 @@ class MarketingDecisionSubmit(DecisionSubmitBase):
 
 
 class MarketingStateResponse(QuarterScopedBase):
+    """`GET .../marketing/state` -- this workspace's own denormalised snapshot."""
+
     marketing_spend: Decimal
     leads_generated: int
     customer_acquisition_cost: Decimal

@@ -9,6 +9,8 @@ from app.schemas.decision import DecisionSubmitBase
 
 
 class SalesDecisionSubmit(DecisionSubmitBase):
+    """Legacy per-decision submission for the Sales workspace -- see `DecisionSubmitBase`."""
+
     workspace = Workspace.SALES
 
     @model_validator(mode="after")
@@ -44,6 +46,8 @@ class SalesDecisionSubmit(DecisionSubmitBase):
 
 
 class SalesStateResponse(QuarterScopedBase):
+    """`GET .../sales/state` -- this workspace's own denormalised snapshot."""
+
     pipeline_value: Decimal
     deals_closed: int
     quota_attainment_pct: Decimal

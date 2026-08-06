@@ -26,6 +26,7 @@ from app.schemas.company import (
     QuarterSummary,
     ScenarioResponse,
 )
+from app.schemas.errors import CREATE_ONLY_RESPONSES, READ_RESPONSES, WRITE_RESPONSES
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_owner, require_read_access
 from app.services.company_service import ScenarioAssignmentError, create_company, create_quarter
@@ -68,7 +69,16 @@ def _company_detail(company: Company, quarters: list[Quarter]) -> CompanyDetailR
     )
 
 
-@router.post("/companies", response_model=CompanyDetailResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/companies",
+    response_model=CompanyDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses=CREATE_ONLY_RESPONSES,
+    summary="Start a new run",
+    description="Step 1 of the lifecycle. Creates a company, assigning a scenario "
+    "deterministically from the company id if none is given. The authenticated caller becomes "
+    "this run's owner. No quarter exists yet -- `POST .../quarters` next.",
+)
 async def create_company_route(
     payload: CompanyCreate,
     session: AsyncSession = Depends(get_db),
@@ -94,7 +104,14 @@ async def create_company_route(
     return _company_detail(company, quarters=[])
 
 
-@router.get("/companies/{company_id}", response_model=CompanyDetailResponse)
+@router.get(
+    "/companies/{company_id}",
+    response_model=CompanyDetailResponse,
+    responses=READ_RESPONSES,
+    summary="Read a company's current state",
+    description="Read-through of current state, including every quarter opened so far. Legal to "
+    "call at any point in the lifecycle, including after the run has ended.",
+)
 async def get_company(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),
@@ -112,7 +129,15 @@ async def get_company(
 
 
 @router.post(
-    "/companies/{company_id}/quarters", response_model=QuarterDetailResponse, status_code=status.HTTP_201_CREATED
+    "/companies/{company_id}/quarters",
+    response_model=QuarterDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses=WRITE_RESPONSES,
+    summary="Open the next quarter",
+    description="Opens quarter N+1, carrying forward quarter N's closing state (cash, customers, "
+    "Brand/Quality/Innovation Scores, etc.). Legal only when no quarter is currently open and the "
+    "prior quarter (if any) is locked -- check `GET .../run`'s `legal_moves` first; an "
+    "out-of-order call returns `illegal_move` (409).",
 )
 async def create_quarter_route(
     company_id: uuid.UUID,
@@ -144,7 +169,14 @@ async def create_quarter_route(
     return await _quarter_detail(quarter, session)
 
 
-@router.get("/companies/{company_id}/quarters/{quarter_id}", response_model=QuarterDetailResponse)
+@router.get(
+    "/companies/{company_id}/quarters/{quarter_id}",
+    response_model=QuarterDetailResponse,
+    responses=READ_RESPONSES,
+    summary="Read a quarter's current submitted state",
+    description="The 22 spend lines submitted so far (and crisis fields, if this is the crisis "
+    "quarter) -- not a report; there is no scored outcome until the quarter locks.",
+)
 async def get_quarter_detail(
     quarter: Quarter = Depends(get_quarter),
     session: AsyncSession = Depends(get_db),

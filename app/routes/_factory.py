@@ -18,6 +18,7 @@ from app.models.decision import Decision, DecisionLog, DecisionStatus, Workspace
 from app.models.quarter import Quarter
 from app.routes.deps import get_open_quarter, get_quarter, get_quarter_modifiers
 from app.schemas.decision import DecisionLogEntry, DecisionSubmissionResponse, DecisionSubmitBase, FieldImpactResponse
+from app.schemas.errors import READ_RESPONSES, WRITE_RESPONSES
 from app.services.decision_engine import compute_decision_impact
 from app.services.evidence_engine import generate_evidence
 
@@ -49,7 +50,19 @@ def build_workspace_router(
         tags=[workspace.value],
     )
 
-    @router.post("/decisions", response_model=DecisionSubmissionResponse, status_code=status.HTTP_201_CREATED)
+    @router.post(
+        "/decisions",
+        response_model=DecisionSubmissionResponse,
+        status_code=status.HTTP_201_CREATED,
+        responses=WRITE_RESPONSES,
+        summary=f"Submit a {workspace.value} decision (legacy per-decision pipeline)",
+        description=f"**Not part of the primary 22-line allocation flow** -- a separate, older "
+        f"per-decision system (CLAUDE.md's ~72-key decision taxonomy) that writes its own "
+        f"Decision/Evidence rows, feeding only the cognitive-scoring pipeline, never business "
+        f"outcome (`compute_quarter`/`outcome` in the quarter report never reads {workspace.value} "
+        f"decisions). 422s if `decision_key` has no business-impact formula. Legal only while the "
+        f"quarter is open -- 409 (plain-detail, quarter locked) once it isn't.",
+    )
     async def submit_decision(
         company_id: uuid.UUID,
         submission: decision_submit_schema,
@@ -140,7 +153,15 @@ def build_workspace_router(
             evidence_generated=len(evidence_records),
         )
 
-    @router.get("/state", response_model=state_response_schema)
+    @router.get(
+        "/state",
+        response_model=state_response_schema,
+        responses=READ_RESPONSES,
+        summary=f"Read the {workspace.value} workspace's denormalised snapshot (legacy)",
+        description=f"This workspace's own state row, distinct from the 22-line "
+        f"`QuarterAllocationResponse`. 404s (plain-detail) if no {workspace.value} decision has "
+        f"been submitted yet this quarter.",
+    )
     async def get_state(
         quarter: Quarter = Depends(get_quarter),
         session: AsyncSession = Depends(get_db),
@@ -153,7 +174,13 @@ def build_workspace_router(
             )
         return state
 
-    @router.get("/decisions", response_model=list[DecisionLogEntry])
+    @router.get(
+        "/decisions",
+        response_model=list[DecisionLogEntry],
+        responses=READ_RESPONSES,
+        summary=f"List {workspace.value} decisions submitted this quarter (legacy)",
+        description=f"Every decision submitted so far in the {workspace.value} workspace this quarter.",
+    )
     async def list_decisions(
         quarter: Quarter = Depends(get_quarter),
         session: AsyncSession = Depends(get_db),

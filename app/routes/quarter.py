@@ -9,6 +9,7 @@ from app.models.company import Company
 from app.models.quarter import Quarter
 from app.models.quarter_performance import QuarterPerformance
 from app.routes.deps import get_current_user, get_quarter, get_quarter_for_write
+from app.schemas.errors import READ_RESPONSES, READ_RESPONSES_WITH_PLAIN_CONFLICT
 from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_read_access
@@ -18,7 +19,16 @@ from app.services.report_service import QuarterNotLockedError, build_report_for_
 router = APIRouter(prefix="/companies/{company_id}", tags=["quarter"])
 
 
-@router.post("/quarters/{quarter_id}/lock", response_model=QuarterReportResponse)
+@router.post(
+    "/quarters/{quarter_id}/lock",
+    response_model=QuarterReportResponse,
+    responses=READ_RESPONSES,
+    summary="Lock the quarter and run the engine",
+    description="Runs the pure 22-line engine over this quarter's submitted allocations, "
+    "persists the result, and returns the full report. Idempotent: calling this twice on an "
+    "already-locked quarter returns the same persisted result unchanged, not a 409 -- there is "
+    "no illegal_move refusal for this route.",
+)
 async def lock_quarter(
     company_id: uuid.UUID,
     quarter: Quarter = Depends(get_quarter_for_write),
@@ -35,7 +45,15 @@ async def lock_quarter(
     return QuarterReportResponse.model_validate(report)
 
 
-@router.get("/quarters/{quarter_id}/report", response_model=QuarterReportResponse)
+@router.get(
+    "/quarters/{quarter_id}/report",
+    response_model=QuarterReportResponse,
+    responses=READ_RESPONSES_WITH_PLAIN_CONFLICT,
+    summary="Read a locked quarter's report",
+    description="Reads back everything the lock transaction already persisted -- never "
+    "recomputes, never mutates. 409s (plain-detail, not the illegal_move envelope) for a quarter "
+    "that hasn't been locked yet.",
+)
 async def get_quarter_report(
     company_id: uuid.UUID,
     quarter: Quarter = Depends(get_quarter),
@@ -52,7 +70,14 @@ async def get_quarter_report(
     return QuarterReportResponse.model_validate(report)
 
 
-@router.get("/leaderboard", response_model=LeaderboardResponse)
+@router.get(
+    "/leaderboard",
+    response_model=LeaderboardResponse,
+    responses=READ_RESPONSES,
+    summary="Read this company's per-quarter score rollups",
+    description="Reads persisted `QuarterPerformance` rollups -- never live-aggregates. Entries "
+    "exist only for quarters that have locked.",
+)
 async def get_leaderboard(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.models.company import Company
 from app.routes.deps import get_current_user
+from app.schemas.errors import READ_RESPONSES
 from app.schemas.run import RunStateResponse
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_read_access
@@ -23,7 +24,17 @@ from app.services.run_service import get_run_state
 router = APIRouter(prefix="/companies/{company_id}", tags=["run"])
 
 
-@router.get("/run", response_model=RunStateResponse)
+@router.get(
+    "/run",
+    response_model=RunStateResponse,
+    responses=READ_RESPONSES,
+    summary="Read the single rich run-state payload",
+    description="The one call that answers \"where am I, and what can I legally do next\" -- "
+    "combines company/quarter state, the gatekeeper's `legal_moves`, the prior quarter's "
+    "binding-constraint hint, the score trajectory so far, and (in the last quarter) the Q4 "
+    "endgame preview. Poll this after every write instead of re-deriving state client-side; see "
+    "`docs/frontend-integration-guide.md`.",
+)
 async def get_run(
     company_id: uuid.UUID,
     session: AsyncSession = Depends(get_db),

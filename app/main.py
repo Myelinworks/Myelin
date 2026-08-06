@@ -10,7 +10,29 @@ from app.services.run_service import IllegalMoveError
 
 settings = get_settings()
 
-app = FastAPI(title=settings.app_name)
+app = FastAPI(
+    title=settings.app_name,
+    description=(
+        "Deterministic CEO decision-simulation engine. A run belongs to the authenticated user "
+        "who started it; every write is checked for identity (owner-or-instructor), then "
+        "legality (the single gatekeeper), before it touches anything. See "
+        "`docs/frontend-integration-guide.md` in the repo for the full lifecycle walkthrough --"
+        " this reference documents each endpoint in isolation; the guide covers the flow."
+    ),
+    openapi_tags=[
+        {"name": "auth", "description": "Registration/login -- proxies to Supabase Auth. Not run-scoped."},
+        {"name": "company", "description": "Start a run, open quarters, read current state."},
+        {"name": "run", "description": "The single rich run-state read -- poll this between every write."},
+        {"name": "allocations", "description": "The 22-line spend model + the crisis-response line. The primary write surface."},
+        {"name": "quarter", "description": "Lock a quarter, read its report, read the leaderboard."},
+        {"name": "endgame", "description": "The Q4 endgame preview and strategic decision."},
+        {"name": "finance", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+        {"name": "marketing", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+        {"name": "product", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+        {"name": "sales", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+        {"name": "cx", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+    ],
+)
 
 
 @app.exception_handler(NotAuthenticatedError)

@@ -1,0 +1,3274 @@
+{
+  "allocation_submit_response": {
+    "audit_prep": "0.0000",
+    "comparison_ads": "0.0000",
+    "compliance_legal": "0.0000",
+    "content_seo": "1.2800",
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "crisis_choice": null,
+    "crisis_choice_d_spend": "0.0000",
+    "crm_tools": "0.0000",
+    "culture_benefits": "0.0000",
+    "cx_team": "0.0000",
+    "email_marketing": "1.6000",
+    "emergency_supply_fund": "0.0000",
+    "events_pr": "0.8000",
+    "financial_planning": "0.0000",
+    "google_ads": "4.0000",
+    "id": "8a28f32f-6897-4aba-840d-c155a6555fad",
+    "innovation": "0.0000",
+    "logistics": "0.0000",
+    "manufacturing": "0.0000",
+    "meta_ads": "1.9200",
+    "onboarding": "0.0000",
+    "prelaunch_buzz": "1.9200",
+    "price_match_fund": "0.0000",
+    "quality_qa": "0.0000",
+    "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "referral": "2.4000",
+    "reps": "0.0000",
+    "retention_offers": "0.0000",
+    "social_influencer": "2.0800",
+    "supplier_qc": "0.0000",
+    "training_development": "0.0000",
+    "warranty_years": 0
+  },
+  "auth_login_request": {
+    "email": "student@myelin.dev",
+    "password": "correct horse battery staple"
+  },
+  "auth_login_response": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-access-token",
+    "email": "student@myelin.dev",
+    "refresh_token": "v1.Mnb3-example-refresh-token",
+    "user_id": "3fae5a10-4b2e-4f0a-8f0a-1c2d3e4f5a6b"
+  },
+  "auth_register_request": {
+    "email": "student@myelin.dev",
+    "password": "correct horse battery staple"
+  },
+  "auth_register_response": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-access-token",
+    "email": "student@myelin.dev",
+    "refresh_token": "v1.Mnb3-example-refresh-token",
+    "user_id": "3fae5a10-4b2e-4f0a-8f0a-1c2d3e4f5a6b"
+  },
+  "company_create_request": {
+    "name": "Nadi Wear Capture Co"
+  },
+  "company_create_response": {
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "name": "Nadi Wear Capture Co",
+    "owner_id": "f5d1b17b-d64b-44b3-9d1d-b5da9492f089",
+    "profile_name": "default",
+    "quarters": [],
+    "run_status": "active",
+    "scenario": {
+      "crisis_quarter": 3,
+      "display_name": "Nadi Wear \u2014 Four-Quarter Run",
+      "scenario_id": "nadi_wear_standard",
+      "total_quarters": 4
+    },
+    "scenario_id": "nadi_wear_standard",
+    "seed_name": "nadi_wear",
+    "survival_condition": null,
+    "survival_detail": null
+  },
+  "company_detail_response": {
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "name": "Nadi Wear Capture Co",
+    "owner_id": "f5d1b17b-d64b-44b3-9d1d-b5da9492f089",
+    "profile_name": "default",
+    "quarters": [],
+    "run_status": "active",
+    "scenario": {
+      "crisis_quarter": 3,
+      "display_name": "Nadi Wear \u2014 Four-Quarter Run",
+      "scenario_id": "nadi_wear_standard",
+      "total_quarters": 4
+    },
+    "scenario_id": "nadi_wear_standard",
+    "seed_name": "nadi_wear",
+    "survival_condition": null,
+    "survival_detail": null
+  },
+  "crisis_allocation_submit_request": {
+    "comparison_ads": "5.0",
+    "crisis_choice": "C",
+    "emergency_supply_fund": "1.0"
+  },
+  "crisis_allocation_submit_response": {
+    "audit_prep": "2.1000",
+    "comparison_ads": "5.0000",
+    "compliance_legal": "2.8000",
+    "content_seo": "1.2800",
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "crisis_choice": "C",
+    "crisis_choice_d_spend": "0.0000",
+    "crm_tools": "1.3000",
+    "culture_benefits": "1.2000",
+    "cx_team": "0.9000",
+    "email_marketing": "1.6000",
+    "emergency_supply_fund": "1.0000",
+    "events_pr": "0.8000",
+    "financial_planning": "2.1000",
+    "google_ads": "4.0000",
+    "id": "bb63f2ea-dc69-45d6-a1e9-96767dfaedb1",
+    "innovation": "2.2500",
+    "logistics": "1.2000",
+    "manufacturing": "3.3000",
+    "meta_ads": "1.9200",
+    "onboarding": "1.2500",
+    "prelaunch_buzz": "1.9200",
+    "price_match_fund": "0.0000",
+    "quality_qa": "2.7500",
+    "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "referral": "2.4000",
+    "reps": "5.4500",
+    "retention_offers": "0.0000",
+    "social_influencer": "2.0800",
+    "supplier_qc": "1.5000",
+    "training_development": "0.9000",
+    "warranty_years": 1
+  },
+  "decision_log_list_response": [
+    {
+      "created_at": "2026-08-06T07:45:18.096660Z",
+      "decision_key": "increase_google_ads_budget",
+      "id": "c53f80e0-f236-4152-bdd5-b053eb66772d",
+      "payload": {
+        "amount": 5000
+      },
+      "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+      "status": "submitted",
+      "submitted_at": null,
+      "title": "increase_google_ads_budget",
+      "workspace": "marketing"
+    }
+  ],
+  "decision_submit_request": {
+    "decision_key": "increase_google_ads_budget",
+    "payload": {
+      "amount": 5000
+    }
+  },
+  "decision_submit_response": {
+    "business_impact": [
+      {
+        "actual_value": 20.0,
+        "base_value": 20.0,
+        "field": "marketing"
+      },
+      {
+        "actual_value": 15.0,
+        "base_value": 15.0,
+        "field": "sales"
+      },
+      {
+        "actual_value": -8.0,
+        "base_value": -8.0,
+        "field": "finance"
+      },
+      {
+        "actual_value": 5.0,
+        "base_value": 5.0,
+        "field": "operations"
+      },
+      {
+        "actual_value": 6.0,
+        "base_value": 6.0,
+        "field": "manufacturing"
+      },
+      {
+        "actual_value": 3.0,
+        "base_value": 3.0,
+        "field": "supply_chain"
+      },
+      {
+        "actual_value": 2.0,
+        "base_value": 2.0,
+        "field": "hr"
+      },
+      {
+        "actual_value": 4.0,
+        "base_value": 4.0,
+        "field": "customer_support"
+      },
+      {
+        "actual_value": 0.0,
+        "base_value": 0.0,
+        "field": "product"
+      },
+      {
+        "actual_value": 7.0,
+        "base_value": 7.0,
+        "field": "strategy"
+      }
+    ],
+    "decision_id": "c53f80e0-f236-4152-bdd5-b053eb66772d",
+    "decision_key": "increase_google_ads_budget",
+    "evidence_generated": 0,
+    "workspace": "marketing"
+  },
+  "endgame_decision_submit_request": {
+    "path": "C",
+    "reasoning": "staying independent based on the Q1-Q3 trend",
+    "term_sheet_name": "High-Risk Independent"
+  },
+  "endgame_decision_submit_response": {
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "id": "d78e0a8a-042e-49c4-9382-35f12a487724",
+    "path": "C",
+    "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "reasoning": "staying independent based on the Q1-Q3 trend",
+    "term_sheet_name": "High-Risk Independent"
+  },
+  "endgame_preview_response": {
+    "acquisition_trap_offer_inr": null,
+    "covenant_units": "1183.124125145993801230949950",
+    "momentum_score": "0.256755604035358511853962258",
+    "term_sheet_menu": {
+      "path_a_name": "Rescue Financing",
+      "path_b_name": "Fire-Sale",
+      "path_c_name": "High-Risk Independent"
+    },
+    "tier": "distressed",
+    "tier_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
+    "true_continuation_value_inr": "101147469.4472973077432734089"
+  },
+  "error_illegal_move": {
+    "allowed_moves": [
+      "read_endgame_preview",
+      "read_quarter_report"
+    ],
+    "attempted_move": "open_next_quarter",
+    "error": "illegal_move",
+    "reason": "the run is completed; a terminated run accepts no further submissions or locks"
+  },
+  "error_not_authenticated": {
+    "error": "not_authenticated"
+  },
+  "error_not_found": {
+    "detail": "Company 0422f4c0-fa53-44ee-bd6d-940b479a3631 not found"
+  },
+  "error_not_permitted": {
+    "error": "not_permitted",
+    "reason": "user 2932596b-64ce-4fa3-9f18-5dccce63ca9c may not view company ad691d51-2a71-45ec-bacc-e877a5e67001"
+  },
+  "leaderboard_response": {
+    "entries": [
+      {
+        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+        "overall_score": null,
+        "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+        "quarter_number": 1
+      },
+      {
+        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+        "overall_score": null,
+        "quarter_id": "33c4db6d-ca43-4818-883b-41066f1c10a6",
+        "quarter_number": 2
+      },
+      {
+        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+        "overall_score": null,
+        "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+        "quarter_number": 3
+      },
+      {
+        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+        "overall_score": null,
+        "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+        "quarter_number": 4
+      }
+    ]
+  },
+  "quarter_detail_after_allocations": {
+    "allocations": {
+      "audit_prep": "2.1000",
+      "compliance_legal": "2.8000",
+      "content_seo": "1.2800",
+      "crm_tools": "1.3000",
+      "culture_benefits": "1.2000",
+      "cx_team": "0.9000",
+      "email_marketing": "1.6000",
+      "events_pr": "0.8000",
+      "financial_planning": "2.1000",
+      "google_ads": "4.0000",
+      "innovation": "2.2500",
+      "logistics": "1.2000",
+      "manufacturing": "3.3000",
+      "meta_ads": "1.9200",
+      "onboarding": "1.2500",
+      "prelaunch_buzz": "1.9200",
+      "quality_qa": "2.7500",
+      "referral": "2.4000",
+      "reps": "5.4500",
+      "social_influencer": "2.0800",
+      "supplier_qc": "1.5000",
+      "training_development": "0.9000"
+    },
+    "cash_balance": "15000000.00",
+    "closed_at": null,
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "crisis": {
+      "comparison_ads": "0.0000",
+      "crisis_choice": null,
+      "crisis_choice_d_spend": "0.0000",
+      "emergency_supply_fund": "0.0000",
+      "price_match_fund": "0.0000",
+      "retention_offers": "0.0000"
+    },
+    "id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "modifiers": {
+      "brand_strength": 1.0,
+      "competitor_activity": 1.0,
+      "inventory_availability": 1.0,
+      "market_saturation": 1.0
+    },
+    "number": 1,
+    "revenue": "0.00",
+    "status": "in_progress",
+    "warranty_years": 1
+  },
+  "quarter_open_response": {
+    "allocations": null,
+    "cash_balance": "15000000",
+    "closed_at": null,
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "created_at": "2026-08-06T07:45:18.096660Z",
+    "crisis": null,
+    "id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "modifiers": {
+      "brand_strength": 1.0,
+      "competitor_activity": 1.0,
+      "inventory_availability": 1.0,
+      "market_saturation": 1.0
+    },
+    "number": 1,
+    "revenue": "0",
+    "status": "in_progress",
+    "warranty_years": null
+  },
+  "quarter_report_q1": {
+    "binding_constraints": [
+      {
+        "demand_lost": "216.483960046993560623218801",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2725.0000 effective) bound 216.483960046993560623218801 leads' worth of demand out of 2941.483960046993560623218801 effective leads generated",
+        "gate": "sales_capacity"
+      },
+      {
+        "demand_lost": "8.14252319193148962339848533",
+        "demand_lost_unit": "conversion_points",
+        "detail": "the Conversion Ceiling (19.10996231131985986420343946%) capped 8.14252319193148962339848533 points of raw conversion (27.25248550325134948760192479%) -- a build-quality limit, not a demand or capacity limit",
+        "gate": "conversion_ceiling"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "decision_quality": {
+      "band": "Weak",
+      "ceo_score": "55.26",
+      "mechanical_points_available": "31.66666666666666666666666666",
+      "modifiers": [
+        {
+          "applied_points": "0",
+          "detail": "net_cash_flow_inr = Rs -3,127,836.80",
+          "fired": false,
+          "id": "profitability_achieved",
+          "points": "3"
+        },
+        {
+          "applied_points": "2",
+          "detail": "referral leads=800.00, referral_lead_cap=800.00, referral_wasted_spend_inr=0.0000",
+          "fired": true,
+          "id": "perfect_channel_match",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "effective_leads=2941.483960046993560623218801, leads_used=2725.0000, gap=216.483960046993560623218801",
+          "fired": false,
+          "id": "zero_capacity_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "available_to_sell - units_sold = 729.4065342891424425694132567 (threshold 25)",
+          "fired": false,
+          "id": "zero_supply_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "no prior_allocations available -- nothing to compare against (e.g. Q1)",
+          "fired": false,
+          "id": "compounding_asset_cut",
+          "points": "-2"
+        },
+        {
+          "applied_points": "-2",
+          "detail": "raw_conversion_pct - conversion_ceiling_pct = 8.14252319193148962339848533 pts (threshold 3)",
+          "fired": true,
+          "id": "ceiling_undershot",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "buffer_overspend_inr = Rs 0.00",
+          "fired": false,
+          "id": "cash_buffer_breached",
+          "points": "-3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today",
+          "fired": false,
+          "id": "debt_without_justification",
+          "points": "-2"
+        }
+      ],
+      "scored_criteria": [
+        {
+          "detail": "effective_leads/effective_sales_capacity=2941.483960046993560623218801/2725.0000, total_units_demanded/available_to_sell=561.6214729834661812995437253/1291.028007272608623868956982, within 1.30x band: leads=True, supply=False",
+          "id": "systems_thinking_2",
+          "points": "3.333333333333333333333333333",
+          "result": "partially_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=True, supply_bound=False",
+          "id": "systems_thinking_3",
+          "points": "3.333333333333333333333333333",
+          "result": "partially_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 7,150,000.00",
+          "id": "risk_management_1",
+          "points": "5.000000000000000000000000000",
+          "result": "clearly_met",
+          "trait": "risk_management"
+        },
+        {
+          "detail": "referral_wasted_spend_inr=0.0000, capacity_bound=True",
+          "id": "capital_allocation_2",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=True, supply_bound=False",
+          "id": "capital_allocation_3",
+          "points": "0E-27",
+          "result": "not_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "compounding-line spend this quarter = 10.2500 lakhs",
+          "id": "long_term_thinking_1",
+          "points": "3.333333333333333333333333333",
+          "result": "clearly_met",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_criteria": [
+        {
+          "id": "systems_thinking_1",
+          "reason": "'Correctly identified' asks about the student's stated understanding of the dependency, not just its numeric consequence -- the consequence is checkable (systems_thinking_2/3 do), the identification claim is not.",
+          "trait": "systems_thinking"
+        },
+        {
+          "id": "strategic_thinking_1",
+          "reason": "'Stated' asks for the student's own reasoning. QuarterAllocations carries spend numbers, not a rationale field -- there is nothing in the pure engine's output that represents what the student said.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_2",
+          "reason": "Checking follow-through requires knowing what the thesis was (see strategic_thinking_1); with no stated thesis captured, there is nothing to check the numbers against.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_3",
+          "reason": "QuarterResult can say which gate bound this quarter (capacity_bound/ceiling_bound/supply_bound), but the criterion asks whether the student's thesis targeted it -- that comparison needs the thesis, which isn't captured.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "adaptability_1",
+          "reason": "Recognition is a claim about the student's awareness, not a fact derivable from comparing two QuarterResults -- a changed allocation is consistent with recognition, drift, or coincidence alike.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_2",
+          "reason": "Distinguishing evidence-driven from arbitrary change needs the student's stated motivation; the engine has no such field.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_3",
+          "reason": "Identifying 'the change' at all depends on knowing what was attempted and why (adaptability_1/2), which isn't captured, so execution quality against it can't be checked either.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "risk_management_2",
+          "reason": "This asks about exposure under hypothetical futures that didn't happen -- QuarterResult only carries what did happen, not what the student's assumptions were or how they'd fail.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "risk_management_3",
+          "reason": "Explicitly asks what was known 'at the time of the decision' -- the engine only has the outcome, not a reconstruction of what evidence preceded it.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "capital_allocation_1",
+          "reason": "'Roughly matches' is a comparative judgment across department-specific marginal-return curves; deriving and comparing all of them would be inventing an evaluation formula docs/ does not state.",
+          "trait": "capital_allocation"
+        },
+        {
+          "id": "leadership_1",
+          "reason": "Hedging and indecision are properties of how a decision was made, not of the resulting spend numbers -- no field in QuarterResult or QuarterAllocations carries process information.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_2",
+          "reason": "Proactivity is about whether the student raised something unprompted. The engine only sees the final allocation, never whether or how it was prompted.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_3",
+          "reason": "Ownership is expressed in what the student says about their decision, not in the decision's numbers -- nothing here is inferable from spend alone without inventing a proxy.",
+          "trait": "leadership"
+        },
+        {
+          "id": "long_term_thinking_2",
+          "reason": "'When the two compete' asks about a trade-off the student faced; the engine sees the resulting split, not whether a competing short-term option was passed over for it.",
+          "trait": "long_term_thinking"
+        },
+        {
+          "id": "long_term_thinking_3",
+          "reason": "'Current stage' is an interpretive read of where the company is in its trajectory, not a field in CompanyState -- there is no stated formula mapping cash/history to a 'stage'.",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_points": "68.33333333333333333333333334"
+    },
+    "evidence": {
+      "capital_allocation": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 7,150,000.00 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "11650000",
+            "margin_inr": "7150000.0000",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Financial Planning funded: +1.369482604771366314423119850% next-quarter cash efficiency bonus",
+          "evidence_key": "finance_planning_investment",
+          "value": {
+            "cash_efficiency_bonus_pct": "1.369482604771366314423119850",
+            "forecast_accuracy_after": "63.69482604771366314423119850"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.00 of a 800.00 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": true,
+            "lead_cap": "800.00",
+            "leads": "800.00",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1291.028007272608623868956982 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1291.028007272608623868956982",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "74.89897948556635619639456815"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "Logistics funded: efficiency now 65.47722557505166113456969783",
+          "evidence_key": "operations_process_efficiency",
+          "value": {
+            "logistics_efficiency_after": "65.47722557505166113456969783",
+            "satisfaction_pts": "3.273861278752583056728484892"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (15.00% -> 19.10996231131985986420343946%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "19.10996231131985986420343946",
+            "ceiling_before_pct": "15.00",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "CRM Tools funded: +1.665975460251483263162614612 conversion points",
+          "evidence_key": "sales_conversion_investment",
+          "value": {
+            "conversion_bonus_pts": "1.665975460251483263162614612",
+            "funded": true
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "leadership": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 70.47722557505166113456969783",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "70.47722557505166113456969783",
+            "productivity_multiplier": "1.081908902300206644538278791"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "long_term_thinking": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 70.47722557505166113456969783",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "70.47722557505166113456969783",
+            "productivity_multiplier": "1.081908902300206644538278791"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "CX Team funded: +1.917463031028365417456303974 Repeat Purchase Rate points",
+          "evidence_key": "hr_cx_team_investment",
+          "value": {
+            "repeat_rate_pts": "1.917463031028365417456303974",
+            "satisfaction_pts": "3.794733192202055198398672253"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "Training & Development funded: Engagement now 65.69209978830308279759800838, Attrition 7.116948025403630064288238994%",
+          "evidence_key": "hr_training_investment",
+          "value": {
+            "attrition_rate_pct_after": "7.116948025403630064288238994",
+            "employee_engagement_after": "65.69209978830308279759800838"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "brand-building channels funded: meta_ads, social_influencer, events_pr (+8.70400 Brand Score this quarter)",
+          "evidence_key": "marketing_brand_building",
+          "value": {
+            "brand_score_built": "8.70400",
+            "channels_funded": [
+              "meta_ads",
+              "social_influencer",
+              "events_pr"
+            ]
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.500000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "12.00000000000000000000000000",
+            "innovation_score_built": "7.500000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Onboarding funded: +3.280086221829834169106293344 Repeat Purchase Rate points",
+          "evidence_key": "sales_retention_investment",
+          "value": {
+            "repeat_rate_pts": "3.280086221829834169106293344",
+            "satisfaction_pts": "3.354101966249684544613760502"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "risk_management": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 7,150,000.00 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "11650000",
+            "margin_inr": "7150000.0000",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Compliance & Legal + Audit Prep funded: Penalty Risk now 19.68378109635533920136863673%",
+          "evidence_key": "finance_compliance_investment",
+          "value": {
+            "audit_readiness_after": "57.24568837309471928685933208",
+            "compliance_score_after": "58.36660026534075547978172026",
+            "penalty_risk_pct_after": "19.68378109635533920136863673"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.00 of a 800.00 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": true,
+            "lead_cap": "800.00",
+            "leads": "800.00",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "largest single channel (google_ads) is 29.4% of diversifiable marketing spend -- band Low (resolves high_channel_dependency + risk_level, no sourced weight in docs/ for either)",
+          "evidence_key": "marketing_channel_concentration",
+          "value": {
+            "band": "Low",
+            "max_channel": "google_ads",
+            "max_channel_share": "0.2941176470588235294117647059"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "opened the quarter carrying 600 unsold units",
+          "evidence_key": "operations_inventory_planning",
+          "value": {
+            "carrying_stock": true,
+            "opening_inventory_units": "600"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "warranty term selected: 1 year(s)",
+          "evidence_key": "rnd_warranty_offered",
+          "value": {
+            "warranty_years": 1
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "strategic_thinking": [
+        {
+          "department": null,
+          "detail": "no prior quarter to compare against (e.g. Q1)",
+          "evidence_key": "consistent_objective",
+          "value": "no_prior_quarter",
+          "weight": "2.00",
+          "weight_status": "not_applicable"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.500000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "12.00000000000000000000000000",
+            "innovation_score_built": "7.500000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "systems_thinking": [
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1291.028007272608623868956982 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1291.028007272608623868956982",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "74.89897948556635619639456815"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (15.00% -> 19.10996231131985986420343946%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "19.10996231131985986420343946",
+            "ceiling_before_pct": "15.00",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ]
+    },
+    "outcome": {
+      "cash_runway_gap_reason": null,
+      "cash_runway_quarters": {
+        "delta": null,
+        "value": "3.795646627008347062900802135"
+      },
+      "closing_cash_inr": {
+        "delta": null,
+        "value": "11872163.19994840776046893547"
+      },
+      "cogs_inr": {
+        "delta": null,
+        "value": "1733448.540812719192657889590"
+      },
+      "gross_profit_inr": {
+        "delta": null,
+        "value": "3882204.567548959154156248119"
+      },
+      "net_cash_flow_inr": {
+        "delta": null,
+        "value": "-3127836.800051592239531064534"
+      },
+      "revenue_inr": {
+        "delta": null,
+        "value": "5615653.108361678346814137709"
+      },
+      "units_sold": {
+        "delta": null,
+        "value": "561.6214729834661812995437253"
+      },
+      "valuation_gap_reason": null,
+      "valuation_inr": {
+        "delta": null,
+        "value": "52507746.33695241339816550549"
+      }
+    },
+    "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "quarter_number": 1,
+    "run_status": "active",
+    "run_summary": null,
+    "survival_detail": null,
+    "survival_triggered_by": null
+  },
+  "quarter_report_q2": {
+    "binding_constraints": [
+      {
+        "demand_lost": "1245.302886272528627819132753",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2531.063166307751080748145488 effective) bound 1245.302886272528627819132753 leads' worth of demand out of 3776.366052580279708567278241 effective leads generated",
+        "gate": "sales_capacity"
+      },
+      {
+        "demand_lost": "4.03256088061162975919504586",
+        "demand_lost_unit": "conversion_points",
+        "detail": "the Conversion Ceiling (23.21992462263971972840687893%) capped 4.03256088061162975919504586 points of raw conversion (27.25248550325134948760192479%) -- a build-quality limit, not a demand or capacity limit",
+        "gate": "conversion_ceiling"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "decision_quality": {
+      "band": "Weak",
+      "ceo_score": "42.74",
+      "mechanical_points_available": "31.66666666666666666666666666",
+      "modifiers": [
+        {
+          "applied_points": "0",
+          "detail": "net_cash_flow_inr = Rs -1,923,665.66",
+          "fired": false,
+          "id": "profitability_achieved",
+          "points": "3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "referral leads=800.0000, referral_lead_cap=912.3242945966932362599087450, referral_wasted_spend_inr=0.0000",
+          "fired": false,
+          "id": "perfect_channel_match",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "effective_leads=3776.366052580279708567278241, leads_used=2531.063166307751080748145488, gap=1245.302886272528627819132753",
+          "fired": false,
+          "id": "zero_capacity_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "available_to_sell - units_sold = 680.8946707083253033967786711 (threshold 25)",
+          "fired": false,
+          "id": "zero_supply_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "lines below 0.80x prior spend: none",
+          "fired": false,
+          "id": "compounding_asset_cut",
+          "points": "-2"
+        },
+        {
+          "applied_points": "-2",
+          "detail": "raw_conversion_pct - conversion_ceiling_pct = 4.03256088061162975919504586 pts (threshold 3)",
+          "fired": true,
+          "id": "ceiling_undershot",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "buffer_overspend_inr = Rs 0.00",
+          "fired": false,
+          "id": "cash_buffer_breached",
+          "points": "-3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today",
+          "fired": false,
+          "id": "debt_without_justification",
+          "points": "-2"
+        }
+      ],
+      "scored_criteria": [
+        {
+          "detail": "effective_leads/effective_sales_capacity=3776.366052580279708567278241/2531.063166307751080748145488, total_units_demanded/available_to_sell=732.3416432838019472319500319/1413.236313992127250628728703, within 1.30x band: leads=False, supply=False",
+          "id": "systems_thinking_2",
+          "points": "0E-27",
+          "result": "not_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=True, supply_bound=False",
+          "id": "systems_thinking_3",
+          "points": "3.333333333333333333333333333",
+          "result": "partially_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 4,054,346.04",
+          "id": "risk_management_1",
+          "points": "5.000000000000000000000000000",
+          "result": "clearly_met",
+          "trait": "risk_management"
+        },
+        {
+          "detail": "referral_wasted_spend_inr=0.0000, capacity_bound=True",
+          "id": "capital_allocation_2",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=True, supply_bound=False",
+          "id": "capital_allocation_3",
+          "points": "0E-27",
+          "result": "not_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "compounding-line spend this quarter = 10.2500 lakhs",
+          "id": "long_term_thinking_1",
+          "points": "3.333333333333333333333333333",
+          "result": "clearly_met",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_criteria": [
+        {
+          "id": "systems_thinking_1",
+          "reason": "'Correctly identified' asks about the student's stated understanding of the dependency, not just its numeric consequence -- the consequence is checkable (systems_thinking_2/3 do), the identification claim is not.",
+          "trait": "systems_thinking"
+        },
+        {
+          "id": "strategic_thinking_1",
+          "reason": "'Stated' asks for the student's own reasoning. QuarterAllocations carries spend numbers, not a rationale field -- there is nothing in the pure engine's output that represents what the student said.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_2",
+          "reason": "Checking follow-through requires knowing what the thesis was (see strategic_thinking_1); with no stated thesis captured, there is nothing to check the numbers against.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_3",
+          "reason": "QuarterResult can say which gate bound this quarter (capacity_bound/ceiling_bound/supply_bound), but the criterion asks whether the student's thesis targeted it -- that comparison needs the thesis, which isn't captured.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "adaptability_1",
+          "reason": "Recognition is a claim about the student's awareness, not a fact derivable from comparing two QuarterResults -- a changed allocation is consistent with recognition, drift, or coincidence alike.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_2",
+          "reason": "Distinguishing evidence-driven from arbitrary change needs the student's stated motivation; the engine has no such field.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_3",
+          "reason": "Identifying 'the change' at all depends on knowing what was attempted and why (adaptability_1/2), which isn't captured, so execution quality against it can't be checked either.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "risk_management_2",
+          "reason": "This asks about exposure under hypothetical futures that didn't happen -- QuarterResult only carries what did happen, not what the student's assumptions were or how they'd fail.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "risk_management_3",
+          "reason": "Explicitly asks what was known 'at the time of the decision' -- the engine only has the outcome, not a reconstruction of what evidence preceded it.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "capital_allocation_1",
+          "reason": "'Roughly matches' is a comparative judgment across department-specific marginal-return curves; deriving and comparing all of them would be inventing an evaluation formula docs/ does not state.",
+          "trait": "capital_allocation"
+        },
+        {
+          "id": "leadership_1",
+          "reason": "Hedging and indecision are properties of how a decision was made, not of the resulting spend numbers -- no field in QuarterResult or QuarterAllocations carries process information.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_2",
+          "reason": "Proactivity is about whether the student raised something unprompted. The engine only sees the final allocation, never whether or how it was prompted.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_3",
+          "reason": "Ownership is expressed in what the student says about their decision, not in the decision's numbers -- nothing here is inferable from spend alone without inventing a proxy.",
+          "trait": "leadership"
+        },
+        {
+          "id": "long_term_thinking_2",
+          "reason": "'When the two compete' asks about a trade-off the student faced; the engine sees the resulting split, not whether a competing short-term option was passed over for it.",
+          "trait": "long_term_thinking"
+        },
+        {
+          "id": "long_term_thinking_3",
+          "reason": "'Current stage' is an interpretive read of where the company is in its trajectory, not a field in CompanyState -- there is no stated formula mapping cash/history to a 'stage'.",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_points": "68.33333333333333333333333334"
+    },
+    "evidence": {
+      "capital_allocation": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 4,054,346.04 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "8554346.041160534868857878786",
+            "margin_inr": "4054346.041160534868857878786",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Financial Planning funded: +2.238965209542732628846239700% next-quarter cash efficiency bonus",
+          "evidence_key": "finance_planning_investment",
+          "value": {
+            "cash_efficiency_bonus_pct": "2.238965209542732628846239700",
+            "forecast_accuracy_after": "72.38965209542732628846239700"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 912.3242945966932362599087450 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "912.3242945966932362599087450",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1413.236313992127250628728703 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1413.236313992127250628728703",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "79.79795897113271239278913630"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "Logistics funded: efficiency now 70.95445115010332226913939566",
+          "evidence_key": "operations_process_efficiency",
+          "value": {
+            "logistics_efficiency_after": "70.95445115010332226913939566",
+            "satisfaction_pts": "3.547722557505166113456969783"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343947 points this quarter (19.10996231131985986420343946% -> 23.21992462263971972840687893%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "23.21992462263971972840687893",
+            "ceiling_before_pct": "19.10996231131985986420343946",
+            "lift_pts": "4.10996231131985986420343947"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "CRM Tools funded: +1.665975460251483263162614612 conversion points",
+          "evidence_key": "sales_conversion_investment",
+          "value": {
+            "conversion_bonus_pts": "1.665975460251483263162614612",
+            "funded": true
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "leadership": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 75.95445115010332226913939566",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "75.95445115010332226913939566",
+            "productivity_multiplier": "1.103817804600413289076557583"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "long_term_thinking": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 75.95445115010332226913939566",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "75.95445115010332226913939566",
+            "productivity_multiplier": "1.103817804600413289076557583"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "CX Team funded: +1.917463031028365417456303974 Repeat Purchase Rate points",
+          "evidence_key": "hr_cx_team_investment",
+          "value": {
+            "repeat_rate_pts": "1.917463031028365417456303974",
+            "satisfaction_pts": "3.794733192202055198398672253"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "Training & Development funded: Engagement now 71.38419957660616559519601676, Attrition 6.433896050807260128576477989%",
+          "evidence_key": "hr_training_investment",
+          "value": {
+            "attrition_rate_pct_after": "6.433896050807260128576477989",
+            "employee_engagement_after": "71.38419957660616559519601676"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "brand-building channels funded: meta_ads, social_influencer, events_pr (+8.70400 Brand Score this quarter)",
+          "evidence_key": "marketing_brand_building",
+          "value": {
+            "brand_score_built": "8.70400",
+            "channels_funded": [
+              "meta_ads",
+              "social_influencer",
+              "events_pr"
+            ]
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.500000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "24.00000000000000000000000000",
+            "innovation_score_built": "7.500000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Onboarding funded: +3.280086221829834169106293344 Repeat Purchase Rate points",
+          "evidence_key": "sales_retention_investment",
+          "value": {
+            "repeat_rate_pts": "3.280086221829834169106293344",
+            "satisfaction_pts": "3.354101966249684544613760502"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "risk_management": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 4,054,346.04 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "8554346.041160534868857878786",
+            "margin_inr": "4054346.041160534868857878786",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Compliance & Legal + Audit Prep funded: Penalty Risk now 16.86756219271067840273727345%",
+          "evidence_key": "finance_compliance_investment",
+          "value": {
+            "audit_readiness_after": "64.49137674618943857371866416",
+            "compliance_score_after": "66.73320053068151095956344052",
+            "penalty_risk_pct_after": "16.86756219271067840273727345"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 912.3242945966932362599087450 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "912.3242945966932362599087450",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "largest single channel (google_ads) is 29.4% of diversifiable marketing spend -- band Low (resolves high_channel_dependency + risk_level, no sourced weight in docs/ for either)",
+          "evidence_key": "marketing_channel_concentration",
+          "value": {
+            "band": "Low",
+            "max_channel": "google_ads",
+            "max_channel_share": "0.2941176470588235294117647059"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "opened the quarter carrying 729.4065342891424425694132567 unsold units",
+          "evidence_key": "operations_inventory_planning",
+          "value": {
+            "carrying_stock": true,
+            "opening_inventory_units": "729.4065342891424425694132567"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "warranty term selected: 1 year(s)",
+          "evidence_key": "rnd_warranty_offered",
+          "value": {
+            "warranty_years": 1
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "strategic_thinking": [
+        {
+          "department": null,
+          "detail": "compounding lines funded last quarter that dropped to zero this quarter: none",
+          "evidence_key": "consistent_objective",
+          "value": {
+            "consistent": true,
+            "dropped_to_zero": []
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.500000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "24.00000000000000000000000000",
+            "innovation_score_built": "7.500000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "systems_thinking": [
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1413.236313992127250628728703 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1413.236313992127250628728703",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "79.79795897113271239278913630"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343947 points this quarter (19.10996231131985986420343946% -> 23.21992462263971972840687893%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "23.21992462263971972840687893",
+            "ceiling_before_pct": "19.10996231131985986420343946",
+            "lift_pts": "4.10996231131985986420343947"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ]
+    },
+    "outcome": {
+      "cash_runway_gap_reason": null,
+      "cash_runway_quarters": {
+        "delta": "1.375988818296122597379969520",
+        "value": "5.171635445304469660280771655"
+      },
+      "closing_cash_inr": {
+        "delta": "-1923665.664500815298740411485",
+        "value": "9948497.535447592461728523985"
+      },
+      "cogs_inr": {
+        "delta": "526928.980336775873544853397",
+        "value": "2260377.521149495066202742987"
+      },
+      "gross_profit_inr": {
+        "delta": "1180102.002496281450013277263",
+        "value": "5062306.570045240604169525382"
+      },
+      "net_cash_flow_inr": {
+        "delta": "1204171.135550776940790653049",
+        "value": "-1923665.664500815298740411485"
+      },
+      "revenue_inr": {
+        "delta": "1707030.982833057323558130660",
+        "value": "7322684.091194735670372268369"
+      },
+      "units_sold": {
+        "delta": "170.7201703003357659324063066",
+        "value": "732.3416432838019472319500319"
+      },
+      "valuation_gap_reason": null,
+      "valuation_inr": {
+        "delta": "14617160.66315469450718558797",
+        "value": "67124907.00010710790535109346"
+      }
+    },
+    "quarter_id": "33c4db6d-ca43-4818-883b-41066f1c10a6",
+    "quarter_number": 2,
+    "run_status": "active",
+    "run_summary": null,
+    "survival_detail": null,
+    "survival_triggered_by": null
+  },
+  "quarter_report_q3_with_crisis": {
+    "binding_constraints": [
+      {
+        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "gate": "sales_capacity"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "decision_quality": {
+      "band": "Competent",
+      "ceo_score": "69.16",
+      "mechanical_points_available": "31.66666666666666666666666666",
+      "modifiers": [
+        {
+          "applied_points": "0",
+          "detail": "net_cash_flow_inr = Rs -1,392,950.94",
+          "fired": false,
+          "id": "profitability_achieved",
+          "points": "3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "referral leads=800.0000, referral_lead_cap=1058.792623253453625706298751, referral_wasted_spend_inr=0.0000",
+          "fired": false,
+          "id": "perfect_channel_match",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "effective_leads=3597.113157869907873691211751, leads_used=2549.676332615502161496290975, gap=1047.436825254405712194920776",
+          "fired": false,
+          "id": "zero_capacity_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "available_to_sell - units_sold = 524.9994541739592585371213110 (threshold 25)",
+          "fired": false,
+          "id": "zero_supply_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "lines below 0.80x prior spend: none",
+          "fired": false,
+          "id": "compounding_asset_cut",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "raw_conversion_pct - conversion_ceiling_pct = -0.07740143070823010500839360 pts (threshold 3)",
+          "fired": false,
+          "id": "ceiling_undershot",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "buffer_overspend_inr = Rs 0.00",
+          "fired": false,
+          "id": "cash_buffer_breached",
+          "points": "-3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today",
+          "fired": false,
+          "id": "debt_without_justification",
+          "points": "-2"
+        },
+        {
+          "applied_points": "3",
+          "detail": "crisis_scenario=C, crisis_fully_neutralized=True",
+          "fired": true,
+          "id": "crisis_fully_neutralized",
+          "points": "3"
+        },
+        {
+          "applied_points": "3",
+          "detail": "crisis_scenario=C, crisis_proofed_by_prior_investment=True",
+          "fired": true,
+          "id": "crisis_proofed_by_prior_investment",
+          "points": "3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "crisis_scenario=C, crisis_choice=C, crisis_structural_improvement=False",
+          "fired": false,
+          "id": "structural_improvement_made",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "crisis_scenario=C, crisis_response_spend_inr=Rs 0.00, fully_neutralized=True, proofed_by_prior_investment=True",
+          "fired": false,
+          "id": "crisis_ignored",
+          "points": "-4"
+        }
+      ],
+      "scored_criteria": [
+        {
+          "detail": "effective_leads/effective_sales_capacity=3597.113157869907873691211751/2549.676332615502161496290975, total_units_demanded/available_to_sell=887.0444136449232994293770840/1412.043867818882557966498395, within 1.30x band: leads=False, supply=False",
+          "id": "systems_thinking_2",
+          "points": "0E-27",
+          "result": "not_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=False, supply_bound=False",
+          "id": "systems_thinking_3",
+          "points": "6.666666666666666666666666666",
+          "result": "clearly_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 1,582,575.50",
+          "id": "risk_management_1",
+          "points": "5.000000000000000000000000000",
+          "result": "clearly_met",
+          "trait": "risk_management"
+        },
+        {
+          "detail": "referral_wasted_spend_inr=0.0000, capacity_bound=True",
+          "id": "capital_allocation_2",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=False, supply_bound=False",
+          "id": "capital_allocation_3",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "compounding-line spend this quarter = 10.2500 lakhs",
+          "id": "long_term_thinking_1",
+          "points": "3.333333333333333333333333333",
+          "result": "clearly_met",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_criteria": [
+        {
+          "id": "systems_thinking_1",
+          "reason": "'Correctly identified' asks about the student's stated understanding of the dependency, not just its numeric consequence -- the consequence is checkable (systems_thinking_2/3 do), the identification claim is not.",
+          "trait": "systems_thinking"
+        },
+        {
+          "id": "strategic_thinking_1",
+          "reason": "'Stated' asks for the student's own reasoning. QuarterAllocations carries spend numbers, not a rationale field -- there is nothing in the pure engine's output that represents what the student said.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_2",
+          "reason": "Checking follow-through requires knowing what the thesis was (see strategic_thinking_1); with no stated thesis captured, there is nothing to check the numbers against.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_3",
+          "reason": "QuarterResult can say which gate bound this quarter (capacity_bound/ceiling_bound/supply_bound), but the criterion asks whether the student's thesis targeted it -- that comparison needs the thesis, which isn't captured.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "adaptability_1",
+          "reason": "Recognition is a claim about the student's awareness, not a fact derivable from comparing two QuarterResults -- a changed allocation is consistent with recognition, drift, or coincidence alike.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_2",
+          "reason": "Distinguishing evidence-driven from arbitrary change needs the student's stated motivation; the engine has no such field.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_3",
+          "reason": "Identifying 'the change' at all depends on knowing what was attempted and why (adaptability_1/2), which isn't captured, so execution quality against it can't be checked either.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "risk_management_2",
+          "reason": "This asks about exposure under hypothetical futures that didn't happen -- QuarterResult only carries what did happen, not what the student's assumptions were or how they'd fail.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "risk_management_3",
+          "reason": "Explicitly asks what was known 'at the time of the decision' -- the engine only has the outcome, not a reconstruction of what evidence preceded it.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "capital_allocation_1",
+          "reason": "'Roughly matches' is a comparative judgment across department-specific marginal-return curves; deriving and comparing all of them would be inventing an evaluation formula docs/ does not state.",
+          "trait": "capital_allocation"
+        },
+        {
+          "id": "leadership_1",
+          "reason": "Hedging and indecision are properties of how a decision was made, not of the resulting spend numbers -- no field in QuarterResult or QuarterAllocations carries process information.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_2",
+          "reason": "Proactivity is about whether the student raised something unprompted. The engine only sees the final allocation, never whether or how it was prompted.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_3",
+          "reason": "Ownership is expressed in what the student says about their decision, not in the decision's numbers -- nothing here is inferable from spend alone without inventing a proxy.",
+          "trait": "leadership"
+        },
+        {
+          "id": "long_term_thinking_2",
+          "reason": "'When the two compete' asks about a trade-off the student faced; the engine sees the resulting split, not whether a competing short-term option was passed over for it.",
+          "trait": "long_term_thinking"
+        },
+        {
+          "id": "long_term_thinking_3",
+          "reason": "'Current stage' is an interpretive read of where the company is in its trajectory, not a field in CompanyState -- there is no stated formula mapping cash/history to a 'stage'.",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_points": "68.33333333333333333333333334"
+    },
+    "evidence": {
+      "capital_allocation": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 1,582,575.50 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "6682575.496465791880269519784",
+            "margin_inr": "1582575.496465791880269519784",
+            "total_discretionary_inr": "5100000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Financial Planning funded: +3.108447814314098943269359550% next-quarter cash efficiency bonus",
+          "evidence_key": "finance_planning_investment",
+          "value": {
+            "cash_efficiency_bonus_pct": "3.108447814314098943269359550",
+            "forecast_accuracy_after": "81.08447814314098943269359550"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 1058.792623253453625706298751 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "1058.792623253453625706298751",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1412.043867818882557966498395 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1412.043867818882557966498395",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "84.69693845669906858918370445"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "Logistics funded: efficiency now 76.43167672515498340370909349",
+          "evidence_key": "operations_process_efficiency",
+          "value": {
+            "logistics_efficiency_after": "76.43167672515498340370909349",
+            "satisfaction_pts": "3.821583836257749170185454674"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (23.21992462263971972840687893% -> 27.32988693395957959261031839%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "27.32988693395957959261031839",
+            "ceiling_before_pct": "23.21992462263971972840687893",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "CRM Tools funded: +1.665975460251483263162614612 conversion points",
+          "evidence_key": "sales_conversion_investment",
+          "value": {
+            "conversion_bonus_pts": "1.665975460251483263162614612",
+            "funded": true
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "leadership": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 81.43167672515498340370909349",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "81.43167672515498340370909349",
+            "productivity_multiplier": "1.125726706900619933614836374"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "long_term_thinking": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 81.43167672515498340370909349",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "81.43167672515498340370909349",
+            "productivity_multiplier": "1.125726706900619933614836374"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "CX Team funded: +1.917463031028365417456303974 Repeat Purchase Rate points",
+          "evidence_key": "hr_cx_team_investment",
+          "value": {
+            "repeat_rate_pts": "1.917463031028365417456303974",
+            "satisfaction_pts": "3.794733192202055198398672253"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "Training & Development funded: Engagement now 77.07629936490924839279402514, Attrition 5.750844076210890192864716983%",
+          "evidence_key": "hr_training_investment",
+          "value": {
+            "attrition_rate_pct_after": "5.750844076210890192864716983",
+            "employee_engagement_after": "77.07629936490924839279402514"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "brand-building channels funded: meta_ads, social_influencer, events_pr (+8.70400 Brand Score this quarter)",
+          "evidence_key": "marketing_brand_building",
+          "value": {
+            "brand_score_built": "8.70400",
+            "channels_funded": [
+              "meta_ads",
+              "social_influencer",
+              "events_pr"
+            ]
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.50000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "36.00000000000000000000000000",
+            "innovation_score_built": "7.50000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Onboarding funded: +3.280086221829834169106293344 Repeat Purchase Rate points",
+          "evidence_key": "sales_retention_investment",
+          "value": {
+            "repeat_rate_pts": "3.280086221829834169106293344",
+            "satisfaction_pts": "3.354101966249684544613760502"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "risk_management": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 1,582,575.50 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "6682575.496465791880269519784",
+            "margin_inr": "1582575.496465791880269519784",
+            "total_discretionary_inr": "5100000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Compliance & Legal + Audit Prep funded: Penalty Risk now 14.05134328906601760410591018%",
+          "evidence_key": "finance_compliance_investment",
+          "value": {
+            "audit_readiness_after": "71.73706511928415786057799624",
+            "compliance_score_after": "75.09980079602226643934516078",
+            "penalty_risk_pct_after": "14.05134328906601760410591018"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 1058.792623253453625706298751 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "1058.792623253453625706298751",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "largest single channel (google_ads) is 29.4% of diversifiable marketing spend -- band Low (resolves high_channel_dependency + risk_level, no sourced weight in docs/ for either)",
+          "evidence_key": "marketing_channel_concentration",
+          "value": {
+            "band": "Low",
+            "max_channel": "google_ads",
+            "max_channel_share": "0.2941176470588235294117647059"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "opened the quarter carrying 680.8946707083253033967786711 unsold units",
+          "evidence_key": "operations_inventory_planning",
+          "value": {
+            "carrying_stock": true,
+            "opening_inventory_units": "680.8946707083253033967786711"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "warranty term selected: 1 year(s)",
+          "evidence_key": "rnd_warranty_offered",
+          "value": {
+            "warranty_years": 1
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "strategic_thinking": [
+        {
+          "department": null,
+          "detail": "compounding lines funded last quarter that dropped to zero this quarter: none",
+          "evidence_key": "consistent_objective",
+          "value": {
+            "consistent": true,
+            "dropped_to_zero": []
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.50000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "36.00000000000000000000000000",
+            "innovation_score_built": "7.50000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "systems_thinking": [
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1412.043867818882557966498395 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1412.043867818882557966498395",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "84.69693845669906858918370445"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (23.21992462263971972840687893% -> 27.32988693395957959261031839%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "27.32988693395957959261031839",
+            "ceiling_before_pct": "23.21992462263971972840687893",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ]
+    },
+    "outcome": {
+      "cash_runway_gap_reason": null,
+      "cash_runway_quarters": {
+        "delta": "0.970394652348677318252711255",
+        "value": "6.142030097653146978533482910"
+      },
+      "closing_cash_inr": {
+        "delta": "-1392950.939637827007081947521",
+        "value": "8555546.595809765454646576464"
+      },
+      "cogs_inr": {
+        "delta": "477491.165210603946612181780",
+        "value": "2737868.686360099012814924767"
+      },
+      "gross_profit_inr": {
+        "delta": "1069381.835630248454009891314",
+        "value": "6131688.405675489058179416696"
+      },
+      "net_cash_flow_inr": {
+        "delta": "530714.724862988291658463964",
+        "value": "-1392950.939637827007081947521"
+      },
+      "revenue_inr": {
+        "delta": "1546873.000840852400622073094",
+        "value": "8869557.092035588070994341463"
+      },
+      "units_sold": {
+        "delta": "154.7027703611213521974270521",
+        "value": "887.0444136449232994293770840"
+      },
+      "valuation_gap_reason": null,
+      "valuation_inr": {
+        "delta": "13358099.49894451550315225996",
+        "value": "80483006.49905162340850335342"
+      }
+    },
+    "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "quarter_number": 3,
+    "run_status": "distressed",
+    "run_summary": null,
+    "survival_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
+    "survival_triggered_by": "sustained_decline"
+  },
+  "quarter_report_q4_final": {
+    "binding_constraints": [
+      {
+        "demand_lost": "2522.277348636402214711507530",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2568.289498923253242244436462 effective) bound 2522.277348636402214711507530 leads' worth of demand out of 5090.566847559655456955943992 effective leads generated",
+        "gate": "sales_capacity"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "decision_quality": {
+      "band": "Strong",
+      "ceo_score": "76.68",
+      "mechanical_points_available": "31.66666666666666666666666666",
+      "modifiers": [
+        {
+          "applied_points": "3",
+          "detail": "net_cash_flow_inr = Rs 544,541.98",
+          "fired": true,
+          "id": "profitability_achieved",
+          "points": "3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "referral leads=800.0000, referral_lead_cap=1236.201505982438285592174168, referral_wasted_spend_inr=0.0000",
+          "fired": false,
+          "id": "perfect_channel_match",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "effective_leads=5090.566847559655456955943992, leads_used=2568.289498923253242244436462, gap=2522.277348636402214711507530",
+          "fired": false,
+          "id": "zero_capacity_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "available_to_sell - units_sold = 237.637404613853979687821977 (threshold 25)",
+          "fired": false,
+          "id": "zero_supply_waste",
+          "points": "2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "lines below 0.80x prior spend: none",
+          "fired": false,
+          "id": "compounding_asset_cut",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "raw_conversion_pct - conversion_ceiling_pct = -4.18736374202808996921183306 pts (threshold 3)",
+          "fired": false,
+          "id": "ceiling_undershot",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "buffer_overspend_inr = Rs 0.00",
+          "fired": false,
+          "id": "cash_buffer_breached",
+          "points": "-3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "no debt/loan mechanic exists in the 22-line chain -- this modifier can never fire today",
+          "fired": false,
+          "id": "debt_without_justification",
+          "points": "-2"
+        },
+        {
+          "applied_points": "0",
+          "detail": "Path A was not chosen this run",
+          "fired": false,
+          "id": "covenant_hit",
+          "points": "5"
+        },
+        {
+          "applied_points": "0",
+          "detail": "Path A was not chosen this run",
+          "fired": false,
+          "id": "covenant_missed",
+          "points": "-8"
+        },
+        {
+          "applied_points": "0",
+          "detail": "'correct reasoning' cannot be verified mechanically -- no reasoning-quality signal exists in this engine's inputs; this modifier can never fire today",
+          "fired": false,
+          "id": "correct_rejection",
+          "points": "4"
+        },
+        {
+          "applied_points": "0",
+          "detail": "requires a known offer for a weak/flat-momentum (Stable/Distressed) company, but an offer amount is only ever known for the Thriving tier's Acquisition Trap term sheet -- the two conditions can never co-occur with today's data; this modifier can never fire today",
+          "fired": false,
+          "id": "correct_acceptance",
+          "points": "4"
+        },
+        {
+          "applied_points": "0",
+          "detail": "Path B was not accepted this run",
+          "fired": false,
+          "id": "value_left_on_table",
+          "points": "-3"
+        },
+        {
+          "applied_points": "0",
+          "detail": "'explicit, stated reasoning' cannot be verified mechanically -- no reasoning-quality signal exists in this engine's inputs; this modifier can never fire today",
+          "fired": false,
+          "id": "deliberate_independence",
+          "points": "2"
+        }
+      ],
+      "scored_criteria": [
+        {
+          "detail": "effective_leads/effective_sales_capacity=5090.566847559655456955943992/2568.289498923253242244436462, total_units_demanded/available_to_sell=1066.448124488167769587690504/1304.085529102021749275512481, within 1.30x band: leads=False, supply=True",
+          "id": "systems_thinking_2",
+          "points": "3.333333333333333333333333333",
+          "result": "partially_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=False, supply_bound=False",
+          "id": "systems_thinking_3",
+          "points": "6.666666666666666666666666666",
+          "result": "clearly_met",
+          "trait": "systems_thinking"
+        },
+        {
+          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 860,059.56",
+          "id": "risk_management_1",
+          "points": "5.000000000000000000000000000",
+          "result": "clearly_met",
+          "trait": "risk_management"
+        },
+        {
+          "detail": "referral_wasted_spend_inr=0.0000, capacity_bound=True",
+          "id": "capital_allocation_2",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "capacity_bound=True, ceiling_bound=False, supply_bound=False",
+          "id": "capital_allocation_3",
+          "points": "2.500000000000000000000000000",
+          "result": "partially_met",
+          "trait": "capital_allocation"
+        },
+        {
+          "detail": "compounding-line spend this quarter = 10.2500 lakhs",
+          "id": "long_term_thinking_1",
+          "points": "3.333333333333333333333333333",
+          "result": "clearly_met",
+          "trait": "long_term_thinking"
+        }
+      ],
+      "unscored_criteria": [
+        {
+          "id": "systems_thinking_1",
+          "reason": "'Correctly identified' asks about the student's stated understanding of the dependency, not just its numeric consequence -- the consequence is checkable (systems_thinking_2/3 do), the identification claim is not.",
+          "trait": "systems_thinking"
+        },
+        {
+          "id": "strategic_thinking_1",
+          "reason": "'Stated' asks for the student's own reasoning. QuarterAllocations carries spend numbers, not a rationale field -- there is nothing in the pure engine's output that represents what the student said.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_2",
+          "reason": "Checking follow-through requires knowing what the thesis was (see strategic_thinking_1); with no stated thesis captured, there is nothing to check the numbers against.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "strategic_thinking_3",
+          "reason": "QuarterResult can say which gate bound this quarter (capacity_bound/ceiling_bound/supply_bound), but the criterion asks whether the student's thesis targeted it -- that comparison needs the thesis, which isn't captured.",
+          "trait": "strategic_thinking"
+        },
+        {
+          "id": "adaptability_1",
+          "reason": "Recognition is a claim about the student's awareness, not a fact derivable from comparing two QuarterResults -- a changed allocation is consistent with recognition, drift, or coincidence alike.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_2",
+          "reason": "Distinguishing evidence-driven from arbitrary change needs the student's stated motivation; the engine has no such field.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "adaptability_3",
+          "reason": "Identifying 'the change' at all depends on knowing what was attempted and why (adaptability_1/2), which isn't captured, so execution quality against it can't be checked either.",
+          "trait": "adaptability"
+        },
+        {
+          "id": "risk_management_2",
+          "reason": "This asks about exposure under hypothetical futures that didn't happen -- QuarterResult only carries what did happen, not what the student's assumptions were or how they'd fail.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "risk_management_3",
+          "reason": "Explicitly asks what was known 'at the time of the decision' -- the engine only has the outcome, not a reconstruction of what evidence preceded it.",
+          "trait": "risk_management"
+        },
+        {
+          "id": "capital_allocation_1",
+          "reason": "'Roughly matches' is a comparative judgment across department-specific marginal-return curves; deriving and comparing all of them would be inventing an evaluation formula docs/ does not state.",
+          "trait": "capital_allocation"
+        },
+        {
+          "id": "leadership_1",
+          "reason": "Hedging and indecision are properties of how a decision was made, not of the resulting spend numbers -- no field in QuarterResult or QuarterAllocations carries process information.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_2",
+          "reason": "Proactivity is about whether the student raised something unprompted. The engine only sees the final allocation, never whether or how it was prompted.",
+          "trait": "leadership"
+        },
+        {
+          "id": "leadership_3",
+          "reason": "Ownership is expressed in what the student says about their decision, not in the decision's numbers -- nothing here is inferable from spend alone without inventing a proxy.",
+          "trait": "leadership"
+        },
+        {
+          "id": "long_term_thinking_2",
+          "reason": "'When the two compete' asks about a trade-off the student faced; the engine sees the resulting split, not whether a competing short-term option was passed over for it.",
+          "trait": "long_term_thinking"
+        },
+        {
+          "id": "long_term_thinking_3",
+          "reason": "'Current stage' is an interpretive read of where the company is in its trajectory, not a field in CompanyState -- there is no stated formula mapping cash/history to a 'stage'.",
+          "trait": "long_term_thinking"
+        },
+        {
+          "id": "exit_growth_1",
+          "reason": "docs/17 P1's first Exit & Growth sub-criterion asks whether the student's stated reasoning engages with the trajectory across quarters -- that's the content of a reasoning field, not a fact QuarterResult/QuarterAllocations carries.",
+          "trait": "exit_growth"
+        },
+        {
+          "id": "exit_growth_2",
+          "reason": "Whether a path 'matches' the trajectory is an interpretive judgment about the student's stated case, not a mechanical comparison -- Tier already encodes the trajectory mechanically (assign_tier), but whether the student's chosen path was justified by it is a distinct question about their reasoning, which isn't captured.",
+          "trait": "exit_growth"
+        },
+        {
+          "id": "exit_growth_3",
+          "reason": "Ownership vs. attribution-to-luck is a property of what the student wrote, not of any number in QuarterResult -- the same reason leadership_3 (ownership of trade-offs) is unscored today.",
+          "trait": "exit_growth"
+        }
+      ],
+      "unscored_points": "83.33333333333333333333333334"
+    },
+    "evidence": {
+      "capital_allocation": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 860,059.56 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "5360059.560922756118399523329",
+            "margin_inr": "860059.560922756118399523329",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Financial Planning funded: +3.977930419085465257692479400% next-quarter cash efficiency bonus",
+          "evidence_key": "finance_planning_investment",
+          "value": {
+            "cash_efficiency_bonus_pct": "3.977930419085465257692479400",
+            "forecast_accuracy_after": "89.77930419085465257692479400"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 1236.201505982438285592174168 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "1236.201505982438285592174168",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1304.085529102021749275512481 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1304.085529102021749275512481",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "89.59591794226542478557827260"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "Logistics funded: efficiency now 81.90890230020664453827879132",
+          "evidence_key": "operations_process_efficiency",
+          "value": {
+            "logistics_efficiency_after": "81.90890230020664453827879132",
+            "satisfaction_pts": "4.095445115010332226913939566"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (27.32988693395957959261031839% -> 31.43984924527943945681375785%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "31.43984924527943945681375785",
+            "ceiling_before_pct": "27.32988693395957959261031839",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "CRM Tools funded: +1.665975460251483263162614612 conversion points",
+          "evidence_key": "sales_conversion_investment",
+          "value": {
+            "conversion_bonus_pts": "1.665975460251483263162614612",
+            "funded": true
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "leadership": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 86.90890230020664453827879132",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "86.90890230020664453827879132",
+            "productivity_multiplier": "1.147635609200826578153115165"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "long_term_thinking": [
+        {
+          "department": "hr",
+          "detail": "Culture & Benefits funded: Employee Satisfaction now 86.90890230020664453827879132",
+          "evidence_key": "hr_culture_investment",
+          "value": {
+            "employee_satisfaction_after": "86.90890230020664453827879132",
+            "productivity_multiplier": "1.147635609200826578153115165"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "CX Team funded: +1.917463031028365417456303974 Repeat Purchase Rate points",
+          "evidence_key": "hr_cx_team_investment",
+          "value": {
+            "repeat_rate_pts": "1.917463031028365417456303974",
+            "satisfaction_pts": "3.794733192202055198398672253"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "hr",
+          "detail": "Training & Development funded: Engagement now 82.76839915321233119039203352, Attrition 5.067792101614520257152955978%",
+          "evidence_key": "hr_training_investment",
+          "value": {
+            "attrition_rate_pct_after": "5.067792101614520257152955978",
+            "employee_engagement_after": "82.76839915321233119039203352"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "brand-building channels funded: meta_ads, social_influencer, events_pr (+8.70400 Brand Score this quarter)",
+          "evidence_key": "marketing_brand_building",
+          "value": {
+            "brand_score_built": "8.70400",
+            "channels_funded": [
+              "meta_ads",
+              "social_influencer",
+              "events_pr"
+            ]
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.50000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "48.00000000000000000000000000",
+            "innovation_score_built": "7.50000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Onboarding funded: +3.280086221829834169106293344 Repeat Purchase Rate points",
+          "evidence_key": "sales_retention_investment",
+          "value": {
+            "repeat_rate_pts": "3.280086221829834169106293344",
+            "satisfaction_pts": "3.354101966249684544613760502"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "risk_management": [
+        {
+          "department": "finance_admin",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 860,059.56 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "evidence_key": "finance_cash_preservation",
+          "value": {
+            "buffer_preserved": true,
+            "discretionary_ceiling_inr": "5360059.560922756118399523329",
+            "margin_inr": "860059.560922756118399523329",
+            "total_discretionary_inr": "4500000.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "finance_admin",
+          "detail": "Compliance & Legal + Audit Prep funded: Penalty Risk now 11.23512438542135680547454691%",
+          "evidence_key": "finance_compliance_investment",
+          "value": {
+            "audit_readiness_after": "78.98275349237887714743732832",
+            "compliance_score_after": "83.46640106136302191912688104",
+            "penalty_risk_pct_after": "11.23512438542135680547454691"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "Referral funded 800.0000 of a 1236.201505982438285592174168 lead cap (wasted spend Rs 0.00)",
+          "evidence_key": "marketing_cac_discipline",
+          "value": {
+            "at_cap": false,
+            "lead_cap": "1236.201505982438285592174168",
+            "leads": "800.0000",
+            "wasted_spend_inr": "0.0000"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "marketing",
+          "detail": "largest single channel (google_ads) is 29.4% of diversifiable marketing spend -- band Low (resolves high_channel_dependency + risk_level, no sourced weight in docs/ for either)",
+          "evidence_key": "marketing_channel_concentration",
+          "value": {
+            "band": "Low",
+            "max_channel": "google_ads",
+            "max_channel_share": "0.2941176470588235294117647059"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "operations",
+          "detail": "opened the quarter carrying 524.9994541739592585371213110 unsold units",
+          "evidence_key": "operations_inventory_planning",
+          "value": {
+            "carrying_stock": true,
+            "opening_inventory_units": "524.9994541739592585371213110"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "warranty term selected: 1 year(s)",
+          "evidence_key": "rnd_warranty_offered",
+          "value": {
+            "warranty_years": 1
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "strategic_thinking": [
+        {
+          "department": null,
+          "detail": "compounding lines funded last quarter that dropped to zero this quarter: none",
+          "evidence_key": "consistent_objective",
+          "value": {
+            "consistent": true,
+            "dropped_to_zero": []
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "diversified=True and not high_concentration=False",
+          "evidence_key": "marketing_balanced_budget",
+          "value": {
+            "balanced": true,
+            "diversified": true,
+            "high_concentration": false
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "7 of 7 diminishing-curve channels funded (>= 4 required): content_seo, email_marketing, events_pr, google_ads, meta_ads, prelaunch_buzz, social_influencer",
+          "evidence_key": "marketing_diversification",
+          "value": {
+            "channels": [
+              "content_seo",
+              "email_marketing",
+              "events_pr",
+              "google_ads",
+              "meta_ads",
+              "prelaunch_buzz",
+              "social_influencer"
+            ],
+            "channels_funded": 7,
+            "diversified": true
+          },
+          "weight": "2.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "marketing",
+          "detail": "deferred-payoff channels funded: content_seo, prelaunch_buzz (of content_seo, prelaunch_buzz)",
+          "evidence_key": "marketing_long_term_investment",
+          "value": {
+            "channels_funded": [
+              "content_seo",
+              "prelaunch_buzz"
+            ]
+          },
+          "weight": "3.00",
+          "weight_status": "confirmed"
+        },
+        {
+          "department": "rnd",
+          "detail": "Innovation spend built +7.50000000000000000000000000 Innovation Score this quarter (launched=False)",
+          "evidence_key": "rnd_innovation_investment",
+          "value": {
+            "feature_completeness": "48.00000000000000000000000000",
+            "innovation_score_built": "7.50000000000000000000000000",
+            "launched": false
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ],
+      "systems_thinking": [
+        {
+          "department": "operations",
+          "detail": "Manufacturing + Supplier QC funded: 1304.085529102021749275512481 units available to sell this quarter",
+          "evidence_key": "operations_capacity_planning",
+          "value": {
+            "available_to_sell": "1304.085529102021749275512481",
+            "production_capacity": "922.6133814089888274458132596",
+            "supplier_reliability_after": "89.59591794226542478557827260"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "rnd",
+          "detail": "Quality QA + Innovation spend lifted the Conversion Ceiling by 4.10996231131985986420343946 points this quarter (27.32988693395957959261031839% -> 31.43984924527943945681375785%) -- the R&D-only analogue of the ceiling-undershot fact, computed without raw_conversion_pct (needs Sales+HR+Marketing, off-limits here)",
+          "evidence_key": "rnd_quality_ceiling_lift",
+          "value": {
+            "ceiling_after_pct": "31.43984924527943945681375785",
+            "ceiling_before_pct": "27.32988693395957959261031839",
+            "lift_pts": "4.10996231131985986420343946"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        },
+        {
+          "department": "sales",
+          "detail": "Reps funded: +2725.0000 units/quarter Sales Capacity",
+          "evidence_key": "sales_capacity_investment",
+          "value": {
+            "capacity_built": "2725.0000",
+            "spend_lakhs": "5.4500"
+          },
+          "weight": null,
+          "weight_status": "descriptive_only"
+        }
+      ]
+    },
+    "outcome": {
+      "cash_runway_gap_reason": "quarter was cash-flow positive or breakeven -- runway (quarters until cash runs out at the current burn rate) is not a meaningful figure when there is no burn",
+      "cash_runway_quarters": null,
+      "closing_cash_inr": {
+        "delta": "544541.976492319199583922864",
+        "value": "9100088.572302084654230499328"
+      },
+      "cogs_inr": {
+        "delta": "553730.787972853059257150289",
+        "value": "3291599.474332952072072075056"
+      },
+      "gross_profit_inr": {
+        "delta": "1240126.916748748397855825598",
+        "value": "7371815.322424237456035242294"
+      },
+      "net_cash_flow_inr": {
+        "delta": "1937492.916130146206665870385",
+        "value": "544541.976492319199583922864"
+      },
+      "revenue_inr": {
+        "delta": "1793857.704721601457112975887",
+        "value": "10663414.79675718952810731735"
+      },
+      "units_sold": {
+        "delta": "179.4037108432444701583134200",
+        "value": "1066.448124488167769587690504"
+      },
+      "valuation_gap_reason": null,
+      "valuation_inr": {
+        "delta": "15792936.05107355417415996346",
+        "value": "96275942.55012517758266331688"
+      }
+    },
+    "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "quarter_number": 4,
+    "run_status": "completed",
+    "run_summary": {
+      "final_valuation_inr": "96275942.55012517758266331688",
+      "score_trajectory": [
+        {
+          "band": "Weak",
+          "ceo_score": "55.26",
+          "quarter_number": 1
+        },
+        {
+          "band": "Weak",
+          "ceo_score": "42.74",
+          "quarter_number": 2
+        },
+        {
+          "band": "Competent",
+          "ceo_score": "69.16",
+          "quarter_number": 3
+        },
+        {
+          "band": "Strong",
+          "ceo_score": "76.68",
+          "quarter_number": 4
+        }
+      ],
+      "terminal_status": "completed"
+    },
+    "survival_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
+    "survival_triggered_by": "sustained_decline"
+  },
+  "run_state_after_q1_locked": {
+    "binding_constraint_hint": [
+      {
+        "demand_lost": "216.483960046993560623218801",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2725.0000 effective) bound 216.483960046993560623218801 leads' worth of demand out of 2941.483960046993560623218801 effective leads generated",
+        "gate": "sales_capacity"
+      },
+      {
+        "demand_lost": "8.14252319193148962339848533",
+        "demand_lost_unit": "conversion_points",
+        "detail": "the Conversion Ceiling (19.10996231131985986420343946%) capped 8.14252319193148962339848533 points of raw conversion (27.25248550325134948760192479%) -- a build-quality limit, not a demand or capacity limit",
+        "gate": "conversion_ceiling"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "current_quarter_number": 1,
+    "current_quarter_status": "closed",
+    "endgame_preview": null,
+    "legal_moves": [
+      "open_next_quarter",
+      "read_quarter_report"
+    ],
+    "run_status": "active",
+    "score_trajectory": [
+      {
+        "band": "Weak",
+        "ceo_score": "55.26",
+        "quarter_number": 1
+      }
+    ],
+    "total_quarters": 4
+  },
+  "run_state_at_q4_with_endgame_preview": {
+    "binding_constraint_hint": [
+      {
+        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "gate": "sales_capacity"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "current_quarter_number": 4,
+    "current_quarter_status": "in_progress",
+    "endgame_preview": {
+      "acquisition_trap_offer_inr": null,
+      "covenant_units": "1183.124125145993801230949950",
+      "momentum_score": "0.256755604035358511853962258",
+      "term_sheet_menu": {
+        "path_a_name": "Rescue Financing",
+        "path_b_name": "Fire-Sale",
+        "path_c_name": "High-Risk Independent"
+      },
+      "tier": "distressed",
+      "tier_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
+      "true_continuation_value_inr": "101147469.4472973077432734089"
+    },
+    "legal_moves": [
+      "lock_quarter",
+      "read_endgame_preview",
+      "submit_allocation",
+      "submit_endgame_decision"
+    ],
+    "run_status": "distressed",
+    "score_trajectory": [
+      {
+        "band": "Weak",
+        "ceo_score": "55.26",
+        "quarter_number": 1
+      },
+      {
+        "band": "Weak",
+        "ceo_score": "42.74",
+        "quarter_number": 2
+      },
+      {
+        "band": "Competent",
+        "ceo_score": "69.16",
+        "quarter_number": 3
+      }
+    ],
+    "total_quarters": 4
+  },
+  "run_state_completed": {
+    "binding_constraint_hint": [
+      {
+        "demand_lost": "2522.277348636402214711507530",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2568.289498923253242244436462 effective) bound 2522.277348636402214711507530 leads' worth of demand out of 5090.566847559655456955943992 effective leads generated",
+        "gate": "sales_capacity"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "current_quarter_number": 4,
+    "current_quarter_status": "closed",
+    "endgame_preview": {
+      "acquisition_trap_offer_inr": null,
+      "covenant_units": "1183.124125145993801230949950",
+      "momentum_score": "0.256755604035358511853962258",
+      "term_sheet_menu": {
+        "path_a_name": "Bridge Financing",
+        "path_b_name": "Fair-Value Acquisition",
+        "path_c_name": "Prove Stability"
+      },
+      "tier": "stable",
+      "tier_detail": "did not clear the Thriving bar; not Distressed either",
+      "true_continuation_value_inr": "101147469.4472973077432734089"
+    },
+    "legal_moves": [
+      "read_endgame_preview",
+      "read_quarter_report"
+    ],
+    "run_status": "completed",
+    "score_trajectory": [
+      {
+        "band": "Weak",
+        "ceo_score": "55.26",
+        "quarter_number": 1
+      },
+      {
+        "band": "Weak",
+        "ceo_score": "42.74",
+        "quarter_number": 2
+      },
+      {
+        "band": "Competent",
+        "ceo_score": "69.16",
+        "quarter_number": 3
+      },
+      {
+        "band": "Strong",
+        "ceo_score": "76.68",
+        "quarter_number": 4
+      }
+    ],
+    "total_quarters": 4
+  },
+  "run_state_fresh": {
+    "binding_constraint_hint": [],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": null,
+    "current_quarter_number": null,
+    "current_quarter_status": null,
+    "endgame_preview": null,
+    "legal_moves": [
+      "open_next_quarter"
+    ],
+    "run_status": "active",
+    "score_trajectory": [],
+    "total_quarters": 4
+  },
+  "run_state_mid_quarter": {
+    "binding_constraint_hint": [],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "current_quarter_number": 1,
+    "current_quarter_status": "in_progress",
+    "endgame_preview": null,
+    "legal_moves": [
+      "lock_quarter",
+      "submit_allocation"
+    ],
+    "run_status": "active",
+    "score_trajectory": [],
+    "total_quarters": 4
+  },
+  "run_state_mid_run_with_binding_constraint_hint": {
+    "binding_constraint_hint": [
+      {
+        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost_unit": "leads",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "gate": "sales_capacity"
+      }
+    ],
+    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "crisis_quarter": 3,
+    "current_quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "current_quarter_number": 3,
+    "current_quarter_status": "closed",
+    "endgame_preview": null,
+    "legal_moves": [
+      "open_next_quarter",
+      "read_quarter_report"
+    ],
+    "run_status": "distressed",
+    "score_trajectory": [
+      {
+        "band": "Weak",
+        "ceo_score": "55.26",
+        "quarter_number": 1
+      },
+      {
+        "band": "Weak",
+        "ceo_score": "42.74",
+        "quarter_number": 2
+      },
+      {
+        "band": "Competent",
+        "ceo_score": "69.16",
+        "quarter_number": 3
+      }
+    ],
+    "total_quarters": 4
+  }
+}
