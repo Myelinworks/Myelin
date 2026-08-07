@@ -13,6 +13,7 @@ each request instead, via `_as_user`.
 
 import uuid
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,7 @@ from app.core.db import get_db
 from app.main import app
 from app.models.app_user import AppUser
 from app.routes.deps import get_current_user
-from app.services.auth_service import CurrentUser, get_supabase_auth_client
+from app.services.auth_service import CurrentUser, SupabaseAuthError, get_supabase_auth_client
 from tests.routes.test_company_routes import Q1_BY_DEPARTMENT, _create_company, _open_quarter
 
 
@@ -257,3 +258,85 @@ class TestRegisterAndLoginProxy:
 
         assert response.status_code == 200
         assert response.json()["email"] == "student@myelin.dev"
+
+
+class _FakeAuthClientThatRaises:
+    """Stands in for `HttpxSupabaseAuthClient` when Supabase itself rejected the request (or
+    the call failed outright) -- `error` is whatever `sign_up`/`sign_in` should raise, verifying
+    `routes/auth.py`'s mapping of that failure to this API's own envelope."""
+
+    def __init__(self, error: Exception):
+        self._error = error
+
+    async def sign_up(self, *, email: str, password: str) -> dict:
+        raise self._error
+
+    async def sign_in(self, *, email: str, password: str) -> dict:
+        raise self._error
+
+
+class TestAuthProxyFailureMapping:
+    """Both routes go through the *same* Supabase call; only the mapping of a rejection differs
+    (login: wrong-credentials means not-authenticated; register: rejected input means the request
+    itself was malformed) -- see `routes/auth.py`."""
+
+    async def _register_with(self, auth_client, error: Exception):
+        _as_user(None)
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            return await auth_client.post(
+                "/auth/register", json={"email": "student@myelin.dev", "password": "correct horse battery staple"}
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+    async def _login_with(self, auth_client, error: Exception):
+        _as_user(None)
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            return await auth_client.post(
+                "/auth/login", json={"email": "student@myelin.dev", "password": "wrong-password"}
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+    async def test_bad_login_credentials_return_not_authenticated_not_500(self, auth_client):
+        error = SupabaseAuthError(400, "invalid_grant", "Invalid login credentials")
+        response = await self._login_with(auth_client, error)
+
+        assert response.status_code == 401
+        assert response.json() == {"error": "not_authenticated"}
+
+    async def test_rejected_registration_input_returns_422_with_supabases_reason(self, auth_client):
+        error = SupabaseAuthError(400, "email_address_invalid", "Email address is invalid")
+        response = await self._register_with(auth_client, error)
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Email address is invalid"
+
+    async def test_registration_rate_limit_returns_429_not_500(self, auth_client):
+        error = SupabaseAuthError(429, "over_email_send_rate_limit", "email rate limit exceeded")
+        response = await self._register_with(auth_client, error)
+
+        assert response.status_code == 429
+        assert response.json()["detail"] == "email rate limit exceeded"
+
+    async def test_login_rate_limit_returns_429_not_401(self, auth_client):
+        error = SupabaseAuthError(429, "over_email_send_rate_limit", "email rate limit exceeded")
+        response = await self._login_with(auth_client, error)
+
+        assert response.status_code == 429
+        assert response.json()["detail"] == "email rate limit exceeded"
+
+    async def test_genuine_infrastructure_failure_is_not_caught_here(self, auth_client):
+        """A failure that isn't a `SupabaseAuthError` (Supabase itself down, a network error)
+        must stay uncaught by `routes/auth.py`'s new try/except -- Starlette's own
+        `ServerErrorMiddleware` is what turns this into the existing generic 500 in a real
+        deployment (confirmed manually: an unhandled exception there returns a plain-text 500).
+        `httpx`'s `ASGITransport` re-raises rather than swallowing that already-sent response,
+        so the way to confirm "not caught" here is that it still propagates -- same as before
+        this change, since nothing in `login`/`register` catches anything but
+        `SupabaseAuthError`.
+        """
+        with pytest.raises(RuntimeError, match="Supabase is unreachable"):
+            await self._login_with(auth_client, RuntimeError("Supabase is unreachable"))

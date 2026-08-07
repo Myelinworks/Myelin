@@ -5,10 +5,11 @@ Supabase directly, so the full register -> login -> play lifecycle stays testabl
 via httpx/pytest, the same way Phase 12's acceptance tests exercise the run lifecycle.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.routes.deps import NotAuthenticatedError
 from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest
-from app.services.auth_service import SupabaseAuthClient, get_supabase_auth_client
+from app.services.auth_service import SupabaseAuthClient, SupabaseAuthError, get_supabase_auth_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -20,13 +21,23 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     summary="Register a new user",
     description="Creates a Supabase Auth identity via Supabase's own signup API and returns a "
     "session. Not run-scoped -- no Bearer token required to call this. Call this once per user, "
-    "then `POST /auth/login` on return visits.",
+    "then `POST /auth/login` on return visits. 422 (plain `detail`) if Supabase rejects the "
+    "email/password itself (invalid domain, weak password, already registered); 429 (plain "
+    "`detail`) if Supabase's signup rate limit was hit.",
 )
 async def register(
     payload: RegisterRequest,
     client: SupabaseAuthClient = Depends(get_supabase_auth_client),
 ) -> AuthResponse:
-    result = await client.sign_up(email=payload.email, password=payload.password)
+    try:
+        result = await client.sign_up(email=payload.email, password=payload.password)
+    except SupabaseAuthError as exc:
+        # Rate limiting is the one signup rejection that isn't about the input itself.
+        if exc.status_code == 429:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc
+        # Everything else Supabase's signup endpoint rejects (bad email, weak password,
+        # already-registered, ...) is a malformed/rejected request, not a server failure.
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from exc
     return AuthResponse(**result)
 
 
@@ -35,11 +46,22 @@ async def register(
     response_model=AuthResponse,
     summary="Log in an existing user",
     description="Proxies to Supabase Auth's password grant and returns a session. Send the "
-    "returned `access_token` as `Authorization: Bearer <access_token>` on every subsequent request.",
+    "returned `access_token` as `Authorization: Bearer <access_token>` on every subsequent "
+    "request. 401 `{\"error\": \"not_authenticated\"}` for any rejected login attempt (wrong "
+    "password, unknown email, unconfirmed email, ...); 429 (plain `detail`) if Supabase's "
+    "login rate limit was hit.",
 )
 async def login(
     payload: LoginRequest,
     client: SupabaseAuthClient = Depends(get_supabase_auth_client),
 ) -> AuthResponse:
-    result = await client.sign_in(email=payload.email, password=payload.password)
+    try:
+        result = await client.sign_in(email=payload.email, password=payload.password)
+    except SupabaseAuthError as exc:
+        if exc.status_code == 429:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc
+        # Any other rejection (wrong password, unknown email, unconfirmed email, ...) means
+        # this request didn't authenticate -- the same envelope `get_current_user` uses for a
+        # missing/invalid Bearer token, so the frontend's one 401 handler catches both.
+        raise NotAuthenticatedError(exc.message) from exc
     return AuthResponse(**result)

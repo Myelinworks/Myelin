@@ -77,6 +77,38 @@ async def get_or_create_app_user(session: AsyncSession, *, sub: uuid.UUID, email
     return user
 
 
+class SupabaseAuthError(Exception):
+    """A *known* rejection from Supabase Auth itself (bad credentials, rejected signup input,
+    rate limiting) -- carries Supabase's own status code and message so `routes/auth.py` can
+    map it to this API's envelope without losing the real reason. Only raised for 4xx
+    responses; a 5xx from Supabase (or a network failure) is treated as a genuine
+    infrastructure failure and left to propagate as the existing unhandled-exception 500 --
+    this type exists to normalize *expected* auth failures, not to hide real outages.
+    """
+
+    def __init__(self, status_code: int, error_code: str | None, message: str):
+        super().__init__(message)
+        self.status_code = status_code
+        self.error_code = error_code
+        self.message = message
+
+
+def _to_auth_error(response: httpx.Response) -> SupabaseAuthError:
+    """Parses whatever structured body Supabase actually returned, rather than pattern-matching
+    on status code alone -- GoTrue uses two different shapes across its endpoints: signup/signin
+    errors carry `error_code`/`msg` (e.g. `{"error_code": "email_address_invalid", "msg": ...}`),
+    while the password-grant token endpoint uses OAuth2's `error`/`error_description`. Falls back
+    to the raw response text if the body isn't JSON at all, so the real reason is never lost."""
+    try:
+        body = response.json()
+    except ValueError:
+        return SupabaseAuthError(response.status_code, None, response.text or "Supabase Auth rejected the request")
+
+    error_code = body.get("error_code") or body.get("error")
+    message = body.get("msg") or body.get("error_description") or error_code or "Supabase Auth rejected the request"
+    return SupabaseAuthError(response.status_code, error_code, message)
+
+
 class SupabaseAuthClient(Protocol):
     async def sign_up(self, *, email: str, password: str) -> dict: ...
     async def sign_in(self, *, email: str, password: str) -> dict: ...
@@ -86,18 +118,30 @@ class HttpxSupabaseAuthClient:
     """Calls Supabase Auth's own REST API for password hashing and session-token issuance --
     this backend never implements either itself."""
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
         self._base_url = settings.supabase_url
         self._api_key = settings.supabase_publishable_key
+        # None means "real network" (httpx's own default) -- only ever overridden by tests, to
+        # exercise this exact error-classification logic against a mocked Supabase response
+        # instead of duplicating `_call` in the test suite.
+        self._transport = transport
 
     async def _call(self, path: str, payload: dict) -> dict:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(transport=self._transport) as client:
             response = await client.post(
                 f"{self._base_url}{path}",
                 json=payload,
                 headers={"apikey": self._api_key, "Content-Type": "application/json"},
             )
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                # Only 4xx is a *known* auth rejection worth normalizing -- a 5xx here means
+                # Supabase's own infrastructure is failing, which is a real outage, not a
+                # rejected login/signup, so it falls through to the generic 500 unchanged.
+                if 400 <= exc.response.status_code < 500:
+                    raise _to_auth_error(exc.response) from exc
+                raise
             data = response.json()
         return {
             "access_token": data["access_token"],
