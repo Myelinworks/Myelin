@@ -502,6 +502,40 @@ class RawConversionCompositionConfig(_Frozen):
 # --------------------------------------------------------------------------------------
 
 
+class CrisisChoiceBriefingConfig(_Frozen):
+    """One Strategic Choice as a student is allowed to see it: a letter, a name, and a
+    qualitative description of the posture. Never a coefficient, threshold or penalty magnitude
+    -- docs/11 section 2 is explicit that students are told the narrative and the choices but
+    must diagnose the numbers from their own results.
+
+    `label_source` is `"docs/11"` where the source names the choice outright, and
+    `"derived_from_stated_mechanism"` where it describes a choice's effect without naming it
+    (Marketing Blitz's Choice B) -- the same "flag what the source didn't state" convention the
+    numeric config already uses for values like `choice_a_offset_status`.
+    """
+
+    code: str
+    label: str
+    effect: str
+    label_source: str
+
+
+class CrisisBriefingConfig(_Frozen):
+    """Presentation copy for one crisis event. Lives in config, not engine code, for the same
+    reason the Q4 term-sheet names do (`TierTermSheetConfig`): it is scenario-specific content a
+    designer should be able to rewrite without touching a formula.
+
+    Deliberately carries no list of response lines -- which spend lines actually feed a
+    scenario's recovery is `engines/crisis.RESPONSE_LINES_BY_SCENARIO`, and the briefing reads
+    it from there so the advice can never drift from what the engine scores.
+    """
+
+    title: str
+    category: str
+    narrative: str
+    choices: tuple[CrisisChoiceBriefingConfig, ...]
+
+
 class CrisisResponseLinesConfig(_Frozen):
     """Price-Match Fund / Comparison Ads / Retention Offers -- shared across Scenarios A and B
     (docs/11 §3's table, confirmed identical for B by the docs/14 §4 worked example, which applies
@@ -531,6 +565,7 @@ class PriceWarriorConfig(_Frozen):
     brand_erosion_pts: Decimal
     choice_a_price_inr: Decimal
     choice_d_dampening_rate: Decimal  # Contract Sales/Promo Surge
+    briefing: CrisisBriefingConfig
 
 
 class MarketingBlitzConfig(_Frozen):
@@ -554,6 +589,7 @@ class MarketingBlitzConfig(_Frozen):
     choice_b_qualified_penalty_pts: Decimal
     choice_b_qualification_status: str
     choice_d_dampening_rate: Decimal  # Contract Marketing Agency Surge
+    briefing: CrisisBriefingConfig
 
 
 class FeatureLeapfrogConfig(_Frozen):
@@ -570,6 +606,7 @@ class FeatureLeapfrogConfig(_Frozen):
     ceiling_penalty_pts: Decimal
     innovation_threshold: Decimal
     choice_d_innovation_rate: Decimal  # Contract R&D Sprint
+    briefing: CrisisBriefingConfig
 
 
 class SupplyShockConfig(_Frozen):
@@ -603,6 +640,7 @@ class SupplyShockConfig(_Frozen):
     choice_d_capacity_constant: Decimal
     choice_d_capacity_exponent: Decimal
     choice_d_cost_premium_inr: Decimal
+    briefing: CrisisBriefingConfig
 
 
 class CrisisConfig(_Frozen):
@@ -610,6 +648,7 @@ class CrisisConfig(_Frozen):
 
     status: str
     source: str
+    briefing_status: str
     price_warrior: PriceWarriorConfig
     marketing_blitz: MarketingBlitzConfig
     feature_leapfrog: FeatureLeapfrogConfig

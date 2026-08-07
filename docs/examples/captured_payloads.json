@@ -4,7 +4,7 @@
     "comparison_ads": "0.0000",
     "compliance_legal": "0.0000",
     "content_seo": "1.2800",
-    "created_at": "2026-08-06T07:45:18.096660Z",
+    "created_at": "2026-08-07T06:52:04.258089Z",
     "crisis_choice": null,
     "crisis_choice_d_spend": "0.0000",
     "crm_tools": "0.0000",
@@ -15,7 +15,7 @@
     "events_pr": "0.8000",
     "financial_planning": "0.0000",
     "google_ads": "4.0000",
-    "id": "8a28f32f-6897-4aba-840d-c155a6555fad",
+    "id": "8710cb09-41b8-47f3-916a-41eb3e879a83",
     "innovation": "0.0000",
     "logistics": "0.0000",
     "manufacturing": "0.0000",
@@ -24,7 +24,7 @@
     "prelaunch_buzz": "1.9200",
     "price_match_fund": "0.0000",
     "quality_qa": "0.0000",
-    "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "referral": "2.4000",
     "reps": "0.0000",
     "retention_offers": "0.0000",
@@ -57,10 +57,10 @@
     "name": "Nadi Wear Capture Co"
   },
   "company_create_response": {
-    "created_at": "2026-08-06T07:45:18.096660Z",
-    "id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "created_at": "2026-08-07T06:52:04.258089Z",
+    "id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "name": "Nadi Wear Capture Co",
-    "owner_id": "f5d1b17b-d64b-44b3-9d1d-b5da9492f089",
+    "owner_id": "927a8122-33e3-4dfa-99a4-4c08c43d7a97",
     "profile_name": "default",
     "quarters": [],
     "run_status": "active",
@@ -76,10 +76,10 @@
     "survival_detail": null
   },
   "company_detail_response": {
-    "created_at": "2026-08-06T07:45:18.096660Z",
-    "id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "created_at": "2026-08-07T06:52:04.258089Z",
+    "id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "name": "Nadi Wear Capture Co",
-    "owner_id": "f5d1b17b-d64b-44b3-9d1d-b5da9492f089",
+    "owner_id": "927a8122-33e3-4dfa-99a4-4c08c43d7a97",
     "profile_name": "default",
     "quarters": [],
     "run_status": "active",
@@ -104,7 +104,7 @@
     "comparison_ads": "5.0000",
     "compliance_legal": "2.8000",
     "content_seo": "1.2800",
-    "created_at": "2026-08-06T07:45:18.096660Z",
+    "created_at": "2026-08-07T06:52:04.258089Z",
     "crisis_choice": "C",
     "crisis_choice_d_spend": "0.0000",
     "crm_tools": "1.3000",
@@ -115,7 +115,7 @@
     "events_pr": "0.8000",
     "financial_planning": "2.1000",
     "google_ads": "4.0000",
-    "id": "bb63f2ea-dc69-45d6-a1e9-96767dfaedb1",
+    "id": "af89b7a9-49cf-4385-a06b-cc88b8163496",
     "innovation": "2.2500",
     "logistics": "1.2000",
     "manufacturing": "3.3000",
@@ -124,7 +124,7 @@
     "prelaunch_buzz": "1.9200",
     "price_match_fund": "0.0000",
     "quality_qa": "2.7500",
-    "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "quarter_id": "c9431af4-e835-451a-90fe-52ee0ab126f0",
     "referral": "2.4000",
     "reps": "5.4500",
     "retention_offers": "0.0000",
@@ -135,13 +135,13 @@
   },
   "decision_log_list_response": [
     {
-      "created_at": "2026-08-06T07:45:18.096660Z",
+      "created_at": "2026-08-07T06:52:04.258089Z",
       "decision_key": "increase_google_ads_budget",
-      "id": "c53f80e0-f236-4152-bdd5-b053eb66772d",
+      "id": "4611946f-aece-4010-8a09-3dd6e6b77f54",
       "payload": {
         "amount": 5000
       },
-      "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+      "quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
       "status": "submitted",
       "submitted_at": null,
       "title": "increase_google_ads_budget",
@@ -207,7 +207,7 @@
         "field": "strategy"
       }
     ],
-    "decision_id": "c53f80e0-f236-4152-bdd5-b053eb66772d",
+    "decision_id": "4611946f-aece-4010-8a09-3dd6e6b77f54",
     "decision_key": "increase_google_ads_budget",
     "evidence_generated": 0,
     "workspace": "marketing"
@@ -218,17 +218,17 @@
     "term_sheet_name": "High-Risk Independent"
   },
   "endgame_decision_submit_response": {
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-    "id": "d78e0a8a-042e-49c4-9382-35f12a487724",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+    "id": "a1cde582-2579-42d4-9372-fad78e674c74",
     "path": "C",
-    "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "quarter_id": "61cd3fb4-e7d5-4dad-b16a-d3a079949b9c",
     "reasoning": "staying independent based on the Q1-Q3 trend",
     "term_sheet_name": "High-Risk Independent"
   },
   "endgame_preview_response": {
     "acquisition_trap_offer_inr": null,
-    "covenant_units": "1183.124125145993801230949950",
-    "momentum_score": "0.256755604035358511853962258",
+    "covenant_units": "1100.399318950157811407975896",
+    "momentum_score": "0.228849843237356081366166054",
     "term_sheet_menu": {
       "path_a_name": "Rescue Financing",
       "path_b_name": "Fire-Sale",
@@ -236,7 +236,7 @@
     },
     "tier": "distressed",
     "tier_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
-    "true_continuation_value_inr": "101147469.4472973077432734089"
+    "true_continuation_value_inr": "94673108.04576621778680560230"
   },
   "error_illegal_move": {
     "allowed_moves": [
@@ -251,36 +251,40 @@
     "error": "not_authenticated"
   },
   "error_not_found": {
-    "detail": "Company 0422f4c0-fa53-44ee-bd6d-940b479a3631 not found"
+    "detail": "Company ba716dc0-7660-4a60-ac95-a684aa82dadb not found"
   },
   "error_not_permitted": {
     "error": "not_permitted",
-    "reason": "user 2932596b-64ce-4fa3-9f18-5dccce63ca9c may not view company ad691d51-2a71-45ec-bacc-e877a5e67001"
+    "reason": "user 9d5f50f4-d575-43d3-ac40-c03c850a9fc2 may not view company 1684438a-1074-407b-a47f-5ecd019cb244"
   },
   "leaderboard_response": {
     "entries": [
       {
-        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-        "overall_score": null,
-        "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+        "band": "Weak",
+        "ceo_score": "55.26",
+        "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+        "quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
         "quarter_number": 1
       },
       {
-        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-        "overall_score": null,
-        "quarter_id": "33c4db6d-ca43-4818-883b-41066f1c10a6",
+        "band": "Weak",
+        "ceo_score": "42.74",
+        "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+        "quarter_id": "41e8c7ee-f1fe-469e-a968-a8a05f9cf0d7",
         "quarter_number": 2
       },
       {
-        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-        "overall_score": null,
-        "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+        "band": "Competent",
+        "ceo_score": "63.16",
+        "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+        "quarter_id": "c9431af4-e835-451a-90fe-52ee0ab126f0",
         "quarter_number": 3
       },
       {
-        "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-        "overall_score": null,
-        "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+        "band": "Strong",
+        "ceo_score": "76.68",
+        "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+        "quarter_id": "61cd3fb4-e7d5-4dad-b16a-d3a079949b9c",
         "quarter_number": 4
       }
     ]
@@ -312,8 +316,8 @@
     },
     "cash_balance": "15000000.00",
     "closed_at": null,
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-    "created_at": "2026-08-06T07:45:18.096660Z",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+    "created_at": "2026-08-07T06:52:04.258089Z",
     "crisis": {
       "comparison_ads": "0.0000",
       "crisis_choice": null,
@@ -322,7 +326,7 @@
       "price_match_fund": "0.0000",
       "retention_offers": "0.0000"
     },
-    "id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "modifiers": {
       "brand_strength": 1.0,
       "competitor_activity": 1.0,
@@ -338,10 +342,10 @@
     "allocations": null,
     "cash_balance": "15000000",
     "closed_at": null,
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
-    "created_at": "2026-08-06T07:45:18.096660Z",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
+    "created_at": "2026-08-07T06:52:04.258089Z",
     "crisis": null,
-    "id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "modifiers": {
       "brand_strength": 1.0,
       "competitor_activity": 1.0,
@@ -368,7 +372,7 @@
         "gate": "conversion_ceiling"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "decision_quality": {
       "band": "Weak",
       "ceo_score": "55.26",
@@ -433,7 +437,7 @@
       ],
       "scored_criteria": [
         {
-          "detail": "effective_leads/effective_sales_capacity=2941.483960046993560623218801/2725.0000, total_units_demanded/available_to_sell=561.6214729834661812995437253/1291.028007272608623868956982, within 1.30x band: leads=True, supply=False",
+          "detail": "effective_leads/effective_sales_capacity=2941.483960046993560623218801/2725.0000, total_units_demanded/available_to_sell=561.6214729834661812995437253/1291.028007272608623868956982, within 1.3x band: leads=True, supply=False",
           "id": "systems_thinking_2",
           "points": "3.333333333333333333333333333",
           "result": "partially_met",
@@ -996,7 +1000,7 @@
         "value": "52507746.33695241339816550549"
       }
     },
-    "quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "quarter_number": 1,
     "run_status": "active",
     "run_summary": null,
@@ -1018,7 +1022,7 @@
         "gate": "conversion_ceiling"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "decision_quality": {
       "band": "Weak",
       "ceo_score": "42.74",
@@ -1054,7 +1058,7 @@
         },
         {
           "applied_points": "0",
-          "detail": "lines below 0.80x prior spend: none",
+          "detail": "lines below 0.8x prior spend: none",
           "fired": false,
           "id": "compounding_asset_cut",
           "points": "-2"
@@ -1083,7 +1087,7 @@
       ],
       "scored_criteria": [
         {
-          "detail": "effective_leads/effective_sales_capacity=3776.366052580279708567278241/2531.063166307751080748145488, total_units_demanded/available_to_sell=732.3416432838019472319500319/1413.236313992127250628728703, within 1.30x band: leads=False, supply=False",
+          "detail": "effective_leads/effective_sales_capacity=3776.366052580279708567278241/2531.063166307751080748145488, total_units_demanded/available_to_sell=732.3416432838019472319500319/1413.236313992127250628728703, within 1.3x band: leads=False, supply=False",
           "id": "systems_thinking_2",
           "points": "0E-27",
           "result": "not_met",
@@ -1649,7 +1653,7 @@
         "value": "67124907.00010710790535109346"
       }
     },
-    "quarter_id": "33c4db6d-ca43-4818-883b-41066f1c10a6",
+    "quarter_id": "41e8c7ee-f1fe-469e-a968-a8a05f9cf0d7",
     "quarter_number": 2,
     "run_status": "active",
     "run_summary": null,
@@ -1659,49 +1663,49 @@
   "quarter_report_q3_with_crisis": {
     "binding_constraints": [
       {
-        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost": "841.126862124006312729693309",
         "demand_lost_unit": "leads",
-        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 841.126862124006312729693309 leads' worth of demand out of 3390.803194739508474225984284 effective leads generated",
         "gate": "sales_capacity"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "decision_quality": {
       "band": "Competent",
-      "ceo_score": "69.16",
+      "ceo_score": "63.16",
       "mechanical_points_available": "31.66666666666666666666666666",
       "modifiers": [
         {
           "applied_points": "0",
-          "detail": "net_cash_flow_inr = Rs -1,392,950.94",
+          "detail": "net_cash_flow_inr = Rs -1,664,562.65",
           "fired": false,
           "id": "profitability_achieved",
           "points": "3"
         },
         {
           "applied_points": "0",
-          "detail": "referral leads=800.0000, referral_lead_cap=1058.792623253453625706298751, referral_wasted_spend_inr=0.0000",
+          "detail": "referral leads=800.0000, referral_lead_cap=974.0892133931773356497948512, referral_wasted_spend_inr=0.0000",
           "fired": false,
           "id": "perfect_channel_match",
           "points": "2"
         },
         {
           "applied_points": "0",
-          "detail": "effective_leads=3597.113157869907873691211751, leads_used=2549.676332615502161496290975, gap=1047.436825254405712194920776",
+          "detail": "effective_leads=3390.803194739508474225984284, leads_used=2549.676332615502161496290975, gap=841.126862124006312729693309",
           "fired": false,
           "id": "zero_capacity_waste",
           "points": "2"
         },
         {
           "applied_points": "0",
-          "detail": "available_to_sell - units_sold = 524.9994541739592585371213110 (threshold 25)",
+          "detail": "available_to_sell - units_sold = 563.9550421238768482805848537 (threshold 25)",
           "fired": false,
           "id": "zero_supply_waste",
           "points": "2"
         },
         {
           "applied_points": "0",
-          "detail": "lines below 0.80x prior spend: none",
+          "detail": "lines below 0.8x prior spend: none",
           "fired": false,
           "id": "compounding_asset_cut",
           "points": "-2"
@@ -1728,29 +1732,29 @@
           "points": "-2"
         },
         {
-          "applied_points": "3",
-          "detail": "crisis_scenario=C, crisis_fully_neutralized=True",
-          "fired": true,
+          "applied_points": "0",
+          "detail": "crisis_scenario=A, crisis_fully_neutralized=False",
+          "fired": false,
           "id": "crisis_fully_neutralized",
           "points": "3"
         },
         {
-          "applied_points": "3",
-          "detail": "crisis_scenario=C, crisis_proofed_by_prior_investment=True",
-          "fired": true,
+          "applied_points": "0",
+          "detail": "crisis_scenario=A, crisis_proofed_by_prior_investment=False",
+          "fired": false,
           "id": "crisis_proofed_by_prior_investment",
           "points": "3"
         },
         {
           "applied_points": "0",
-          "detail": "crisis_scenario=C, crisis_choice=C, crisis_structural_improvement=False",
+          "detail": "crisis_scenario=A, crisis_choice=C, crisis_structural_improvement=False",
           "fired": false,
           "id": "structural_improvement_made",
           "points": "2"
         },
         {
           "applied_points": "0",
-          "detail": "crisis_scenario=C, crisis_response_spend_inr=Rs 0.00, fully_neutralized=True, proofed_by_prior_investment=True",
+          "detail": "crisis_scenario=A, crisis_response_spend_inr=Rs 500,000.00, fully_neutralized=False, proofed_by_prior_investment=False",
           "fired": false,
           "id": "crisis_ignored",
           "points": "-4"
@@ -1758,7 +1762,7 @@
       ],
       "scored_criteria": [
         {
-          "detail": "effective_leads/effective_sales_capacity=3597.113157869907873691211751/2549.676332615502161496290975, total_units_demanded/available_to_sell=887.0444136449232994293770840/1412.043867818882557966498395, within 1.30x band: leads=False, supply=False",
+          "detail": "effective_leads/effective_sales_capacity=3390.803194739508474225984284/2549.676332615502161496290975, total_units_demanded/available_to_sell=848.0888256950057096859135413/1412.043867818882557966498395, within 1.3x band: leads=False, supply=False",
           "id": "systems_thinking_2",
           "points": "0E-27",
           "result": "not_met",
@@ -2291,40 +2295,40 @@
     "outcome": {
       "cash_runway_gap_reason": null,
       "cash_runway_quarters": {
-        "delta": "0.970394652348677318252711255",
-        "value": "6.142030097653146978533482910"
+        "delta": "-0.194991951494868004723564307",
+        "value": "4.976643493809601655557207348"
       },
       "closing_cash_inr": {
-        "delta": "-1392950.939637827007081947521",
-        "value": "8555546.595809765454646576464"
+        "delta": "-1664562.650549911223233241404",
+        "value": "8283934.884897681238495282581"
       },
       "cogs_inr": {
-        "delta": "477491.165210603946612181780",
-        "value": "2737868.686360099012814924767"
+        "delta": "357254.474954506554326161547",
+        "value": "2617631.996104001620528904534"
       },
       "gross_profit_inr": {
-        "delta": "1069381.835630248454009891314",
-        "value": "6131688.405675489058179416696"
+        "delta": "800101.601975119866451019583",
+        "value": "5862408.172020360470620544965"
       },
       "net_cash_flow_inr": {
-        "delta": "530714.724862988291658463964",
-        "value": "-1392950.939637827007081947521"
+        "delta": "259103.013950904075507170081",
+        "value": "-1664562.650549911223233241404"
       },
       "revenue_inr": {
-        "delta": "1546873.000840852400622073094",
-        "value": "8869557.092035588070994341463"
+        "delta": "1157356.076929626420777181130",
+        "value": "8480040.168124362091149449499"
       },
       "units_sold": {
-        "delta": "154.7027703611213521974270521",
-        "value": "887.0444136449232994293770840"
+        "delta": "115.7471824112037624539635094",
+        "value": "848.0888256950057096859135413"
       },
       "valuation_gap_reason": null,
       "valuation_inr": {
-        "delta": "13358099.49894451550315225996",
-        "value": "80483006.49905162340850335342"
+        "delta": "9917140.54278363019567431779",
+        "value": "77042047.54289073810102541125"
       }
     },
-    "quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "quarter_id": "c9431af4-e835-451a-90fe-52ee0ab126f0",
     "quarter_number": 3,
     "run_status": "distressed",
     "run_summary": null,
@@ -2340,7 +2344,7 @@
         "gate": "sales_capacity"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "decision_quality": {
       "band": "Strong",
       "ceo_score": "76.68",
@@ -2348,14 +2352,14 @@
       "modifiers": [
         {
           "applied_points": "3",
-          "detail": "net_cash_flow_inr = Rs 544,541.98",
+          "detail": "net_cash_flow_inr = Rs 438,265.19",
           "fired": true,
           "id": "profitability_achieved",
           "points": "3"
         },
         {
           "applied_points": "0",
-          "detail": "referral leads=800.0000, referral_lead_cap=1236.201505982438285592174168, referral_wasted_spend_inr=0.0000",
+          "detail": "referral leads=800.0000, referral_lead_cap=1143.706978532178477586977559, referral_wasted_spend_inr=0.0000",
           "fired": false,
           "id": "perfect_channel_match",
           "points": "2"
@@ -2369,14 +2373,14 @@
         },
         {
           "applied_points": "0",
-          "detail": "available_to_sell - units_sold = 237.637404613853979687821977 (threshold 25)",
+          "detail": "available_to_sell - units_sold = 290.997540848534670666286516 (threshold 25)",
           "fired": false,
           "id": "zero_supply_waste",
           "points": "2"
         },
         {
           "applied_points": "0",
-          "detail": "lines below 0.80x prior spend: none",
+          "detail": "lines below 0.8x prior spend: none",
           "fired": false,
           "id": "compounding_asset_cut",
           "points": "-2"
@@ -2447,7 +2451,7 @@
       ],
       "scored_criteria": [
         {
-          "detail": "effective_leads/effective_sales_capacity=5090.566847559655456955943992/2568.289498923253242244436462, total_units_demanded/available_to_sell=1066.448124488167769587690504/1304.085529102021749275512481, within 1.30x band: leads=False, supply=True",
+          "detail": "effective_leads/effective_sales_capacity=5090.566847559655456955943992/2568.289498923253242244436462, total_units_demanded/available_to_sell=1052.043576203404668352689508/1343.041117051939339018976024, within 1.3x band: leads=False, supply=True",
           "id": "systems_thinking_2",
           "points": "3.333333333333333333333333333",
           "result": "partially_met",
@@ -2461,7 +2465,7 @@
           "trait": "systems_thinking"
         },
         {
-          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 860,059.56",
+          "detail": "margin = discretionary_ceiling_inr - total_discretionary_inr = Rs 588,447.85",
           "id": "risk_management_1",
           "points": "5.000000000000000000000000000",
           "result": "clearly_met",
@@ -2587,12 +2591,12 @@
       "capital_allocation": [
         {
           "department": "finance_admin",
-          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 860,059.56 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 588,447.85 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
           "evidence_key": "finance_cash_preservation",
           "value": {
             "buffer_preserved": true,
-            "discretionary_ceiling_inr": "5360059.560922756118399523329",
-            "margin_inr": "860059.560922756118399523329",
+            "discretionary_ceiling_inr": "5088447.850010671902248229446",
+            "margin_inr": "588447.850010671902248229446",
             "total_discretionary_inr": "4500000.0000"
           },
           "weight": null,
@@ -2623,11 +2627,11 @@
         },
         {
           "department": "marketing",
-          "detail": "Referral funded 800.0000 of a 1236.201505982438285592174168 lead cap (wasted spend Rs 0.00)",
+          "detail": "Referral funded 800.0000 of a 1143.706978532178477586977559 lead cap (wasted spend Rs 0.00)",
           "evidence_key": "marketing_cac_discipline",
           "value": {
             "at_cap": false,
-            "lead_cap": "1236.201505982438285592174168",
+            "lead_cap": "1143.706978532178477586977559",
             "leads": "800.0000",
             "wasted_spend_inr": "0.0000"
           },
@@ -2656,10 +2660,10 @@
         },
         {
           "department": "operations",
-          "detail": "Manufacturing + Supplier QC funded: 1304.085529102021749275512481 units available to sell this quarter",
+          "detail": "Manufacturing + Supplier QC funded: 1343.041117051939339018976024 units available to sell this quarter",
           "evidence_key": "operations_capacity_planning",
           "value": {
-            "available_to_sell": "1304.085529102021749275512481",
+            "available_to_sell": "1343.041117051939339018976024",
             "production_capacity": "922.6133814089888274458132596",
             "supplier_reliability_after": "89.59591794226542478557827260"
           },
@@ -2814,12 +2818,12 @@
       "risk_management": [
         {
           "department": "finance_admin",
-          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 860,059.56 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
+          "detail": "pre-revenue margin = (opening cash - fixed costs - buffer) - this quarter's discretionary spend = Rs 588,447.85 (buffer_preserved=True); a proxy for closing-cash-vs-buffer that stays derivable from opening state + allocations alone, same inputs `compute_quarter`'s own discretionary_ceiling check uses",
           "evidence_key": "finance_cash_preservation",
           "value": {
             "buffer_preserved": true,
-            "discretionary_ceiling_inr": "5360059.560922756118399523329",
-            "margin_inr": "860059.560922756118399523329",
+            "discretionary_ceiling_inr": "5088447.850010671902248229446",
+            "margin_inr": "588447.850010671902248229446",
             "total_discretionary_inr": "4500000.0000"
           },
           "weight": null,
@@ -2839,11 +2843,11 @@
         },
         {
           "department": "marketing",
-          "detail": "Referral funded 800.0000 of a 1236.201505982438285592174168 lead cap (wasted spend Rs 0.00)",
+          "detail": "Referral funded 800.0000 of a 1143.706978532178477586977559 lead cap (wasted spend Rs 0.00)",
           "evidence_key": "marketing_cac_discipline",
           "value": {
             "at_cap": false,
-            "lead_cap": "1236.201505982438285592174168",
+            "lead_cap": "1143.706978532178477586977559",
             "leads": "800.0000",
             "wasted_spend_inr": "0.0000"
           },
@@ -2864,11 +2868,11 @@
         },
         {
           "department": "operations",
-          "detail": "opened the quarter carrying 524.9994541739592585371213110 unsold units",
+          "detail": "opened the quarter carrying 563.9550421238768482805848537 unsold units",
           "evidence_key": "operations_inventory_planning",
           "value": {
             "carrying_stock": true,
-            "opening_inventory_units": "524.9994541739592585371213110"
+            "opening_inventory_units": "563.9550421238768482805848537"
           },
           "weight": null,
           "weight_status": "descriptive_only"
@@ -2957,10 +2961,10 @@
       "systems_thinking": [
         {
           "department": "operations",
-          "detail": "Manufacturing + Supplier QC funded: 1304.085529102021749275512481 units available to sell this quarter",
+          "detail": "Manufacturing + Supplier QC funded: 1343.041117051939339018976024 units available to sell this quarter",
           "evidence_key": "operations_capacity_planning",
           "value": {
-            "available_to_sell": "1304.085529102021749275512481",
+            "available_to_sell": "1343.041117051939339018976024",
             "production_capacity": "922.6133814089888274458132596",
             "supplier_reliability_after": "89.59591794226542478557827260"
           },
@@ -2996,40 +3000,40 @@
       "cash_runway_gap_reason": "quarter was cash-flow positive or breakeven -- runway (quarters until cash runs out at the current burn rate) is not a meaningful figure when there is no burn",
       "cash_runway_quarters": null,
       "closing_cash_inr": {
-        "delta": "544541.976492319199583922864",
-        "value": "9100088.572302084654230499328"
+        "delta": "438265.190611397667292488873",
+        "value": "8722200.075509078905787771454"
       },
       "cogs_inr": {
-        "delta": "553730.787972853059257150289",
-        "value": "3291599.474332952072072075056"
+        "delta": "629507.740832079153191177675",
+        "value": "3247139.736936080773720082209"
       },
       "gross_profit_inr": {
-        "delta": "1240126.916748748397855825598",
-        "value": "7371815.322424237456035242294"
+        "delta": "1409835.809501402034517915216",
+        "value": "7272243.981521762505138460181"
       },
       "net_cash_flow_inr": {
-        "delta": "1937492.916130146206665870385",
-        "value": "544541.976492319199583922864"
+        "delta": "2102827.841161308890525730277",
+        "value": "438265.190611397667292488873"
       },
       "revenue_inr": {
-        "delta": "1793857.704721601457112975887",
-        "value": "10663414.79675718952810731735"
+        "delta": "2039343.550333481187709092891",
+        "value": "10519383.71845784327885854239"
       },
       "units_sold": {
-        "delta": "179.4037108432444701583134200",
-        "value": "1066.448124488167769587690504"
+        "delta": "203.9547505083989586667759667",
+        "value": "1052.043576203404668352689508"
       },
       "valuation_gap_reason": null,
       "valuation_inr": {
-        "delta": "15792936.05107355417415996346",
-        "value": "96275942.55012517758266331688"
+        "delta": "17838332.38003110493400895781",
+        "value": "94880379.92292184303503436906"
       }
     },
-    "quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "quarter_id": "61cd3fb4-e7d5-4dad-b16a-d3a079949b9c",
     "quarter_number": 4,
     "run_status": "completed",
     "run_summary": {
-      "final_valuation_inr": "96275942.55012517758266331688",
+      "final_valuation_inr": "94880379.92292184303503436906",
       "score_trajectory": [
         {
           "band": "Weak",
@@ -3043,7 +3047,7 @@
         },
         {
           "band": "Competent",
-          "ceo_score": "69.16",
+          "ceo_score": "63.16",
           "quarter_number": 3
         },
         {
@@ -3072,9 +3076,9 @@
         "gate": "conversion_ceiling"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
-    "current_quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "current_quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "current_quarter_number": 1,
     "current_quarter_status": "closed",
     "endgame_preview": null,
@@ -3095,21 +3099,21 @@
   "run_state_at_q4_with_endgame_preview": {
     "binding_constraint_hint": [
       {
-        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost": "841.126862124006312729693309",
         "demand_lost_unit": "leads",
-        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 841.126862124006312729693309 leads' worth of demand out of 3390.803194739508474225984284 effective leads generated",
         "gate": "sales_capacity"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
-    "current_quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "current_quarter_id": "61cd3fb4-e7d5-4dad-b16a-d3a079949b9c",
     "current_quarter_number": 4,
     "current_quarter_status": "in_progress",
     "endgame_preview": {
       "acquisition_trap_offer_inr": null,
-      "covenant_units": "1183.124125145993801230949950",
-      "momentum_score": "0.256755604035358511853962258",
+      "covenant_units": "1100.399318950157811407975896",
+      "momentum_score": "0.228849843237356081366166054",
       "term_sheet_menu": {
         "path_a_name": "Rescue Financing",
         "path_b_name": "Fire-Sale",
@@ -3117,7 +3121,7 @@
       },
       "tier": "distressed",
       "tier_detail": "net cash flow was negative for 3 consecutive quarters, through the tier-assignment quarter Q3",
-      "true_continuation_value_inr": "101147469.4472973077432734089"
+      "true_continuation_value_inr": "94673108.04576621778680560230"
     },
     "legal_moves": [
       "lock_quarter",
@@ -3139,7 +3143,7 @@
       },
       {
         "band": "Competent",
-        "ceo_score": "69.16",
+        "ceo_score": "63.16",
         "quarter_number": 3
       }
     ],
@@ -3154,15 +3158,15 @@
         "gate": "sales_capacity"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
-    "current_quarter_id": "7eb7055c-4d3d-4d0c-8d37-1222a4c6f117",
+    "current_quarter_id": "61cd3fb4-e7d5-4dad-b16a-d3a079949b9c",
     "current_quarter_number": 4,
     "current_quarter_status": "closed",
     "endgame_preview": {
       "acquisition_trap_offer_inr": null,
-      "covenant_units": "1183.124125145993801230949950",
-      "momentum_score": "0.256755604035358511853962258",
+      "covenant_units": "1100.399318950157811407975896",
+      "momentum_score": "0.228849843237356081366166054",
       "term_sheet_menu": {
         "path_a_name": "Bridge Financing",
         "path_b_name": "Fair-Value Acquisition",
@@ -3170,7 +3174,7 @@
       },
       "tier": "stable",
       "tier_detail": "did not clear the Thriving bar; not Distressed either",
-      "true_continuation_value_inr": "101147469.4472973077432734089"
+      "true_continuation_value_inr": "94673108.04576621778680560230"
     },
     "legal_moves": [
       "read_endgame_preview",
@@ -3190,7 +3194,7 @@
       },
       {
         "band": "Competent",
-        "ceo_score": "69.16",
+        "ceo_score": "63.16",
         "quarter_number": 3
       },
       {
@@ -3203,7 +3207,7 @@
   },
   "run_state_fresh": {
     "binding_constraint_hint": [],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
     "current_quarter_id": null,
     "current_quarter_number": null,
@@ -3218,9 +3222,9 @@
   },
   "run_state_mid_quarter": {
     "binding_constraint_hint": [],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
-    "current_quarter_id": "d3e52614-e707-44ba-9775-a934b4cc9059",
+    "current_quarter_id": "bd4c85e3-84c4-4376-a226-a065594d3bc5",
     "current_quarter_number": 1,
     "current_quarter_status": "in_progress",
     "endgame_preview": null,
@@ -3235,15 +3239,15 @@
   "run_state_mid_run_with_binding_constraint_hint": {
     "binding_constraint_hint": [
       {
-        "demand_lost": "1047.436825254405712194920776",
+        "demand_lost": "841.126862124006312729693309",
         "demand_lost_unit": "leads",
-        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 1047.436825254405712194920776 leads' worth of demand out of 3597.113157869907873691211751 effective leads generated",
+        "detail": "Sales Capacity (2549.676332615502161496290975 effective) bound 841.126862124006312729693309 leads' worth of demand out of 3390.803194739508474225984284 effective leads generated",
         "gate": "sales_capacity"
       }
     ],
-    "company_id": "ad691d51-2a71-45ec-bacc-e877a5e67001",
+    "company_id": "1684438a-1074-407b-a47f-5ecd019cb244",
     "crisis_quarter": 3,
-    "current_quarter_id": "92245194-d1f3-459f-bb50-670e3d67af4a",
+    "current_quarter_id": "c9431af4-e835-451a-90fe-52ee0ab126f0",
     "current_quarter_number": 3,
     "current_quarter_status": "closed",
     "endgame_preview": null,
@@ -3265,7 +3269,7 @@
       },
       {
         "band": "Competent",
-        "ceo_score": "69.16",
+        "ceo_score": "63.16",
         "quarter_number": 3
       }
     ],

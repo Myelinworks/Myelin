@@ -182,10 +182,23 @@ class QuarterReportResponse(_FromAttributes):
 
 
 class LeaderboardEntry(BaseModel):
+    """One locked quarter's score. `ceo_score`/`band` are the same two numbers
+    `RunStateResponse.score_trajectory` and `DecisionQualitySchema` report -- the scoreable
+    (MECHANICAL) portion only, not the full 21-criterion rubric.
+
+    This deliberately does *not* carry `QuarterPerformance.overall_score`: that column belongs to
+    the legacy per-decision cognitive pipeline (`services/quarter_engine.py`), which
+    `run_quarter()` never invokes, so it is null for every quarter of every run the shipped
+    22-line flow produces. Reporting it was reporting a permanent null as if it were a score.
+    """
+
     company_id: uuid.UUID
     quarter_id: uuid.UUID
     quarter_number: int
-    overall_score: float | None = Field(default=None, description="Null until that quarter has been locked.")
+    ceo_score: Decimal | None = Field(default=None, description="Null until that quarter has been locked.")
+    band: str | None = Field(
+        default=None, description='e.g. "Weak" / "Competent" / "Strong". Null until that quarter has been locked.'
+    )
 
 
 class LeaderboardResponse(BaseModel):

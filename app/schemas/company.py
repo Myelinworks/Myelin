@@ -72,6 +72,47 @@ class CompanyDetailResponse(CompanyResponse):
     quarters: list[QuarterSummary]
 
 
+class CompanyListItem(BaseModel):
+    """One row of `GET /companies` -- enough to render a "resume a run" list without a follow-up
+    request per company, and nothing more. Everything here is already-persisted state; no engine
+    function runs to build it.
+
+    `latest_ceo_score`/`latest_band` come from the most recently *locked* quarter, so a run whose
+    current quarter is still open reports the previous quarter's score rather than null -- the
+    number a student recognises as "where I left off".
+    """
+
+    id: uuid.UUID
+    name: str
+    created_at: datetime
+    run_status: RunStatus
+    scenario_id: str
+    total_quarters: int = Field(description="How many quarters this run's scenario plays.")
+    crisis_quarter: int | None = Field(description="Which quarter number carries a crisis event, or null.")
+
+    current_quarter_number: int | None = Field(
+        default=None, description="Null before the first quarter is opened."
+    )
+    current_quarter_status: QuarterStatus | None = None
+    quarters_locked: int = Field(description="How many of this run's quarters have been locked so far.")
+
+    latest_ceo_score: Decimal | None = Field(
+        default=None, description="Most recently locked quarter's CEO score. Null before any quarter locks."
+    )
+    latest_band: str | None = Field(default=None, description="Band for `latest_ceo_score`.")
+
+
+class CompanyListResponse(BaseModel):
+    """`GET /companies` -- every run owned by the authenticated caller, newest first.
+
+    Strictly owner-scoped: this is "my runs", not a directory of everyone's. An instructor
+    listing a cohort's runs is a different, unbuilt endpoint with its own access rule -- folding
+    it in here would silently widen what a plain `GET /companies` returns depending on who asks.
+    """
+
+    entries: list[CompanyListItem]
+
+
 class QuarterDetailResponse(BaseModel):
     """`GET .../quarters/{quarter_id}` and the response of `POST .../quarters`. The quarter's
     current submitted-so-far state -- not a report; there is no scored outcome until it locks."""

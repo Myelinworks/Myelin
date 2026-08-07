@@ -15,12 +15,15 @@ from app.config.loader import load_scenario
 from app.core.db import get_db
 from app.engines.run_state import Move
 from app.models.company import Company
-from app.models.quarter import Quarter
+from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
+from app.models.quarter_performance import QuarterPerformance
 from app.routes.deps import get_current_user, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
     CompanyCreate,
     CompanyDetailResponse,
+    CompanyListItem,
+    CompanyListResponse,
     CompanyResponse,
     QuarterDetailResponse,
     QuarterSummary,
@@ -102,6 +105,83 @@ async def create_company_route(
 
     await session.commit()
     return _company_detail(company, quarters=[])
+
+
+@router.get(
+    "/companies",
+    response_model=CompanyListResponse,
+    responses=CREATE_ONLY_RESPONSES,
+    summary="List the runs this caller owns",
+    description="Every run owned by the authenticated caller, newest first. Exists so a client "
+    "can offer 'resume a run' without having to remember company ids itself -- ownership is "
+    "already enforced server-side, but before this there was no way to *discover* which ids you "
+    "owned. Strictly owner-scoped; never returns another user's runs.",
+)
+async def list_companies(
+    session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> CompanyListResponse:
+    """Owner-scoped read-through. Two queries total regardless of how many runs the caller owns
+    (companies, then every quarter belonging to them joined to its performance row) -- the
+    per-company rollups are folded in Python rather than issued as a query per company.
+    """
+    companies = (
+        (
+            await session.execute(
+                select(Company)
+                .where(Company.owner_id == user.id)
+                # `created_at` is `func.now()`, which PostgreSQL evaluates once per *transaction*
+                # -- two runs started in the same transaction carry an identical timestamp, and
+                # ordering on it alone would let them swap places between two reads of the same
+                # unchanged data. `id` breaks the tie arbitrarily but stably.
+                .order_by(Company.created_at.desc(), Company.id.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if not companies:
+        return CompanyListResponse(entries=[])
+
+    rows = (
+        await session.execute(
+            select(Quarter, QuarterPerformance)
+            .outerjoin(QuarterPerformance, QuarterPerformance.quarter_id == Quarter.id)
+            .where(Quarter.company_id.in_([c.id for c in companies]))
+            .order_by(Quarter.company_id, Quarter.number)
+        )
+    ).all()
+
+    by_company: dict[uuid.UUID, list[tuple[Quarter, QuarterPerformance | None]]] = {}
+    for quarter, performance in rows:
+        by_company.setdefault(quarter.company_id, []).append((quarter, performance))
+
+    entries = []
+    for company in companies:
+        quarters = by_company.get(company.id, [])
+        scenario = load_scenario(company.scenario_id)
+        closed = [(q, p) for q, p in quarters if q.status == QuarterStatus.CLOSED]
+        latest_scored = next(
+            (p for _, p in reversed(closed) if p is not None and p.ceo_score is not None), None
+        )
+        current = quarters[-1][0] if quarters else None
+        entries.append(
+            CompanyListItem(
+                id=company.id,
+                name=company.name,
+                created_at=company.created_at,
+                run_status=company.run_status,
+                scenario_id=company.scenario_id,
+                total_quarters=scenario.total_quarters,
+                crisis_quarter=scenario.crisis_quarter,
+                current_quarter_number=current.number if current else None,
+                current_quarter_status=current.status if current else None,
+                quarters_locked=len(closed),
+                latest_ceo_score=latest_scored.ceo_score if latest_scored else None,
+                latest_band=latest_scored.score_band if latest_scored else None,
+            )
+        )
+    return CompanyListResponse(entries=entries)
 
 
 @router.get(

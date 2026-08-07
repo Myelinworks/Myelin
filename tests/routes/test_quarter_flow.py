@@ -45,8 +45,12 @@ async def test_full_allocate_lock_report_leaderboard_flow(client, company_and_qu
     entries = leaderboard_response.json()["entries"]
     assert len(entries) == 1
     assert entries[0]["quarter_number"] == 1
-    # The leaderboard still reads the legacy overall_score column -- untouched by Phase 9.
-    assert entries[0]["overall_score"] is None
+    # The leaderboard reports the same score this quarter's own report does. It previously read
+    # `QuarterPerformance.overall_score` -- the legacy per-decision pipeline's column, which
+    # `run_quarter()` never writes -- and this assertion pinned that permanent null in place as
+    # if it were correct.
+    assert entries[0]["ceo_score"] == lock_body["decision_quality"]["ceo_score"]
+    assert entries[0]["band"] == lock_body["decision_quality"]["band"]
 
 
 async def test_report_409s_before_quarter_is_locked(client, company_and_quarter):

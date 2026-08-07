@@ -9,10 +9,12 @@ from app.models.company import Company
 from app.models.quarter import Quarter
 from app.models.quarter_performance import QuarterPerformance
 from app.routes.deps import get_current_user, get_quarter, get_quarter_for_write
+from app.schemas.crisis import CrisisBriefingResponse
 from app.schemas.errors import READ_RESPONSES, READ_RESPONSES_WITH_PLAIN_CONFLICT
 from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_read_access
+from app.services.crisis_briefing_service import NotCrisisQuarterError, build_crisis_briefing
 from app.services.quarter_run_service import run_quarter
 from app.services.report_service import QuarterNotLockedError, build_report_for_quarter
 
@@ -71,6 +73,34 @@ async def get_quarter_report(
 
 
 @router.get(
+    "/quarters/{quarter_id}/crisis",
+    response_model=CrisisBriefingResponse,
+    responses=READ_RESPONSES,
+    summary="Read this quarter's crisis briefing",
+    description="The narrative, the Strategic Choices, and the response spend lines that "
+    "actually feed this scenario's recovery formulas -- the half of a crisis "
+    "`docs/11-crisis-system.md` says students are told. Never returns a coefficient, threshold "
+    "or penalty magnitude: diagnosing those from their own results is the exercise. Readable "
+    "before and after the response is submitted; 404s for any quarter that isn't the "
+    "scenario's crisis quarter.",
+)
+async def get_crisis_briefing(
+    company_id: uuid.UUID,
+    quarter: Quarter = Depends(get_quarter),
+    session: AsyncSession = Depends(get_db),
+) -> CrisisBriefingResponse:
+    """Read-through of config copy plus `engines/crisis`'s own response-line mapping -- computes
+    nothing and reads no allocation, so it returns the same briefing whether or not the student
+    has already responded."""
+    company = await session.get(Company, quarter.company_id)
+    try:
+        briefing = build_crisis_briefing(company, quarter)
+    except NotCrisisQuarterError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    return CrisisBriefingResponse.model_validate(briefing)
+
+
+@router.get(
     "/leaderboard",
     response_model=LeaderboardResponse,
     responses=READ_RESPONSES,
@@ -107,7 +137,8 @@ async def get_leaderboard(
             company_id=company_id,
             quarter_id=performance.quarter_id,
             quarter_number=number,
-            overall_score=performance.overall_score,
+            ceo_score=performance.ceo_score,
+            band=performance.score_band,
         )
         for performance, number in rows
     ]

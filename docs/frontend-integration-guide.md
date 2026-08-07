@@ -21,6 +21,7 @@ display, never for computation.
 1.  POST /auth/register  (once)  ─┐
 2.  POST /auth/login              ├─ get a Bearer token
                                    ┘
+2b. GET  /companies                          -- runs you already own; skip to step 4 to resume one
 3.  POST /companies                          -- start a run, become its owner
 4.  GET  /companies/{id}/run                 -- read legal_moves; render the UI from it
 
@@ -47,8 +48,17 @@ Steps 5-17 repeat once per quarter (the shipped scenario runs 4). There is no se
 Q2" call beyond re-opening the next quarter (step 5) — the engine carries every quarter's closing
 state (cash, customers, Brand/Quality/Innovation Scores, ...) forward automatically.
 
+**Step 2b — `GET /companies`, so a client never has to remember ids itself.** Ownership was
+always enforced server-side, but until this existed nothing let you *discover* which company ids
+you owned: lose your local copy and the run was unreachable forever, despite still being yours.
+Returns every run owned by the caller, newest first, each with enough state
+(`run_status`, `current_quarter_number`/`_status`, `quarters_locked`, `latest_ceo_score`/
+`latest_band`) to render a "resume a run" list without a follow-up request per row. Strictly
+owner-scoped — it is "my runs", never a directory of everyone's.
+
 **Every route above appears in this flow except:**
 - `GET /health` — infrastructure liveness check, not part of a run.
+- `GET .../quarters/{qid}/crisis` — the crisis briefing; see section 4.
 - `GET /companies/{id}` and `GET .../quarters/{qid}` — plain read-throughs of state you'll usually
   already have from `GET .../run` and a POST response; useful for a page refresh / deep link.
 - The `finance`/`marketing`/`product`/`sales`/`cx` `.../decisions` and `.../state` routes — see
@@ -233,16 +243,40 @@ crisis — `3` for the shipped scenario. It does **not** tell you which of the f
 scenarios (Price Warrior / Marketing Blitz / Feature Leapfrog / Global Supply Shock, internally
 lettered A-D) is live.
 
-**Known gap: no endpoint currently exposes the crisis scenario letter before you submit.** The
-only place it appears at all is *after* the crisis quarter locks, embedded as plain text inside
-`decision_quality.modifiers[].detail` strings in that quarter's report (e.g.
-`"crisis_scenario=B, crisis_fully_neutralized=False"`) — not a dedicated, machine-readable field.
-Flag this with your backend/design team if the UI needs to render the crisis narrative and the
-correct choice menu *before* the student submits; today a frontend can only render a generic
-crisis-response form and let the student diagnose their situation from what they already know
-about the run (this matches the design intent in `docs/11-crisis-system.md`: "students are told
-the narrative and the choices, but never the underlying formula constants — they must diagnose
-their specific situation from their own quarter's results").
+### `GET .../quarters/{quarter_id}/crisis` — what the student is told
+
+*(This closes what earlier revisions of this guide listed as a known gap: the scenario letter used
+to be recoverable only after lock, buried in `decision_quality.modifiers[].detail` strings.)*
+
+Readable only in the crisis quarter (404 otherwise), and readable before, during and after the
+response — it describes the event, not the student's answer to it:
+
+```json
+{
+  "scenario_code": "C",
+  "title": "Feature Leapfrog",
+  "category": "competitive",
+  "narrative": "Vantis has launched at Rs 10,499 -- pricier than you -- but with genuinely superior specs. The threat is entirely about product credibility.",
+  "choices": [
+    {"code": "D", "label": "Contract R&D Sprint",
+     "effect": "Rent outside engineering capacity for one quarter. Raises Innovation Score now, though less per rupee than building the same capability in-house."}
+  ],
+  "response_lines": [{"field": "crisis_choice_d_spend", "label": "Choice D spend"}],
+  "ignoring_is_legal": true
+}
+```
+
+**`response_lines` is the field that makes this worth calling.** The crisis allocation request
+accepts five spend lines, but each scenario's recovery formulas read only a subset — Feature
+Leapfrog, above, has no documented recovery for its dampening or conversion penalty at all, so
+every rupee outside its Choice-D line is inert. Render the full five-field form to everyone and a
+student can spend their whole response budget on a line that does nothing. Drive the form from
+`response_lines`, and the choice menu from `choices`.
+
+**What it deliberately never returns is a number.** No coefficient, threshold, penalty magnitude
+or multiplier appears anywhere in the payload — `docs/11-crisis-system.md` §2 is explicit that
+students are told the narrative and the choices but "must diagnose their specific situation from
+their own quarter's results." The report they read *after* locking is where the numbers live.
 
 ### The crisis-response allocation
 
@@ -526,6 +560,14 @@ the API entirely — the full lifecycle in section 1 works without ever calling 
 Every route in `/openapi.json` appears in this guide's flow (section 1, its crisis/endgame
 specials in sections 4-5, or read-throughs noted alongside it) or is explicitly named as
 out-of-flow: `GET /health` (liveness only) and the 15 legacy per-workspace routes (section 9).
+
+**`GET /companies/{id}/leaderboard` reports `ceo_score`/`band`** — the same two numbers
+`score_trajectory` and `decision_quality` carry, for each quarter that has locked. It previously
+returned an `overall_score` field belonging to the legacy per-decision cognitive pipeline, which
+`run_quarter()` never invokes; that field was therefore `null` for every quarter of every run the
+shipped 22-line flow produces, and has been removed rather than left reporting a permanent null
+as though it were a score. An open quarter has no rollup row yet and is simply absent from
+`entries`, rather than present with a null score.
 Every enum a client branches on — `run_status` (ACTIVE/DISTRESSED/FAILED/COMPLETED), quarter
 `status` (IN_PROGRESS/CLOSED), `legal_moves`/`Move` values, crisis `crisis_choice`
 (A/B/C/D/null), Q4 `tier` (THRIVING/STABLE/DISTRESSED) and `path` (A/B/C) — is documented both

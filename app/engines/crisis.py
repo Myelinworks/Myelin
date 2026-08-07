@@ -279,20 +279,26 @@ def supply_shock_contract_manufacturing(
 # already holds the scenario-specific context, so scoring.py's predicates stay simple field reads.
 
 
+# Which `QuarterAllocation` crisis columns actually feed each scenario's recovery formulas.
+# Spending on a line that isn't listed for the live scenario is inert -- Scenario C, for
+# instance, has no documented recovery for its dampening or conversion penalty at all
+# (`CrisisResponseLinesConfig`'s docstring), so only its Choice-D line does anything.
+#
+# Single source of truth on purpose: `response_spend_total` below scores against it, and
+# `services/crisis_briefing_service.py` tells the student which lines are worth funding from
+# the same mapping -- so the briefing can never drift from what the engine actually reads.
+RESPONSE_LINES_BY_SCENARIO: dict[str, tuple[str, ...]] = {
+    "A": ("price_match_fund", "comparison_ads", "retention_offers", "crisis_choice_d_spend"),
+    "B": ("price_match_fund", "comparison_ads", "retention_offers", "crisis_choice_d_spend"),
+    "C": ("crisis_choice_d_spend",),
+    "D": ("emergency_supply_fund", "crisis_choice_d_spend"),
+}
+
+
 def response_spend_total(scenario: str | None, allocations) -> Decimal:
     """Every response line relevant to `scenario`, plus whichever Choice-D line is active."""
-    if scenario in ("A", "B"):
-        return (
-            allocations.price_match_fund
-            + allocations.comparison_ads
-            + allocations.retention_offers
-            + allocations.crisis_choice_d_spend
-        )
-    if scenario == "C":
-        return allocations.crisis_choice_d_spend
-    if scenario == "D":
-        return allocations.emergency_supply_fund + allocations.crisis_choice_d_spend
-    return ZERO
+    lines = RESPONSE_LINES_BY_SCENARIO.get(scenario or "", ())
+    return sum((getattr(allocations, line) for line in lines), ZERO)
 
 
 def is_fully_neutralized(

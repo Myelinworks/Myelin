@@ -294,11 +294,26 @@
       ]
     },
     "bands": [
-      {"name": "Exceptional", "minimum": 90},
-      {"name": "Strong", "minimum": 75},
-      {"name": "Competent", "minimum": 60},
-      {"name": "Weak", "minimum": 40},
-      {"name": "Poor", "minimum": -1000000}
+      {
+        "name": "Exceptional",
+        "minimum": 90
+      },
+      {
+        "name": "Strong",
+        "minimum": 75
+      },
+      {
+        "name": "Competent",
+        "minimum": 60
+      },
+      {
+        "name": "Weak",
+        "minimum": 40
+      },
+      {
+        "name": "Poor",
+        "minimum": -1000000
+      }
     ],
     "thresholds": {
       "ceiling_undershoot_points": 3,
@@ -306,9 +321,9 @@
       "supply_waste_status": "inferred_not_confirmed",
       "capacity_waste_leads": 0,
       "capacity_waste_status": "designer_specified",
-      "compounding_cut_ratio": 0.80,
+      "compounding_cut_ratio": 0.8,
       "compounding_cut_status": "inferred_not_confirmed",
-      "coordination_ratio": 1.30,
+      "coordination_ratio": 1.3,
       "coordination_status": "inferred_not_confirmed"
     }
   },
@@ -491,10 +506,29 @@
       "conversion_penalty_pts": 8,
       "brand_erosion_pts": 3,
       "choice_a_price_inr": 7999,
-      "choice_d_dampening_rate": 0.20
+      "choice_d_dampening_rate": 0.2,
+      "briefing": {
+        "title": "Price Warrior",
+        "category": "competitive",
+        "narrative": "Vantis has launched at Rs 6,999 -- a Rs 3,000 gap below your price -- and is competing almost entirely on price.",
+        "choices": [
+          {
+            "code": "A",
+            "label": "Cut Price to Match",
+            "effect": "Meet Vantis on price. Removes the conversion penalty outright, at the cost of gross margin for the whole quarter.",
+            "label_source": "docs/11"
+          },
+          {
+            "code": "D",
+            "label": "Contract Sales/Promo Surge",
+            "effect": "Rent temporary external sales and promotional capacity instead of committing to a standing posture. Recovers lost demand faster per rupee than the standard Price-Match Fund.",
+            "label_source": "docs/11"
+          }
+        ]
+      }
     },
     "marketing_blitz": {
-      "dampening_multiplier": 0.60,
+      "dampening_multiplier": 0.6,
       "conversion_penalty_pts": 3,
       "brand_erosion_pts": 8,
       "choice_a_price_inr": 8149,
@@ -502,18 +536,56 @@
       "choice_b_quality_threshold": 25,
       "choice_b_qualified_penalty_pts": 1.2,
       "choice_b_qualification_status": "single_instance_sourced_docs_14_section_4_general_form_unconfirmed",
-      "choice_d_dampening_rate": 0.25
+      "choice_d_dampening_rate": 0.25,
+      "briefing": {
+        "title": "Marketing Blitz",
+        "category": "competitive",
+        "narrative": "Vantis has launched at a comparable Rs 9,499, backed by a massive awareness campaign. The threat is entirely about attention -- not price, and not product.",
+        "choices": [
+          {
+            "code": "A",
+            "label": "Cut Price to Match",
+            "effect": "Meet Vantis on price. Removes the conversion penalty -- but conversion was never the dominant loss in this event.",
+            "label_source": "docs/11"
+          },
+          {
+            "code": "B",
+            "label": "Compete on build quality",
+            "effect": "Lean on the product's quality rather than its price. Softens the conversion penalty, but only once Quality Score has cleared a threshold.",
+            "label_source": "derived_from_stated_mechanism"
+          },
+          {
+            "code": "D",
+            "label": "Contract Marketing Agency Surge",
+            "effect": "Rent temporary external campaign capacity to win back attention rather than building it in-house.",
+            "label_source": "docs/11"
+          }
+        ]
+      }
     },
     "feature_leapfrog": {
-      "dampening_multiplier": 0.80,
+      "dampening_multiplier": 0.8,
       "conversion_penalty_pts": 6,
       "conversion_penalty_reduced_pts": 2,
       "ceiling_penalty_pts": 2,
       "innovation_threshold": 20,
-      "choice_d_innovation_rate": 3
+      "choice_d_innovation_rate": 3,
+      "briefing": {
+        "title": "Feature Leapfrog",
+        "category": "competitive",
+        "narrative": "Vantis has launched at Rs 10,499 -- pricier than you -- but with genuinely superior specs. The threat is entirely about product credibility.",
+        "choices": [
+          {
+            "code": "D",
+            "label": "Contract R&D Sprint",
+            "effect": "Rent outside engineering capacity for one quarter. Raises Innovation Score now, though less per rupee than building the same capability in-house.",
+            "label_source": "docs/11"
+          }
+        ]
+      }
     },
     "supply_shock": {
-      "base_cut": 0.50,
+      "base_cut": 0.5,
       "reliability_coefficient": 0.005,
       "reliability_centre": 50,
       "choice_a_offset": 0,
@@ -521,16 +593,35 @@
       "choice_b_offset": 0.25,
       "choice_c_offset": 0,
       "choice_b_permanent_reliability_gain": 10,
-      "choice_unassigned_high_tier": 0.50,
+      "choice_unassigned_high_tier": 0.5,
       "choice_unassigned_high_tier_status": "no_letter_confirmed_anywhere_no_worked_example_exercises_it_not_exposed_by_engines_crisis_py",
-      "emergency_fund_rate": 0.10,
-      "floor": 0.10,
-      "cap": 1.00,
+      "emergency_fund_rate": 0.1,
+      "floor": 0.1,
+      "cap": 1.0,
       "manufacturing_cost_surcharge_inr": 500,
       "choice_d_contract_penalty": 0.25,
       "choice_d_capacity_constant": 320,
       "choice_d_capacity_exponent": 0.7,
-      "choice_d_cost_premium_inr": 350
+      "choice_d_cost_premium_inr": 350,
+      "briefing": {
+        "title": "Global Supply Shock",
+        "category": "operational",
+        "narrative": "A global disruption has cut component availability and freight capacity. This is an operational threat, not a competitive one -- it cannot be marketed or priced around, only absorbed.",
+        "choices": [
+          {
+            "code": "B",
+            "label": "Diversify Suppliers",
+            "effect": "Restructure sourcing rather than buying your way through the quarter. Recovers production capacity now and leaves Supplier Reliability permanently higher afterwards.",
+            "label_source": "docs/11"
+          },
+          {
+            "code": "D",
+            "label": "Contract Manufacturing (Diversified Third-Party)",
+            "effect": "Rent third-party production capacity outright. Adds capacity beyond what the other postures reach, at a per-unit cost premium.",
+            "label_source": "docs/11"
+          }
+        ]
+      }
     },
     "response_lines": {
       "price_match_fund_rate": 0.15,
@@ -538,7 +629,8 @@
       "comparison_ads_cap_pts": 8,
       "retention_base_pct": 8,
       "retention_rate": 1.5
-    }
+    },
+    "briefing_status": "narratives_and_choice_labels_transcribed_from_docs_11; no coefficient, threshold or penalty magnitude is exposed to students (docs/11 section 2)"
   },
   "endgame": {
     "status": "partially_specified",
@@ -559,7 +651,7 @@
       "path_b_name": "Fire-Sale",
       "path_c_name": "High-Risk Independent"
     },
-    "acquisition_trap_offer_ratio": 0.719030,
+    "acquisition_trap_offer_ratio": 0.71903,
     "acquisition_trap_offer_ratio_status": "single_instance_sourced_back_solved_from_docs_17s_worked_example_rs_148256189_over_rs_206189028_no_ratio_stated_for_fair_value_acquisition_or_fire_sale"
   }
 }
