@@ -6,3 +6,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Local scratch output -- smoke-test dumps, route listings, anything written just to eyeball
+# once. A pair of these (_api_paths.txt, _smoke_results.txt) reached a commit by accident, and
+# one carried a live Supabase refresh token in its captured response body. The leading
+# underscore is the convention for "scratch, never commit".
+/_*.txt
+/_*.json
