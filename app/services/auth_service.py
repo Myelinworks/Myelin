@@ -112,6 +112,8 @@ def _to_auth_error(response: httpx.Response) -> SupabaseAuthError:
 class SupabaseAuthClient(Protocol):
     async def sign_up(self, *, email: str, password: str) -> dict: ...
     async def sign_in(self, *, email: str, password: str) -> dict: ...
+    async def request_password_reset(self, *, email: str) -> None: ...
+    async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None: ...
 
 
 class HttpxSupabaseAuthClient:
@@ -121,28 +123,55 @@ class HttpxSupabaseAuthClient:
     def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
         self._base_url = settings.supabase_url
         self._api_key = settings.supabase_publishable_key
+        self._redirect_url = settings.password_reset_redirect_url
         # None means "real network" (httpx's own default) -- only ever overridden by tests, to
         # exercise this exact error-classification logic against a mocked Supabase response
         # instead of duplicating `_call` in the test suite.
         self._transport = transport
 
-    async def _call(self, path: str, payload: dict) -> dict:
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict | None = None,
+        params: dict | None = None,
+        bearer: str | None = None,
+    ) -> httpx.Response:
+        """Shared request/error-classification plumbing for every Supabase Auth call --
+        `_call` (signup/signin) and the password-reset proxy methods below all funnel through
+        this so the 4xx/5xx split only lives in one place."""
+        headers = {"apikey": self._api_key, "Content-Type": "application/json"}
+        if bearer is not None:
+            headers["Authorization"] = f"Bearer {bearer}"
         async with httpx.AsyncClient(transport=self._transport) as client:
-            response = await client.post(
-                f"{self._base_url}{path}",
-                json=payload,
-                headers={"apikey": self._api_key, "Content-Type": "application/json"},
+            response = await client.request(
+                method, f"{self._base_url}{path}", json=json, params=params, headers=headers
             )
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as exc:
-                # Only 4xx is a *known* auth rejection worth normalizing -- a 5xx here means
-                # Supabase's own infrastructure is failing, which is a real outage, not a
-                # rejected login/signup, so it falls through to the generic 500 unchanged.
-                if 400 <= exc.response.status_code < 500:
-                    raise _to_auth_error(exc.response) from exc
-                raise
-            data = response.json()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            # Only 4xx is a *known* auth rejection worth normalizing -- a 5xx here means
+            # Supabase's own infrastructure is failing, which is a real outage, not a
+            # rejected login/signup, so it falls through to the generic 500 unchanged.
+            if 400 <= exc.response.status_code < 500:
+                raise _to_auth_error(exc.response) from exc
+            raise
+        return response
+
+    async def _call(self, path: str, payload: dict) -> dict:
+        response = await self._request("POST", path, json=payload)
+        data = response.json()
+        # A 200 with no session at all means Supabase didn't issue one (e.g. the project still
+        # requires email confirmation) -- an unhandled KeyError on the lines below would surface
+        # as an opaque 500 instead of the normal, mapped 4xx `routes/auth.py` already handles.
+        if "access_token" not in data or "user" not in data:
+            raise SupabaseAuthError(
+                502,
+                "no_session_returned",
+                "Supabase Auth did not return a session for this request "
+                "(email confirmation may still be required on this project)",
+            )
         return {
             "access_token": data["access_token"],
             "refresh_token": data.get("refresh_token"),
@@ -156,6 +185,20 @@ class HttpxSupabaseAuthClient:
     async def sign_in(self, *, email: str, password: str) -> dict:
         return await self._call(
             "/auth/v1/token?grant_type=password", {"email": email, "password": password}
+        )
+
+    async def request_password_reset(self, *, email: str) -> None:
+        """Proxies to `/auth/v1/recover` -- Supabase emails a recovery link itself and, like
+        signup, never reveals whether the address is actually registered."""
+        params = {"redirect_to": self._redirect_url} if self._redirect_url else None
+        await self._request("POST", "/auth/v1/recover", json={"email": email}, params=params)
+
+    async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:
+        """Proxies to `PUT /auth/v1/user` using the short-lived access token Supabase's
+        recovery-link redirect carries -- the same token the frontend reads out of the URL
+        fragment (`#access_token=...&type=recovery`, never sent to any server)."""
+        await self._request(
+            "PUT", "/auth/v1/user", json={"password": new_password}, bearer=access_token
         )
 
 

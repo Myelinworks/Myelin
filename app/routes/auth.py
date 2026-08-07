@@ -8,7 +8,7 @@ via httpx/pytest, the same way Phase 12's acceptance tests exercise the run life
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.routes.deps import NotAuthenticatedError
-from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest
+from app.schemas.auth import AuthResponse, ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest
 from app.services.auth_service import SupabaseAuthClient, SupabaseAuthError, get_supabase_auth_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,3 +65,44 @@ async def login(
         # missing/invalid Bearer token, so the frontend's one 401 handler catches both.
         raise NotAuthenticatedError(exc.message) from exc
     return AuthResponse(**result)
+
+
+@router.post(
+    "/forgot-password",
+    summary="Request a password-reset email",
+    description="Proxies to Supabase Auth's `/recover`. Always returns the same generic ack "
+    "whether or not the email is registered -- Supabase itself never reveals that, to prevent "
+    "email enumeration. 429 (plain `detail`) if Supabase's rate limit was hit.",
+)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    client: SupabaseAuthClient = Depends(get_supabase_auth_client),
+) -> dict:
+    try:
+        await client.request_password_reset(email=payload.email)
+    except SupabaseAuthError as exc:
+        if exc.status_code == 429:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from exc
+    return {"message": "If that email is registered, a reset link has been sent."}
+
+
+@router.post(
+    "/reset-password",
+    summary="Complete a password reset",
+    description="Proxies to Supabase Auth's `PUT /user`, authenticated with the short-lived "
+    "recovery `access_token` from the emailed reset link (the frontend reads it out of the "
+    "URL fragment after Supabase's redirect). 422 (plain `detail`) if the token is expired/"
+    "invalid or Supabase rejects the new password itself.",
+)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    client: SupabaseAuthClient = Depends(get_supabase_auth_client),
+) -> dict:
+    try:
+        await client.confirm_password_reset(
+            access_token=payload.access_token, new_password=payload.new_password
+        )
+    except SupabaseAuthError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from exc
+    return {"message": "Password updated."}

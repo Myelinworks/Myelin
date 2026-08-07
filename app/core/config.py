@@ -12,12 +12,16 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
 
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
     supabase_jwks_url: str = ""
+
+    # Where Supabase redirects after a user clicks the password-reset email link (the
+    # frontend's own reset-password page). Passed as `redirect_to` on `/auth/v1/recover`.
+    password_reset_redirect_url: str = ""
 
     # The valid-role universe, kept in config so a new role is an env change, not a code
     # change. Which of these roles get cross-ownership read access is a business rule, not

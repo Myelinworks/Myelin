@@ -24,6 +24,23 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """`POST /auth/forgot-password` -- proxies to Supabase Auth's `/recover`. Always answers
+    the same way regardless of whether the email is registered (Supabase's own anti-enumeration
+    behavior)."""
+
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    """`POST /auth/reset-password` -- `access_token` is the short-lived recovery token Supabase's
+    emailed link redirects the user back with (read from the URL fragment client-side, never
+    logged server-side)."""
+
+    access_token: str
+    new_password: str
+
+
 class AuthResponse(BaseModel):
     """The session returned by both `/auth/register` and `/auth/login`. Send `access_token` as
     `Authorization: Bearer <access_token>` on every subsequent request."""

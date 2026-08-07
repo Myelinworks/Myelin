@@ -229,6 +229,12 @@ class FakeSupabaseAuthClient:
     async def sign_in(self, *, email: str, password: str) -> dict:
         return await self.sign_up(email=email, password=password)
 
+    async def request_password_reset(self, *, email: str) -> None:
+        return None
+
+    async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:
+        return None
+
 
 class TestRegisterAndLoginProxy:
     async def test_register_calls_through_to_the_supabase_client(self, auth_client):
@@ -272,6 +278,12 @@ class _FakeAuthClientThatRaises:
         raise self._error
 
     async def sign_in(self, *, email: str, password: str) -> dict:
+        raise self._error
+
+    async def request_password_reset(self, *, email: str) -> None:
+        raise self._error
+
+    async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:
         raise self._error
 
 
@@ -340,3 +352,72 @@ class TestAuthProxyFailureMapping:
         """
         with pytest.raises(RuntimeError, match="Supabase is unreachable"):
             await self._login_with(auth_client, RuntimeError("Supabase is unreachable"))
+
+
+class TestForgotAndResetPasswordProxy:
+    """Same proxy shape as register/login (`TestRegisterAndLoginProxy` /
+    `TestAuthProxyFailureMapping` above): a known `SupabaseAuthError` maps to this API's own
+    envelope, everything else propagates unchanged."""
+
+    async def test_forgot_password_returns_generic_ack(self, auth_client):
+        _as_user(None)
+        app.dependency_overrides[get_supabase_auth_client] = lambda: FakeSupabaseAuthClient()
+        try:
+            response = await auth_client.post("/auth/forgot-password", json={"email": "student@myelin.dev"})
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 200
+        assert "message" in response.json()
+
+    async def test_forgot_password_rate_limit_returns_429_not_500(self, auth_client):
+        _as_user(None)
+        error = SupabaseAuthError(429, "over_email_send_rate_limit", "email rate limit exceeded")
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            response = await auth_client.post("/auth/forgot-password", json={"email": "student@myelin.dev"})
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 429
+
+    async def test_forgot_password_rejected_email_returns_422_not_500(self, auth_client):
+        _as_user(None)
+        error = SupabaseAuthError(400, "email_address_invalid", "Email address is invalid")
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            response = await auth_client.post("/auth/forgot-password", json={"email": "not-an-email"})
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Email address is invalid"
+
+    async def test_reset_password_returns_confirmation(self, auth_client):
+        _as_user(None)
+        app.dependency_overrides[get_supabase_auth_client] = lambda: FakeSupabaseAuthClient()
+        try:
+            response = await auth_client.post(
+                "/auth/reset-password",
+                json={"access_token": "recovery-token", "new_password": "correct horse battery staple"},
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 200
+        assert "message" in response.json()
+
+    async def test_reset_password_expired_token_returns_422_not_500(self, auth_client):
+        _as_user(None)
+        error = SupabaseAuthError(401, "invalid_token", "Token has expired or is invalid")
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            response = await auth_client.post(
+                "/auth/reset-password",
+                json={"access_token": "stale-token", "new_password": "correct horse battery staple"},
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Token has expired or is invalid"

@@ -112,3 +112,83 @@ async def test_network_failure_propagates_unchanged():
 
     with pytest.raises(httpx.ConnectError):
         await client.sign_in(email="student@myelin.dev", password="correct horse battery staple")
+
+
+async def test_signup_without_a_session_becomes_a_known_auth_error_not_a_keyerror():
+    """When the Supabase project still requires email confirmation, `/signup` returns 200 with
+    a bare user object -- no `access_token`, no `user` wrapper. Must not surface as a raw
+    `KeyError` (-> opaque 500); `routes/auth.py` already knows how to map `SupabaseAuthError`."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"id": "abc-123", "email": "student@myelin.dev", "aud": "authenticated"})
+
+    client = _client_with(handler)
+
+    with pytest.raises(SupabaseAuthError) as exc_info:
+        await client.sign_up(email="student@myelin.dev", password="correct horse battery staple")
+
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.error_code == "no_session_returned"
+
+
+async def test_forgot_password_calls_recover_with_redirect_to():
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        captured["body"] = request.content
+        return httpx.Response(200, json={})
+
+    settings = Settings(
+        supabase_url="https://example.supabase.co",
+        supabase_publishable_key="test-key",
+        password_reset_redirect_url="http://localhost:3000/reset-password",
+    )
+    client = HttpxSupabaseAuthClient(settings, transport=httpx.MockTransport(handler))
+
+    await client.request_password_reset(email="student@myelin.dev")
+
+    assert "/auth/v1/recover" in captured["url"]
+    assert "redirect_to=http" in captured["url"]
+
+
+async def test_forgot_password_rate_limit_becomes_a_known_auth_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            429, json={"code": 429, "error_code": "over_email_send_rate_limit", "msg": "email rate limit exceeded"}
+        )
+
+    client = _client_with(handler)
+
+    with pytest.raises(SupabaseAuthError) as exc_info:
+        await client.request_password_reset(email="student@myelin.dev")
+
+    assert exc_info.value.status_code == 429
+
+
+async def test_reset_password_sends_bearer_and_new_password():
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["auth_header"] = request.headers.get("authorization")
+        captured["body"] = request.content
+        return httpx.Response(200, json={"id": "abc-123"})
+
+    client = _client_with(handler)
+
+    await client.confirm_password_reset(access_token="recovery-token", new_password="new correct horse battery")
+
+    assert captured["auth_header"] == "Bearer recovery-token"
+    assert b"new correct horse battery" in captured["body"]
+
+
+async def test_reset_password_expired_token_becomes_a_known_auth_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={"error_code": "invalid_token", "msg": "Token has expired or is invalid"})
+
+    client = _client_with(handler)
+
+    with pytest.raises(SupabaseAuthError) as exc_info:
+        await client.confirm_password_reset(access_token="stale-token", new_password="new correct horse battery")
+
+    assert exc_info.value.status_code == 401
