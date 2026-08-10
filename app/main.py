@@ -71,6 +71,9 @@ async def illegal_move_handler(_request: Request, exc: IllegalMoveError) -> JSON
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    # Empty string would match nothing but is still a *configured* regex to Starlette; None means
+    # "no regex at all", which is what an unset CORS_ORIGIN_REGEX should mean.
+    allow_origin_regex=settings.cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

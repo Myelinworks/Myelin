@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     # before a single log line. `_split_csv` accepts both that and a JSON array.
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+    # Vercel mints a distinct origin per deployment (`<project>-<hash>-<scope>.vercel.app`), so an
+    # enumerated allow-list goes stale the next time the frontend deploys and every browser call
+    # starts failing preflight. This regex covers the whole project's deployment family in one
+    # entry. Anchored at both ends -- an unanchored pattern would match any host that merely
+    # *contains* the project name, e.g. `evil-myelin-frontend.attacker.com`.
+    cors_origin_regex: str = ""
+
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
