@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,12 +11,23 @@ from app.models.quarter_performance import QuarterPerformance
 from app.routes.deps import get_current_user, get_quarter, get_quarter_for_write
 from app.schemas.crisis import CrisisBriefingResponse
 from app.schemas.errors import READ_RESPONSES, READ_RESPONSES_WITH_PLAIN_CONFLICT
-from app.schemas.quarter import LeaderboardEntry, LeaderboardResponse, QuarterReportResponse
+from app.schemas.quarter import (
+    LeaderboardEntry,
+    LeaderboardResponse,
+    QuarterReportPdfResponse,
+    QuarterReportResponse,
+)
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_read_access
 from app.services.crisis_briefing_service import NotCrisisQuarterError, build_crisis_briefing
 from app.services.quarter_run_service import run_quarter
 from app.services.report_service import QuarterNotLockedError, build_report_for_quarter
+from app.services.storage_service import (
+    REPORT_BUCKET,
+    SupabaseStorageClient,
+    SupabaseStorageError,
+    get_supabase_storage_client,
+)
 
 router = APIRouter(prefix="/companies/{company_id}", tags=["quarter"])
 
@@ -70,6 +81,75 @@ async def get_quarter_report(
     except QuarterNotLockedError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     return QuarterReportResponse.model_validate(report)
+
+
+_PDF_SIGNED_URL_TTL = 3600
+
+
+def _report_pdf_path(company_id: uuid.UUID, quarter_id: uuid.UUID) -> str:
+    return f"{company_id}/{quarter_id}.pdf"
+
+
+@router.post(
+    "/quarters/{quarter_id}/report/pdf",
+    response_model=QuarterReportPdfResponse,
+    responses=READ_RESPONSES_WITH_PLAIN_CONFLICT,
+    summary="Store a client-rendered report PDF",
+    description="The frontend renders the PDF itself from the same report data `GET .../report` "
+    "already serves, then hands the finished bytes here to be stored in Supabase Storage's "
+    "private `quarter-reports` bucket (service-role write, never public). 409s if the quarter "
+    "isn't locked yet -- there is nothing to have rendered a report from.",
+)
+async def store_quarter_report_pdf(
+    company_id: uuid.UUID,
+    file: UploadFile = File(...),
+    quarter: Quarter = Depends(get_quarter),
+    session: AsyncSession = Depends(get_db),
+    storage: SupabaseStorageClient = Depends(get_supabase_storage_client),
+) -> QuarterReportPdfResponse:
+    try:
+        await build_report_for_quarter(session, quarter.id)
+    except QuarterNotLockedError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+
+    data = await file.read()
+    path = _report_pdf_path(company_id, quarter.id)
+    try:
+        await storage.upload(REPORT_BUCKET, path, data, content_type="application/pdf")
+        signed_url = await storage.create_signed_url(REPORT_BUCKET, path, expires_in=_PDF_SIGNED_URL_TTL)
+    except SupabaseStorageError as exc:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Supabase Storage rejected the upload: {exc.message}") from exc
+
+    return QuarterReportPdfResponse(
+        bucket=REPORT_BUCKET, path=path, signed_url=signed_url, expires_in=_PDF_SIGNED_URL_TTL
+    )
+
+
+@router.get(
+    "/quarters/{quarter_id}/report/pdf",
+    response_model=QuarterReportPdfResponse,
+    responses=READ_RESPONSES_WITH_PLAIN_CONFLICT,
+    summary="Re-sign a previously stored report PDF",
+    description="404s if this quarter's PDF has never been generated (`POST` this same path "
+    "first). Signed URLs expire, so this always mints a fresh one rather than caching -- don't "
+    "persist the URL itself, only that a PDF exists.",
+)
+async def get_quarter_report_pdf(
+    company_id: uuid.UUID,
+    quarter: Quarter = Depends(get_quarter),
+    storage: SupabaseStorageClient = Depends(get_supabase_storage_client),
+) -> QuarterReportPdfResponse:
+    path = _report_pdf_path(company_id, quarter.id)
+    try:
+        signed_url = await storage.create_signed_url(REPORT_BUCKET, path, expires_in=_PDF_SIGNED_URL_TTL)
+    except SupabaseStorageError as exc:
+        if exc.status_code == 404:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No report PDF has been generated for this quarter yet") from exc
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Supabase Storage rejected the request: {exc.message}") from exc
+
+    return QuarterReportPdfResponse(
+        bucket=REPORT_BUCKET, path=path, signed_url=signed_url, expires_in=_PDF_SIGNED_URL_TTL
+    )
 
 
 @router.get(

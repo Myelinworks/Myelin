@@ -207,3 +207,15 @@ class LeaderboardResponse(BaseModel):
     model_config = ConfigDict(json_schema_extra={"example": example("leaderboard_response")})
 
     entries: list[LeaderboardEntry]
+
+
+class QuarterReportPdfResponse(BaseModel):
+    """`POST`/`GET .../report/pdf` -- the frontend renders the PDF itself (client-side, from the
+    same report data this API already serves) and hands the finished bytes to `POST` for
+    storage; this backend never generates the PDF, only stores and re-signs access to it in
+    Supabase Storage's private `quarter-reports` bucket."""
+
+    bucket: str
+    path: str
+    signed_url: str = Field(description="Expires -- re-fetch via GET rather than caching this.")
+    expires_in: int
