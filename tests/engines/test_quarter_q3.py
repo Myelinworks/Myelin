@@ -254,6 +254,68 @@ class TestScenarioCThresholdFlipsBothWays:
         assert result.crisis_fully_neutralized is False
 
 
+class TestContractRndSprintDoesNotPersistIntoQ4:
+    """docs/11 §5: `Innovation Score += 3 x^0.5` **(this quarter only; weaker per rupee than
+    in-house's 5 x^0.5)**. The weaker rate is what makes Choice D a second chance rather than a
+    cheaper substitute for two quarters of R&D -- so the boost must clear *this* quarter's
+    Innovation >= 20 threshold and then lapse, never compounding into Q4's conversion ceiling or
+    its intangible valuation premium.
+    """
+
+    def test_boost_clears_the_threshold_this_quarter(self, q3_opening, profile, nadi_wear):
+        """Starved in-house R&D leaves Innovation under 20; Rs 3,00,000 of contract sprint
+        rescues it, exactly as docs/11 §5's worked example does (17.5 + 3 x 3.0^0.5 = 22.70)."""
+        starved = replace(Q3_BASELINE, quality_qa=Decimal("0"), innovation=Decimal("0"))
+        without = compute_quarter(
+            q3_opening, replace(starved, crisis_choice="C"), profile, nadi_wear, CrisisEvent(scenario="C")
+        )
+        with_sprint = compute_quarter(
+            q3_opening,
+            replace(starved, crisis_choice="D", crisis_choice_d_spend=Decimal("3.00")),
+            profile,
+            nadi_wear,
+            CrisisEvent(scenario="C"),
+        )
+
+        assert without.crisis_fully_neutralized is False
+        assert with_sprint.crisis_fully_neutralized is True
+        assert with_sprint.conversion_ceiling_pct > without.conversion_ceiling_pct
+
+    def test_closing_innovation_score_excludes_the_contract_boost(self, q3_opening, profile, nadi_wear):
+        """The rented boost moves this quarter's ceiling but never the carried score: Q4 opens on
+        in-house R&D alone, identical whether or not the sprint was bought."""
+        starved = replace(Q3_BASELINE, quality_qa=Decimal("0"), innovation=Decimal("0"))
+        without = compute_quarter(
+            q3_opening, replace(starved, crisis_choice="C"), profile, nadi_wear, CrisisEvent(scenario="C")
+        )
+        with_sprint = compute_quarter(
+            q3_opening,
+            replace(starved, crisis_choice="D", crisis_choice_d_spend=Decimal("3.00")),
+            profile,
+            nadi_wear,
+            CrisisEvent(scenario="C"),
+        )
+
+        assert with_sprint.closing_state.innovation_score == without.closing_state.innovation_score
+        assert with_sprint.closing_state.innovation_score == q3_opening.innovation_score
+
+    def test_carried_score_agrees_with_the_valuation_that_quarter(
+        self, q3_opening, profile, nadi_wear
+    ):
+        """`_value_company` values the in-house score, so the closing state must carry the same
+        number -- otherwise Q3's valuation and Q4's opening state disagree about one quantity."""
+        result = compute_quarter(
+            q3_opening,
+            replace(Q3_BASELINE, crisis_choice="D", crisis_choice_d_spend=Decimal("3.00")),
+            profile,
+            nadi_wear,
+            CrisisEvent(scenario="C"),
+        )
+        baseline_innovation = compute_quarter(q3_opening, Q3_BASELINE, profile, nadi_wear).closing_state
+
+        assert result.closing_state.innovation_score == baseline_innovation.innovation_score
+
+
 class TestScenarioDExpert:
     """docs/14 §6: Choice B (Diversify Suppliers) + Rs 2,00,000 Emergency Fund -- the load-bearing
     formula test for the whole phase."""

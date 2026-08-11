@@ -33,11 +33,20 @@ def test_social_influencer_q1(profile):
 
 
 def test_content_seo_q1(profile):
-    """Rs 1,28,000 -> 87 leads, +4.48 SEO asset."""
-    result = marketing.content_seo(L("1.28"), profile)
+    """Rs 1,28,000 -> 87 leads, +4.48 SEO asset. Q1 opens with no asset, so the running total
+    equals the contribution."""
+    result = marketing.content_seo(L("1.28"), Decimal(0), profile)
 
     assert close(result.leads, "87")
     assert close(result.seo_asset, "4.48", tolerance="0.01")
+
+
+def test_content_seo_asset_accumulates_onto_the_prior_balance(profile):
+    """docs/13-quarter-2-reference.md §5/§8: Q1's 4.5 + Rs 2,00,000 of Q2 spend -> 11.5, the
+    canonical Q3 opening SEO Asset. The asset compounds; it is not replaced each quarter."""
+    result = marketing.content_seo(L("2.00"), Decimal("4.5"), profile)
+
+    assert close(result.seo_asset, "11.5", tolerance="0.01")
 
 
 def test_seo_asset_payout_is_read_from_prior_state(profile):
@@ -67,7 +76,7 @@ def test_q1_raw_leads_total(profile):
         marketing.google_ads(L("4.00"), profile)
         + marketing.meta_ads(L("1.92"), profile).leads
         + marketing.social_influencer(L("2.08"), profile).leads
-        + marketing.content_seo(L("1.28"), profile).leads
+        + marketing.content_seo(L("1.28"), Decimal(0), profile).leads
         + marketing.events_pr(L("0.80"), profile).leads
         + marketing.email_marketing(L("1.60"), profile).leads
         + Decimal(800)  # Referral, capped -- see test_referral_q1
@@ -167,7 +176,7 @@ def test_brand_multiplier_matches_the_three_known_points(profile):
         lambda p: marketing.google_ads(L("0"), p),
         lambda p: marketing.meta_ads(L("0"), p).leads,
         lambda p: marketing.social_influencer(L("0"), p).leads,
-        lambda p: marketing.content_seo(L("0"), p).leads,
+        lambda p: marketing.content_seo(L("0"), Decimal(0), p).leads,
         lambda p: marketing.events_pr(L("0"), p).leads,
         lambda p: marketing.email_marketing(L("0"), p).leads,
         lambda p: marketing.prelaunch_buzz(L("0"), p).buzz_score,

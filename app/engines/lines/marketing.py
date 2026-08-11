@@ -89,16 +89,25 @@ def social_influencer(spend_lakhs: Decimal, profile: SimulationProfile) -> Socia
     )
 
 
-def content_seo(spend_lakhs: Decimal, profile: SimulationProfile) -> ContentSeoResult:
-    """`Leads = 75 * x^0.62` · `SEO Asset += 3.5 * x`.
+def content_seo(
+    spend_lakhs: Decimal, prior_seo_asset: Decimal, profile: SimulationProfile
+) -> ContentSeoResult:
+    """`Leads = 75 * x^0.62` · `SEO Asset += 3.5 * x` (cumulative, never resets).
 
     Immediate leads are deliberately the weakest of any paid channel; the real value arrives next
     quarter through the asset, via `seo_asset_payout`.
+
+    The asset accumulates like every other carried score, and takes `prior_seo_asset` for the same
+    reason `quality_qa`/`supplier_qc`/`logistics` take theirs: returning a bare per-quarter delta
+    is what let the caller drop the carried balance. `docs/13-quarter-2-reference.md` states both
+    Q2 variants' closing totals as prior-plus-contribution -- Efficiency `+5.25 -> 9.75` (§4) and
+    Growth `+7.0 -> 11.5` (§5), each from Q1's 4.5 -- and §8 carries that 11.5 into Q3 as the
+    canonical opening value.
     """
     line = profile.marketing.content_seo
     return ContentSeoResult(
         leads=diminishing(line.leads_constant, spend_lakhs, line.leads_exponent),
-        seo_asset=line.asset_per_lakh * spend_lakhs,
+        seo_asset=prior_seo_asset + line.asset_per_lakh * spend_lakhs,
     )
 
 

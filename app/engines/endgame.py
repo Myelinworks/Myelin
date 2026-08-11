@@ -49,10 +49,39 @@ class TierOutcome:
     detail: str
 
 
-def momentum_score(q1_units_sold: Decimal, q3_units_sold: Decimal) -> Decimal:
+def momentum_score(
+    q1_units_sold: Decimal, q3_units_sold: Decimal, quarters_elapsed: int = 2
+) -> Decimal:
     """docs/17 P1: `(Q3 Units Sold / Q1 Units Sold)^0.5 - 1` -- the validated, narrower 2-input
-    formula. Confirmed exactly against the worked example (562 -> 1,437 gives 0.5990, i.e. "59.9%")."""
+    formula. Confirmed exactly against the worked example (562 -> 1,437 gives 0.5990, i.e. "59.9%").
+
+    docs/17 calls this "a 2-input geometric quarterly growth rate", and the `^0.5` is the second
+    root because the canonical scenario puts exactly two quarters between Q1 and the
+    tier-assignment quarter. `engines/survival.py`'s `tier_assignment_quarter` is already
+    scenario-relative, so a scenario of a different length would reach this function with a
+    different span and silently get a wrong root applied -- the exponent would no longer be the
+    per-quarter rate it is documented to be. No source states the formula at any other span, so
+    this refuses rather than pick a generalisation (`^(1/quarters_elapsed)` is the obvious reading
+    of "geometric quarterly growth rate", but obvious is not stated, and no worked example
+    anywhere exercises it).
+    """
+    if quarters_elapsed != 2:
+        raise NotImplementedError(
+            f"Momentum Score is validated only across a two-quarter span (Q1 -> the "
+            f"tier-assignment quarter of a four-quarter scenario), where docs/17's `^0.5` is the "
+            f"per-quarter geometric rate; this run spans {quarters_elapsed} quarters. No source "
+            f"states the formula at any other span -- generalising the exponent to "
+            f"1/{quarters_elapsed} is the obvious reading but is not stated or worked anywhere, "
+            f"so it needs a designer decision rather than a guess"
+        )
     return (q3_units_sold / q1_units_sold) ** HALF - ONE
+
+
+def _quarters_between(earlier: QuarterResult, later: QuarterResult) -> int:
+    """Span in quarters between two results. `closing_state.quarter_number` is already the *next*
+    quarter's number (see `CompanyState.advance`), so the difference is the same either way and
+    needs no offset correction."""
+    return later.closing_state.quarter_number - earlier.closing_state.quarter_number
 
 
 def _valuation_grew(prior: QuarterResult, current: QuarterResult) -> bool:
@@ -202,7 +231,9 @@ def build_endgame_facts(
     if path not in ("A", "B", "C"):
         raise NotImplementedError(f"endgame path {path!r} is not one of A/B/C")
 
-    momentum = momentum_score(q1_result.units_sold, q3_result.units_sold)
+    momentum = momentum_score(
+        q1_result.units_sold, q3_result.units_sold, _quarters_between(q1_result, q3_result)
+    )
 
     covenant_hit = None
     if path == "A":
@@ -275,7 +306,9 @@ def build_endgame_preview(
     """Pure assembly of every `engines/endgame.py` formula against one company's Q1-Q3 history --
     the read-through `GET .../endgame` route calls once its inputs are loaded."""
     tier_outcome = assign_tier(q1_result, q2_result, q3_result, survival_outcome)
-    momentum = momentum_score(q1_result.units_sold, q3_result.units_sold)
+    momentum = momentum_score(
+        q1_result.units_sold, q3_result.units_sold, _quarters_between(q1_result, q3_result)
+    )
     menu = term_sheet_menu(tier_outcome.tier, config)
     covenant = covenant_units(q3_result.units_sold, momentum, config)
 
