@@ -119,6 +119,50 @@ class TestRawConversionComposition:
         assert close(q2_growth.conversion_rate_pct, "28.0", tolerance="0.1")
 
 
+class TestCompoundingAssetsCarryForward:
+    """Q1's own closing values are the only ones the Q1 suite can check, and every cumulative
+    score opens Q1 at a baseline that makes "carried forward" and "recomputed from this quarter's
+    spend alone" indistinguishable there. SEO Asset opens at 0, so Q1 could not tell the two
+    apart at all -- and the engine was in fact replacing it, silently capping the compounding
+    mechanic at one quarter deep. These pin the second link of the chain, where the difference
+    is observable.
+    """
+
+    def test_seo_asset_accumulates_across_q1_to_q2(self, q1, q2_efficiency, q2_growth):
+        """docs/13 §4: `+5.25 -> 9.75`. §5/§8: `+7.0 -> 11.5`, the stated Q3 opening value.
+        Both are Q1's 4.5 plus that variant's own Rs 3.5/lakh contribution."""
+        assert close(q1.closing_state.seo_asset, "4.5", tolerance="0.05")
+        assert close(q2_efficiency.closing_state.seo_asset, "9.75", tolerance="0.05")
+        assert close(q2_growth.closing_state.seo_asset, "11.5", tolerance="0.05")
+
+    def test_seo_payout_reads_the_accumulated_balance(self, q2_growth, q1, profile, nadi_wear):
+        """The payout is `prior asset x 25`, so a dropped carry-forward shows up as missing free
+        leads a quarter later, not as a wrong score in the quarter that built it."""
+        q3 = compute_quarter(q2_growth.closing_state, Q2_GROWTH_ALLOCATIONS, profile, nadi_wear)
+
+        assert close(q2_growth.seo_payout_leads, "113", tolerance="1")  # from Q1's 4.5
+        assert close(q3.seo_payout_leads, "288", tolerance="1")  # from Q2 Growth's 11.5
+
+    def test_zero_seo_spend_preserves_the_asset_rather_than_zeroing_it(
+        self, q1, profile, nadi_wear
+    ):
+        """A quarter that skips Content/SEO keeps the balance it already built -- the asset is a
+        stock, not a per-quarter flow."""
+        result = compute_quarter(
+            q1.closing_state, replace(Q2_GROWTH_ALLOCATIONS, content_seo=Decimal(0)), profile, nadi_wear
+        )
+
+        assert result.closing_state.seo_asset == q1.closing_state.seo_asset
+
+    def test_brand_and_quality_and_innovation_also_accumulate(self, q1, q2_growth):
+        """The three other cumulative scores, checked at the same link for the same reason --
+        docs/13 §5/§8: Brand 8.7 -> 31.2, Quality 9.95 -> 24.65, Innovation 7.5 -> 17.5."""
+        assert q2_growth.closing_state.brand_score > q1.closing_state.brand_score
+        assert close(q2_growth.closing_state.brand_score, "31.2", tolerance="0.1")
+        assert close(q2_growth.closing_state.quality_score, "24.65", tolerance="0.1")
+        assert close(q2_growth.closing_state.innovation_score, "17.5", tolerance="0.1")
+
+
 class TestGate2BothBranchesOfTheMinAreExercised:
     """Every other Q1/Q2 fixture keeps the ceiling binding, so `MIN(raw, ceiling)` only ever
     selects `ceiling` in the rest of the suite. This constructs the other branch."""

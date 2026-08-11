@@ -161,7 +161,7 @@ def compute_quarter(
     # ---- Marketing: raw leads from all 8 channels -----------------------------------------
     meta = marketing.meta_ads(allocations.meta_ads, profile)
     social = marketing.social_influencer(allocations.social_influencer, profile)
-    seo = marketing.content_seo(allocations.content_seo, profile)
+    seo = marketing.content_seo(allocations.content_seo, opening_state.seo_asset, profile)
     events = marketing.events_pr(allocations.events_pr, profile)
     email = marketing.email_marketing(allocations.email_marketing, profile)
     referral = marketing.referral(allocations.referral, effective_customers, seed)
@@ -459,7 +459,15 @@ def compute_quarter(
         seo_asset=seo.seo_asset,
         buzz_score=buzz.buzz_score if allocations.prelaunch_buzz > 0 else opening_state.buzz_score,
         quality_score=quality.quality_score,
-        innovation_score=innovation_score_for_ceiling,
+        # In-house R&D only, never `innovation_score_for_ceiling`: docs/11 §5 qualifies Scenario
+        # C's Choice D Contract R&D Sprint as `Innovation Score += 3 * x^0.5` **(this quarter
+        # only; weaker per rupee than in-house's 5 * x^0.5)**. The weaker coefficient is the whole
+        # reason it is a "second chance" and not a cheaper substitute for two quarters of R&D --
+        # contract capability is rented, so it clears this quarter's threshold and then lapses.
+        # Carrying it forward would permanently inflate every later quarter's conversion ceiling
+        # (0.15 pts per innovation point, via rnd.conversion_ceiling) and the intangible premium,
+        # and would also disagree with `_value_company` below, which values the in-house score.
+        innovation_score=innovation.innovation_score,
         feature_completeness=innovation.feature_completeness,
         repeat_purchase_rate_pct=opening_state.repeat_purchase_rate_pct
         + email.repeat_rate_pts
