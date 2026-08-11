@@ -258,6 +258,77 @@ and no tier cut-offs**.
 **Action required:** Q4 cannot be implemented at all without this. Highest-priority missing spec
 after the P0 items.
 
+> **Partially superseded** by `docs/17-designer-resolutions.md`, which supplies a validated
+> *2-input* Momentum Score (`(Q3 Units / Q1 Units)^0.5 - 1`) plus Tier Assignment, the covenant
+> and true-continuation-value formulas, and the Exit & Growth sub-criteria. The 7-input composite
+> above stays genuinely unspecified — `app/engines/gaps.py::momentum_score` still raises for it.
+> Two residual gaps from that partial resolution are recorded below.
+
+---
+
+## P2 — Momentum Score's exponent is validated only at a two-quarter span
+
+`docs/17` describes its formula as "a 2-input **geometric quarterly growth rate**" and states it
+as `(Q3 Units / Q1 Units)^0.5 - 1`. The `^0.5` is the second root because the canonical scenario
+puts exactly two quarters between Q1 and the tier-assignment quarter.
+
+`engines/survival.py::tier_assignment_quarter` is deliberately scenario-relative
+(`total_quarters - 1`), so a scenario of any other length reaches `momentum_score` with a
+different span while the exponent stays at `0.5` — at which point it is no longer the per-quarter
+rate it is documented to be, and the covenant and true-continuation-value figures derived from it
+are wrong without anything failing.
+
+`^(1/quarters_elapsed)` is the obvious reading of "geometric quarterly growth rate", but obvious
+is not stated, and no worked example anywhere exercises any span but two.
+
+**Status:** `engines/endgame.py::momentum_score` takes `quarters_elapsed` and raises
+`NotImplementedError` for anything but 2, rather than silently applying the wrong root. Callers
+derive the span from the results they already hold (`_quarters_between`). Latent today —
+`nadi_wear_standard` is the only shipped scenario and runs 4 quarters.
+
+**Action required:** designer confirms `^(1/n)` for an n-quarter span, or states the intended
+formula for scenarios of other lengths. Until then, only four-quarter scenarios can reach Q4.
+
+---
+
+## P2 — Q4's Exit & Growth trait: "replaces" vs. "adds", and 15 unscoreable points
+
+Two distinct problems, both from `docs/16` §4 / `docs/10-scoring-methodology.md`'s Q4 addendum.
+
+**1. The weight disposition is stated as an unresolved either/or.** The source says the trait is
+worth 15 points *"either replacing one standard trait's weight or added as a Q4-only category"* —
+and never picks one. `engines/endgame.py::build_q4_rubric` adds it, so Q4's trait weights sum to
+**115** while every other quarter's sum to 100 (and the standard rubric's own
+`test_traits_sum_to_exactly_100` still guards that 100).
+
+This does not currently move any score: all three sub-criteria are `JUDGMENT` (below), so the
+trait contributes nothing to `mechanical_points_available`, and `normalised_score` — what
+`QuarterPerformance.ceo_score` persists — is unchanged. The visible effect is confined to the
+reported `raw_score` and `unscored_points`, which in Q4 are measured against a 115-point nominal
+scale (`unscored_points` jumps 68.33 → 83.33 purely as an artifact of the choice).
+
+**2. All three sub-criteria are unscoreable, so the trait always earns zero.** `docs/17` P1
+resolves the three sub-criteria as (1) reasoning references the actual Q1–Q3 trend, (2) the chosen
+path matches what the trajectory supports, (3) consequences are owned rather than attributed to
+luck. All three ask about the *content of a stated rationale*, and no input to `score_quarter`
+carries one — the same reason `leadership_1..3` are unscored today. They are registered as
+`JUDGMENT` with their reasons recorded inline (`engines/endgame.py::EXIT_GROWTH_CRITERIA`).
+
+The same shortfall affects 4 of the 6 Q4 modifiers: `correct_rejection` and
+`deliberate_independence` require verifying "correct"/"explicit stated" reasoning, and
+`correct_acceptance` requires a known offer for a weak/flat-momentum company — but an offer amount
+is only ever derivable for the Thriving tier's Acquisition Trap term sheet, so its two conditions
+can never co-occur. All four are registered with predicates that return "did not fire", the same
+pattern as `debt_without_justification`.
+
+**Net effect:** of Q4's 15-point dedicated trait and 6 dedicated modifiers, only `covenant_hit`,
+`covenant_missed` and `value_left_on_table` can ever change a score today.
+
+**Action required:** designer (a) picks replace-or-add for the 15 points, and (b) either supplies
+mechanically-checkable Exit & Growth criteria, or confirms the trait is intended to be
+human-graded — in which case the scoring pipeline needs a rationale input it does not currently
+have.
+
 ---
 
 ## P1 — All 12 CX decisions have no formulas

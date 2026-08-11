@@ -63,7 +63,7 @@
   },
   "notes": {
     "only_one_scenario_ships": "PulseWear cannot back a second scenario: docs/03-company-load-state.md never states 9 constants the chain needs (see tests/engines/test_quarter_company_agnostic.py::TestPulseWearCannotRunYet and the P0 baseline conflict in docs/10-implementation-gaps.md). Shipping a pulsewear scenario would produce a company that 500s on its first lock, so it is withheld rather than shipped broken.",
-    "crisis_not_wired": "crisis_quarter/crisis_scenario are recorded but not consumed -- the crisis engine is Phase 10, and compute_quarter still refuses a non-null CrisisEvent rather than silently running a quarter with the crisis dropped.",
+    "crisis_wiring": "crisis_quarter/crisis_scenario are consumed by services/quarter_run_service.py::run_quarter, which builds a CrisisEvent on the crisis quarter and hands it to compute_quarter; all four scenarios A-D are implemented in app/engines/crisis.py. crisis_scenario is null here on purpose -- that makes the branch assigned deterministically per company (SHA-256-seeded, so a replay lands on the same scenario), rather than pinning one for every company on this scenario.",
     "modifiers_are_legacy": "The four modifiers belong to the percentage-influence matrix model in app/engines/legacy_matrix/, which is not wired into run_quarter(). They are materialised so that path stays instantiable, not because the 22-line chain reads them -- it has no modifier stage at all."
   }
 }
