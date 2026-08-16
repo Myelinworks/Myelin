@@ -1,0 +1,228 @@
+"""The Nadi Wear engine, exercised over a full four-quarter run.
+
+These assert the *chain*, not the totals: that each gate binds when it should, that the state
+carried between quarters is coherent, and that the balance sheet balances. A test that only
+checked revenue would pass with the gates wired in the wrong order.
+"""
+
+from decimal import Decimal
+
+import pytest
+
+from app.engines.simulation import (
+    SimulationAllocations,
+    compute_simulation_quarter,
+    build_term_sheet,
+    opening_state,
+    score_quarter,
+    settle,
+)
+from app.engines.simulation.catalog import BUFFER, SHARE_CAPITAL, market_demand
+from app.engines.simulation.state import CrisisResponse, normalise_lines
+
+D = Decimal
+
+
+def alloc(**lines) -> SimulationAllocations:
+    return SimulationAllocations(lines=normalise_lines({k: D(str(v)) for k, v in lines.items()}))
+
+
+def test_opening_state_balances():
+    """Assets = liabilities + equity before a single decision is made."""
+    s = opening_state()
+    inventory = s.products["pulse"].inv * s.products["pulse"].inv_cost
+    assets = s.cash + s.ar + inventory + s.equipment + s.ip
+    from app.engines.simulation.catalog import OTHER_LIABILITIES
+
+    liabilities = s.ap + s.debt + OTHER_LIABILITIES
+    equity = SHARE_CAPITAL + s.retained_earnings
+    assert assets == liabilities + equity
+
+
+def test_an_empty_quarter_is_legal_and_burns_fixed_costs():
+    """Committing nothing is a real, if inert, quarter -- salaries and overhead still land."""
+    r = compute_simulation_quarter(opening_state(), alloc())
+    assert r.units_sold >= 0
+    assert r.fixed_cost > 0
+    assert r.net_cf < 0, "a quarter with no revenue and a payroll must consume cash"
+
+
+def test_selling_capacity_binds_when_marketing_outruns_sales():
+    """Leads beyond what the team can work are lost -- not stored, delayed or discounted."""
+    r = compute_simulation_quarter(opening_state(), alloc(google=40, meta=20, social=20, reps=1))
+    assert r.leads_wasted > 0
+    assert r.leads_used == r.capacity < r.eff_leads
+    assert r.gate() == "sales_capacity"
+
+
+def test_product_ceiling_caps_conversion_however_hard_you_sell():
+    """Sales effort above the ceiling buys nothing at all -- the money is spent, the units
+    do not appear."""
+    r = compute_simulation_quarter(opening_state(), alloc(reps=30, crm=20, sales_training=20, google=20))
+    assert r.raw_conv > r.ceiling
+    assert r.ceiling_binding
+    assert r.final_conv <= r.ceiling + r.warranty_bonus
+
+
+def test_supply_binds_when_demand_outruns_the_line():
+    """Demand you cannot fill is demand you did not have."""
+    state = opening_state()
+    r = compute_simulation_quarter(state, alloc(google=25, meta=15, reps=25, production=0))
+    if r.demand_total > sum(r.avail.values()):
+        assert r.supply_binding and r.unmet_demand > 0
+
+
+def test_capacity_you_own_is_not_capacity_you_run():
+    """Funding plant without funding the run leaves it idle and still depreciating."""
+    r = compute_simulation_quarter(opening_state(), alloc(capex=10, production=1))
+    assert r.capacity_added > 0
+    assert r.run_limited
+    assert r.utilisation < 1
+
+
+def test_short_staffing_throttles_the_spend_it_cannot_absorb():
+    """Money committed above what a function can deliver under-performs; it does not work harder."""
+    r = compute_simulation_quarter(opening_state(), alloc(google=60))
+    assert "marketing" in r.short_roles
+    assert r.staffing["marketing"] < 1
+    # Floor is 0.55 -- a starved function still delivers something.
+    assert r.staffing["marketing"] >= Decimal("0.55")
+
+
+def test_cutting_below_the_founding_team_is_refused():
+    r = compute_simulation_quarter(opening_state(), alloc(fire_sales=99))
+    assert r.staff_out["sales"] == 4, "the founding four cannot be cut"
+
+
+def test_credit_is_capped_at_a_share_of_net_worth():
+    r = compute_simulation_quarter(opening_state(), alloc(draw=500))
+    assert r.drawn == r.debt_limit
+    assert r.draw_rejected > 0
+
+
+def test_referral_past_its_cap_buys_nothing():
+    """The cheapest demand in the model, and hard-capped at 20% of the customer base."""
+    state = opening_state()
+    at_cap = compute_simulation_quarter(state, alloc(referral=float(state.customers * D("0.2") * 300 / 100_000)))
+    over = compute_simulation_quarter(state, alloc(referral=50))
+    assert over.channel_leads["referral"] == at_cap.channel_leads["referral"]
+    assert over.referral_waste > 0
+
+
+def test_the_pro_needs_a_hundred_or_it_is_worth_nothing():
+    """Partial progress is worth exactly as much as no progress."""
+    partial = compute_simulation_quarter(opening_state(), alloc(npd=4))
+    assert 0 < partial.npd < 100
+    assert not partial.pro_launching
+    assert not partial.next_state.products["pro"].live
+
+
+def test_innovation_lead_time_defers_the_effect():
+    """A card with a lead time is paid for now and lands later."""
+    r = compute_simulation_quarter(opening_state(), SimulationAllocations(lines=normalise_lines({}), start_inno=("coach",)))
+    assert "coach" not in r.landed
+    assert r.pipeline["coach"] == 1
+    assert r.inno_spend > 0
+    # Capitalised to the balance sheet, not expensed against profit.
+    assert r.ip_asset > r.entering.ip - r.amortisation
+
+
+def test_a_zero_lead_card_ships_the_same_quarter():
+    r = compute_simulation_quarter(opening_state(), SimulationAllocations(lines=normalise_lines({}), start_inno=("app",)))
+    assert "app" in r.landed
+    assert r.satisfaction > r.entering.satisfaction
+
+
+def test_balance_sheet_balances_after_a_real_quarter():
+    r = compute_simulation_quarter(
+        opening_state(),
+        alloc(google=8, meta=4, reps=10, production=8, supplier=5, quality=4, culture=2),
+    )
+    assert r.total_assets == pytest.approx(r.total_liabilities + r.equity, rel=Decimal("1e-9"))
+
+
+def test_crisis_costs_less_to_a_prepared_company():
+    """The whole point of the shock: preparation bought earlier is worth more than reaction now."""
+    weak = opening_state()
+    strong = weak.with_(supplier_rel=D(95), cash=D(30_000_000), innovation=D(40), quality=D(40),
+                        brand=D(45), repeat_rate=D(30), satisfaction=D(80), emp_sat=D(85))
+    crisis = CrisisResponse(variant="supply", strategy="fight", commit=D(5))
+
+    hurt = compute_simulation_quarter(weak.with_(quarter=3), SimulationAllocations(lines=normalise_lines({}), crisis=crisis))
+    held = compute_simulation_quarter(strong.with_(quarter=3), SimulationAllocations(lines=normalise_lines({}), crisis=crisis))
+    assert held.situation.vuln < hurt.situation.vuln
+    assert held.cap_mult > hurt.cap_mult
+
+
+def test_a_strategy_with_no_money_behind_it_is_punished():
+    crisis = CrisisResponse(variant="price_war", strategy="fight", commit=D(0))
+    r = compute_simulation_quarter(opening_state().with_(quarter=3),
+                             SimulationAllocations(lines=normalise_lines({}), crisis=crisis))
+    assert r.brand_end < r.entering.brand + 1, "announcing a fight and funding nothing erodes brand"
+
+
+def test_four_quarters_run_end_to_end():
+    """The whole year, carrying state forward, ending in a settled term sheet."""
+    state = opening_state()
+    history = []
+    plans = [
+        dict(google=6, meta=4, reps=10, production=8, supplier=5, quality=4, culture=2),
+        dict(google=8, meta=5, social=4, reps=14, crm=3, production=12, supplier=6, quality=6, npd=6, culture=3),
+        dict(google=7, meta=4, social=5, reps=14, production=12, supplier=7, quality=7, npd=8, culture=3),
+        dict(google=9, meta=5, social=5, reps=16, production=14, supplier=6, quality=8, culture=3),
+    ]
+
+    for q in range(1, 5):
+        crisis = CrisisResponse(variant="leapfrog", strategy="differentiate", commit=D(6)) if q == 3 \
+            else CrisisResponse()
+        a = SimulationAllocations(lines=normalise_lines({k: D(str(v)) for k, v in plans[q - 1].items()}),
+                            crisis=crisis, priority="grow")
+        r = compute_simulation_quarter(state, a)
+        assert r.q == q
+        assert r.total_assets == pytest.approx(r.total_liabilities + r.equity, rel=Decimal("1e-9"))
+
+        score = score_quarter(r, history[-1] if history else None, {"constraint": "sales", "risk": "cash",
+                                                                    "expect": "growslow"},
+                              "grow", "sales", ("sales", "cash"), D(10_000_000))
+        assert 0 <= score.final <= 130
+        assert score.band in ("Exceptional", "Strong", "Competent", "Weak", "Poor")
+        # All seven traits are scoreable in this engine -- none is left unassessed.
+        assert len(score.traits) == 7
+
+        history.append(r)
+        state = r.next_state
+
+    assert state.quarter == 5
+
+    ts = build_term_sheet(history[:3], history[2].next_state)
+    assert ts.tier in ("THRIVING", "STABLE", "DISTRESSED")
+    assert set(ts.menu()) == {"path_a_name", "path_b_name", "path_c_name"}
+
+    for path in ("A", "B", "C"):
+        s = settle(ts, path, history[3])
+        assert s.path == path
+        assert s.final_valuation >= 0
+
+
+def test_crisis_quarter_carries_aftermath_into_q4():
+    """A response is not over when the quarter is."""
+    state = opening_state().with_(quarter=3)
+    r3 = compute_simulation_quarter(
+        state,
+        SimulationAllocations(lines=normalise_lines({}),
+                        crisis=CrisisResponse(variant="leapfrog", strategy="focus", commit=D(8))),
+    )
+    assert r3.next_state.aftermath.get("note")
+    assert r3.next_state.aftermath.get("repeat_bonus")
+
+
+def test_wc_breach_and_insolvency_are_sticky():
+    """Once breached, the record carries it -- the endgame tier reads these flags."""
+    broke = opening_state().with_(cash=D(0), ar=D(0))
+    r = compute_simulation_quarter(broke, alloc(google=5))
+    assert r.wc_breached
+    assert r.next_state.wc_breached
+
+
+def test_market_grows_whether_you_act_or_not():
+    assert market_demand(1) < market_demand(2) < market_demand(3) < market_demand(4)

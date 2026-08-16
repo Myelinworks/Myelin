@@ -3,7 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
-from app.routes import allocations, auth, company, cx, endgame, finance, marketing, product, quarter, run, sales
+from app.routes import (
+    allocations,
+    auth,
+    company,
+    cx,
+    endgame,
+    finance,
+    marketing,
+        simulation,
+    product,
+    quarter,
+    run,
+    sales,
+)
 from app.routes.deps import NotAuthenticatedError
 from app.services.authorization_service import NotPermittedError
 from app.services.run_service import IllegalMoveError
@@ -93,6 +106,8 @@ app.include_router(allocations.router)
 app.include_router(quarter.router)
 app.include_router(endgame.router)
 app.include_router(run.router)
+# The four-quarter simulation: a parallel engine on the same companies, never in the 22-line path.
+app.include_router(simulation.router)
 
 
 @app.get("/health")
