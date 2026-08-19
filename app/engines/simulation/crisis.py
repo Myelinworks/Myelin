@@ -9,6 +9,14 @@ Wider than `app/engines/crisis.py`: that models four lettered scenarios with A/B
 this models six archetypes against five postures. The four overlapping archetypes map onto the
 same letters via `catalog.ARCHETYPE_FOR_SCENARIO_LETTER`, so a company can be assigned a crisis
 by either system and land on the same event.
+
+Deliberately NOT a port of the reference's own crisis model. The reference's `runQuarter()`
+crisis block is a much smaller, discrete thing -- four lettered events, three canned choices
+each, hardcoded per-choice numbers, no continuous exposure score. Checked directly against the
+reference source (grepped for `vuln`, `healthFactor`, `archetype`, `shielded`, `protectedBy` --
+zero matches): this whole vulnerability/diagnosis apparatus has no reference counterpart at all.
+Confirmed with the product owner (2026-08-19) as an intentional, richer redesign to keep as-is,
+not drift to reconcile.
 """
 
 from dataclasses import dataclass, field

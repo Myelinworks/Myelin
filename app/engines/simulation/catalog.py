@@ -124,13 +124,13 @@ class DeptLoad:
 DEPT_LOAD: dict[str, DeptLoad] = {
     "marketing": DeptLoad(
         ("google", "meta", "social", "content", "events", "email", "direct", "referral", "prelaunch"),
-        Decimal(1_595_000),
+        Decimal(1_100_000),
     ),
-    "sales": DeptLoad(("reps", "crm", "onboarding", "sales_training", "channel"), Decimal(1_377_500)),
-    "engineering": DeptLoad(("quality", "npd", "design"), Decimal(1_595_000)),
-    "operations": DeptLoad(("production", "capex", "supplier", "logistics", "warehouse"), Decimal(1_885_000)),
-    "support": DeptLoad(("cx", "onboarding"), Decimal(1_160_000)),
-    "admin": DeptLoad(("compliance", "planning", "audit", "working_capital", "treasury"), Decimal(1_305_000)),
+    "sales": DeptLoad(("reps", "crm", "onboarding", "sales_training", "channel"), Decimal(950_000)),
+    "engineering": DeptLoad(("quality", "npd", "design"), Decimal(1_100_000)),
+    "operations": DeptLoad(("production", "capex", "supplier", "logistics", "warehouse"), Decimal(1_300_000)),
+    "support": DeptLoad(("cx", "onboarding"), Decimal(800_000)),
+    "admin": DeptLoad(("compliance", "planning", "audit", "working_capital", "treasury"), Decimal(900_000)),
 }
 
 

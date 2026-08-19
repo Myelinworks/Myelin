@@ -50,6 +50,12 @@ class SimulationCompanyState:
 
     # balance sheet
     cash: Decimal = OPENING_CASH
+    #: An accepted Q4 "Path A" term sheet's investment, not yet swept into cash. Set on Q4's
+    #: opening state once the deal is signed, cleared to zero on `next_state` -- the same
+    #: two-step (raised, then closed) `drawn`/`repaid` already model for debt, so a rescue
+    #: cheque shows up as `equity_raised` in financing cash flow rather than teleporting
+    #: straight into the balance the moment it's accepted.
+    pending_investment: Decimal = ZERO
     ar: Decimal = Decimal(800_000)
     ap: Decimal = ZERO
     debt: Decimal = ZERO
@@ -74,8 +80,11 @@ class SimulationCompanyState:
     innovations: tuple[str, ...] = ()
     #: card id -> quarters remaining before it ships.
     pipeline: dict[str, int] = field(default_factory=dict)
-    launch_hype: Decimal = ZERO
-    launch_boost_left: Decimal = ZERO
+    #: Pre-Launch Buzz's own history: quarter number -> that quarter's `4*sqrt(spend)` gain.
+    #: Never a live score read on its own -- only entries from the two most recent quarters
+    #: are ever read (Q+1 pays 15x as free leads, Q+2 pays 25x free leads plus a one-time
+    #: conversion bonus), so nothing is pruned; older entries just stop being looked at.
+    buzz_hist: dict[int, Decimal] = field(default_factory=dict)
 
     # cumulative scores
     customers: Decimal = Decimal(4_000)

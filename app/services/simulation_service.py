@@ -10,7 +10,7 @@ means the cached `result`/`opening_state` columns can be rebuilt from scratch at
 """
 
 import uuid
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -89,7 +89,7 @@ def state_from_dict(raw: dict) -> SimulationCompanyState:
     decimals = {
         k: Decimal(raw[k]) for k in (
             "cash", "ar", "ap", "debt", "equipment", "ip", "retained_earnings", "installed_capacity",
-            "launch_hype", "launch_boost_left", "customers", "prior_units", "brand", "seo", "quality",
+            "customers", "prior_units", "brand", "seo", "quality",
             "innovation", "npd", "supplier_rel", "logistics_eff", "emp_sat", "emp_eng", "compliance",
             "forecast", "audit", "satisfaction", "repeat_rate", "attrition", "ar_days", "overhead",
             "market_share", "fill_rate", "prior_demand", "last_gm", "last_net_cf",
@@ -101,6 +101,7 @@ def state_from_dict(raw: dict) -> SimulationCompanyState:
         products=products,
         innovations=tuple(raw["innovations"]),
         pipeline={k: int(v) for k, v in raw["pipeline"].items()},
+        buzz_hist={int(k): Decimal(v) for k, v in raw["buzz_hist"].items()},
         rev_history=tuple(Decimal(v) for v in raw["rev_history"]),
         last_mix={k: Decimal(v) for k, v in raw["last_mix"].items()},
         aftermath={k: (Decimal(v) if k != "note" else v) for k, v in raw["aftermath"].items()},
@@ -224,7 +225,7 @@ def budget(state: SimulationCompanyState, result: SimulationQuarterResult | None
     return {
         "opex": opex, "capex": capex, "inno": inno, "people": people, "repay": repay, "drawn": drawn,
         "committed": opex + capex + inno + people + repay,
-        "ceiling": max(Decimal(0), state.cash + drawn - fixed - BUFFER),
+        "ceiling": max(Decimal(0), state.cash + state.pending_investment + drawn - fixed - BUFFER),
     }
 
 
@@ -299,6 +300,7 @@ async def preview(session: AsyncSession, company: Company, payload: dict) -> dic
                         ("read_quarter_report", "read_endgame_preview"))
 
     state, history = replay(quarters)
+    state = _apply_endgame_investment(state, run, history)
     allocations = _with_assigned_crisis(allocations_from_payload(payload), state, run)
     result = compute_simulation_quarter(state, allocations)
 
@@ -329,6 +331,23 @@ def _with_assigned_crisis(a: SimulationAllocations, state: SimulationCompanyStat
     return replace(a, crisis=replace(a.crisis, variant=run.archetype))
 
 
+def _apply_endgame_investment(
+    state: SimulationCompanyState, run: SimulationRun, history: list[SimulationQuarterResult]
+) -> SimulationCompanyState:
+    """Q4's opening state carries a signed "Path A" rescue cheque as `pending_investment`, so it
+    raises the budget ceiling the moment it's accepted and shows as "pending" everywhere Q4 is
+    read -- not just once the quarter locks. `compute_simulation_quarter` sweeps it into
+    financing cash flow and clears it back to zero on `next_state`.
+
+    A no-op unless Q4 is actually open with a signed Path A deal behind it -- everywhere else
+    `state.pending_investment` stays the dataclass default of zero.
+    """
+    if state.quarter != TOTAL_QUARTERS or run.endgame_path != "A" or len(history) < CRISIS_QUARTER:
+        return state
+    ts = build_term_sheet(history[:CRISIS_QUARTER], history[CRISIS_QUARTER - 1].next_state)
+    return replace(state, pending_investment=ts.offer("A").investment)
+
+
 async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
     """Commit the quarter: run it, score it, persist it."""
     run = await get_or_create_run(session, company)
@@ -338,6 +357,7 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
                         ("read_quarter_report", "read_endgame_preview"))
 
     state, history = replay(quarters)
+    state = _apply_endgame_investment(state, run, history)
     allocations = _with_assigned_crisis(allocations_from_payload(payload), state, run)
     result = compute_simulation_quarter(state, allocations)
 
@@ -451,6 +471,7 @@ async def run_state(session: AsyncSession, company: Company) -> dict:
     run = await get_or_create_run(session, company)
     quarters = await locked_quarters(session, company.id)
     state, history = replay(quarters)
+    state = _apply_endgame_investment(state, run, history)
     complete = len(quarters) >= TOTAL_QUARTERS
 
     return {
