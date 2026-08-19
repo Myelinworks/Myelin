@@ -76,6 +76,14 @@ async def test_goals_over_the_cap_are_rejected(client: AsyncClient):
     assert res.status_code == 422
 
 
+async def test_oversized_institution_name_is_rejected_not_500d(client: AsyncClient):
+    # A free-typed institution name has no client-side length cap -- this has to 422 here
+    # rather than overflow AppUser.institution_name's String(255) column at the DB.
+    payload = {"institution": {"id": "custom", "name": "x" * 300, "verified": False}}
+    res = await client.patch("/profile", json=payload)
+    assert res.status_code == 422
+
+
 async def test_profile_requires_authentication(client: AsyncClient) -> None:
     app.dependency_overrides.pop(get_current_user, None)
     res = await client.get("/profile")
