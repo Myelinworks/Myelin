@@ -50,6 +50,12 @@ class SimulationCompanyState:
 
     # balance sheet
     cash: Decimal = OPENING_CASH
+    #: An accepted Q4 "Path A" term sheet's investment, not yet swept into cash. Set on Q4's
+    #: opening state once the deal is signed, cleared to zero on `next_state` -- the same
+    #: two-step (raised, then closed) `drawn`/`repaid` already model for debt, so a rescue
+    #: cheque shows up as `equity_raised` in financing cash flow rather than teleporting
+    #: straight into the balance the moment it's accepted.
+    pending_investment: Decimal = ZERO
     ar: Decimal = Decimal(800_000)
     ap: Decimal = ZERO
     debt: Decimal = ZERO

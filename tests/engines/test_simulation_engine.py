@@ -226,3 +226,20 @@ def test_wc_breach_and_insolvency_are_sticky():
 
 def test_market_grows_whether_you_act_or_not():
     assert market_demand(1) < market_demand(2) < market_demand(3) < market_demand(4)
+
+
+def test_pending_investment_is_raised_not_teleported():
+    """A signed rescue cheque shows up as financing cash flow, not a straight cash bump --
+    it has to actually clear the same quarter it's meant to fund, and never carry past it."""
+    without = opening_state().with_(quarter=4)
+    with_cheque = without.with_(pending_investment=D(5_000_000))
+
+    r_without = compute_simulation_quarter(without, alloc(google=5))
+    r_with = compute_simulation_quarter(with_cheque, alloc(google=5))
+
+    assert r_without.equity_raised == D(0)
+    assert r_with.equity_raised == D(5_000_000)
+    assert r_with.financing_cf - r_without.financing_cf == D(5_000_000)
+    assert r_with.cash - r_without.cash == D(5_000_000)
+    # Spent or not, it doesn't linger -- there's no Q5 for it to be "pending" into.
+    assert r_with.next_state.pending_investment == D(0)

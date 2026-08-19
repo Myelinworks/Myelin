@@ -109,6 +109,9 @@ class SimulationQuarterResult:
     draw_rejected: Decimal
     repaid: Decimal
     debt_close: Decimal
+    #: An accepted Q4 "Path A" investment, swept into this quarter's financing cash flow.
+    #: Zero every quarter it isn't Q4-with-an-accepted-rescue-cheque.
+    equity_raised: Decimal
     interest_expense: Decimal
     interest_income: Decimal
     ar_days: Decimal
@@ -727,7 +730,8 @@ def compute_simulation_quarter(
                     - fixed_cost - opex_spend - people_cost - compliance_penalty
                     - interest_expense + interest_income)
     investing_cf = -(capex_spend + inno_spend)
-    financing_cf = drawn - repaid
+    equity_raised = dec(state.pending_investment)
+    financing_cf = drawn - repaid + equity_raised
     net_cf = operating_cf + investing_cf + financing_cf
     cash = state.cash + net_cf
 
@@ -800,7 +804,7 @@ def compute_simulation_quarter(
 
     next_state = state.with_(
         quarter=q + 1,
-        cash=cash, ar=ar_close, ap=ap_close, debt=debt_close,
+        cash=cash, pending_investment=ZERO, ar=ar_close, ap=ap_close, debt=debt_close,
         equipment=equipment, ip=ip_asset, retained_earnings=retained_earnings,
         installed_capacity=installed_capacity, staff=staff_out, products=next_products,
         innovations=owned_inno, pipeline=pipeline,
@@ -840,6 +844,7 @@ def compute_simulation_quarter(
         emp_sat=emp_sat, emp_eng=emp_eng, prod_mult=prod_mult, attrition_next=attrition_next,
         open_net_worth=open_net_worth, debt_limit=debt_limit, drawn=drawn,
         draw_rejected=draw_rejected, repaid=repaid, debt_close=debt_close,
+        equity_raised=equity_raised,
         interest_expense=interest_expense, interest_income=interest_income, ar_days=ar_days,
         compliance=compliance, forecast=forecast, audit=audit, penalty_risk=penalty_risk,
         channel_leads=channel_leads, raw_leads=raw_leads, seo_free=seo_free, hype_free=hype_free,
