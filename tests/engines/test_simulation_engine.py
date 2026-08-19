@@ -276,3 +276,14 @@ def test_innovation_score_only_moves_via_landed_cards_today():
     funding nothing but a landed innovation-board card is the only way the score moves at all."""
     r = compute_simulation_quarter(opening_state(), alloc(google=1))
     assert r.innovation == opening_state().innovation == D(0)
+
+
+def test_buzz_spend_counts_as_a_compounding_asset_for_scoring():
+    """Buzz (the reference's "prelaunch" line) is one of the five lines the scoring rubric's
+    own label names as compounding -- "SEO, buzz, social, innovation and new product" -- but the
+    sum it was scored against only added three of them."""
+    r = compute_simulation_quarter(opening_state(), alloc(prelaunch=5, google=1))
+    score = score_quarter(r, None, {}, None, None, (), D(10_000_000))
+    strategic = next(t for t in score.traits if t.name == "Strategic Thinking")
+    compounding_sub = next(s for s in strategic.subs if s.label == "At least one compounding asset funded")
+    assert compounding_sub.level in ("full", "part")
