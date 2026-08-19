@@ -165,7 +165,10 @@ def score_quarter(
             expectation_met = (not grew) or cash_positive
 
     slack = pct_of(max(r.leads_wasted, r.idle_capacity), max(ONE, r.eff_leads))
-    compounding = dec(A.get("content")) + dec(A.get("social")) + dec(A.get("npd"))
+    # KNOWN GAP: the reference's compounding set also includes direct "innovation" spend --
+    # see quarter.py's own note at `innov_gain`. That line has no equivalent allocation key in
+    # this port, so it can't be added here either.
+    compounding = dec(A.get("content")) + dec(A.get("prelaunch")) + dec(A.get("social")) + dec(A.get("npd"))
     durable = compounding + dec(A.get("quality")) + dec(A.get("design")) + dec(A.get("capex"))
     largest = max((dec(A.get(k)) for k in SPEND_KEYS if LINE_KIND[k] == "opex"), default=ZERO)
     worst_staffing = min(r.staffing.values()) if r.staffing else ONE
