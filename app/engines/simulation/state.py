@@ -80,8 +80,11 @@ class SimulationCompanyState:
     innovations: tuple[str, ...] = ()
     #: card id -> quarters remaining before it ships.
     pipeline: dict[str, int] = field(default_factory=dict)
-    launch_hype: Decimal = ZERO
-    launch_boost_left: Decimal = ZERO
+    #: Pre-Launch Buzz's own history: quarter number -> that quarter's `4*sqrt(spend)` gain.
+    #: Never a live score read on its own -- only entries from the two most recent quarters
+    #: are ever read (Q+1 pays 15x as free leads, Q+2 pays 25x free leads plus a one-time
+    #: conversion bonus), so nothing is pruned; older entries just stop being looked at.
+    buzz_hist: dict[int, Decimal] = field(default_factory=dict)
 
     # cumulative scores
     customers: Decimal = Decimal(4_000)

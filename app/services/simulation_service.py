@@ -89,7 +89,7 @@ def state_from_dict(raw: dict) -> SimulationCompanyState:
     decimals = {
         k: Decimal(raw[k]) for k in (
             "cash", "ar", "ap", "debt", "equipment", "ip", "retained_earnings", "installed_capacity",
-            "launch_hype", "launch_boost_left", "customers", "prior_units", "brand", "seo", "quality",
+            "customers", "prior_units", "brand", "seo", "quality",
             "innovation", "npd", "supplier_rel", "logistics_eff", "emp_sat", "emp_eng", "compliance",
             "forecast", "audit", "satisfaction", "repeat_rate", "attrition", "ar_days", "overhead",
             "market_share", "fill_rate", "prior_demand", "last_gm", "last_net_cf",
@@ -101,6 +101,7 @@ def state_from_dict(raw: dict) -> SimulationCompanyState:
         products=products,
         innovations=tuple(raw["innovations"]),
         pipeline={k: int(v) for k, v in raw["pipeline"].items()},
+        buzz_hist={int(k): Decimal(v) for k, v in raw["buzz_hist"].items()},
         rev_history=tuple(Decimal(v) for v in raw["rev_history"]),
         last_mix={k: Decimal(v) for k, v in raw["last_mix"].items()},
         aftermath={k: (Decimal(v) if k != "note" else v) for k, v in raw["aftermath"].items()},

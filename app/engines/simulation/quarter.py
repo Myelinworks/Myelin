@@ -124,7 +124,7 @@ class SimulationQuarterResult:
     channel_leads: dict[str, Decimal]
     raw_leads: Decimal
     seo_free: Decimal
-    hype_free: Decimal
+    buzz_free: Decimal
     brand_now: Decimal
     brand_end: Decimal
     brand_mult: Decimal
@@ -154,13 +154,14 @@ class SimulationQuarterResult:
     innovation: Decimal
     npd: Decimal
     pro_launching: bool
-    hype_now: Decimal
 
     # gate 2: conversion
     raw_conv: Decimal
     ceiling: Decimal
     ceiling_binding: bool
     warranty_bonus: Decimal
+    #: Pre-Launch Buzz's one-time payoff, two quarters after the spend: `buzz[q-2] * 0.3`.
+    buzz_conv_bonus: Decimal
     final_conv: Decimal
 
     # position
@@ -451,19 +452,26 @@ def compute_simulation_quarter(
                   + Decimal("1.5") * get("events")
                   + Decimal("1.8") * pw(get("design"), "0.5") * staffing["engineering"])
     seo_gain = Decimal("3.5") * get("content")
-    hype_gain = Decimal(5) * pw(get("prelaunch"), "0.5")
+    #: This quarter's Pre-Launch Buzz build -- paid out over the *next two* quarters, never
+    #: this one (`buzz_free`/`buzz_conv_bonus` below read `state.buzz_hist`, not this value).
+    buzz_gain = Decimal(4) * pw(get("prelaunch"), "0.5")
     direct_fatigue = Decimal("0.25") * max(ZERO, get("direct") - Decimal(8))
     direct_conv = Decimal("0.8") * pw(get("direct"), "0.4")
     referral_waste = max(ZERO, get("referral") - referral_cap_spend)
 
     # Assets bought in earlier quarters, working now for nothing.
     seo_free = state.seo * Decimal(25)
-    hype_free = state.launch_hype * Decimal(30) if dec(state.launch_boost_left) > 0 else ZERO
+    buzz_1 = dec(state.buzz_hist.get(q - 1))
+    buzz_2 = dec(state.buzz_hist.get(q - 2))
+    buzz_free = buzz_1 * Decimal(15) + buzz_2 * Decimal(25)
+    #: The one-time conversion lift Pre-Launch Buzz owes for Q-2's build -- added at the
+    #: conversion step below, not here.
+    buzz_conv_bonus = buzz_2 * Decimal("0.3")
 
     damped_raw = raw_leads * damp
     brand_now = max(ZERO, state.brand + brand_gain - brand_erosion)
     brand_mult = ONE + brand_now / Decimal(50)
-    eff_leads = (damped_raw + seo_free + hype_free) * brand_mult * prod_mult * mkt_staffing
+    eff_leads = (damped_raw + seo_free + buzz_free) * brand_mult * prod_mult * mkt_staffing
 
     # ── GATE 1: selling capacity ─────────────────────────────────────
     sales_staffing = staffing["sales"]
@@ -513,30 +521,31 @@ def compute_simulation_quarter(
     quality_gain = Decimal(6) * pw(get("quality"), "0.5") * eng
     quality = state.quality + quality_gain + inno_sum(landed_t, "quality")
     defect_rate = max(Decimal(2), Decimal(8) - Decimal("1.2") * pw(get("quality"), "0.5") * eng)
+    # KNOWN GAP vs the reference engine: the reference's engineering ROLE_LOAD carries a fourth
+    # line, "innovation" (`5 * sqrt(x) * engStaff`, direct spend, same shape as quality's own
+    # term two lines up) -- this port's DEPT_LOAD["engineering"] only has quality/npd/design, so
+    # there is no "innovation" allocation key a student can fund at all. Innovation Score here
+    # only moves via landed innovation-board cards; the direct-spend lever the reference exposes
+    # is simply absent from this schema. Fixing it means adding a real spend line (catalog.py's
+    # DEPT_LOAD + LINE_KIND, the frontend's matching constants.ts, and a new input on the R&D
+    # screen) -- a schema change, not a one-line formula fix, so it's flagged rather than guessed
+    # at here.
     innov_gain = inno_sum(landed_t, "innovation")
     innovation = state.innovation + innov_gain
     share_awareness = dec(state.market_share) * Decimal(15)
     brand_end = brand_now + inno_sum(landed_t, "brand") + share_awareness + brand_boost
-    npd = state.npd + Decimal(16) * pw(get("npd"), "0.5") * eng
+    npd = state.npd + Decimal(12) * pw(get("npd"), "0.5") * eng
     pro_launching = False
-    hype_now = dec(state.launch_hype) + hype_gain
 
     # Partial progress is worth nothing: the Pro either clears 100 or it does not.
     if not P["pro"].live and npd >= _100:
         pro_launching = True
         npd = ZERO
         innovation += Decimal(15)
-        brand_end += Decimal(20) + hype_now * Decimal("0.25")
+        brand_end += Decimal(20)
         notes.append(
             "The Nadi Pulse Pro cleared development and goes on sale next quarter, with 35% of the "
             "line assigned to it by default -- change that on the Product screen."
-        )
-        notes.append(
-            f"Pre-launch marketing built {hype_now:.1f} points of anticipation. The Pro launches into "
-            f"a market that already knows about it."
-            if hype_now > 4 else
-            "No pre-launch marketing was funded, so the Pro launches to an audience that has never "
-            "heard of it."
         )
 
     design_cogs_cut = Decimal(40) * pw(get("design"), "0.5") * eng - inno_sum(owned_inno, "cogs")
@@ -580,11 +589,7 @@ def compute_simulation_quarter(
         }
 
     sellable = [p for p in PRODUCTS if P[p.id].live and P[p.id].status != "discontinued"]
-    hype_mult = (clamp(ONE + dec(state.launch_hype) / Decimal(60), ONE, Decimal("1.9"))
-                 if dec(state.launch_boost_left) > 0 else ONE)
-
-    raw_weights = {p.id: max(ZERO, dec(P[p.id].share)) * (hype_mult if p.id == "pro" else ONE)
-                   for p in sellable}
+    raw_weights = {p.id: max(ZERO, dec(P[p.id].share)) for p in sellable}
     weight_total = sum(raw_weights.values(), ZERO) or ONE
     demand_weight = {p.id: raw_weights[p.id] / weight_total for p in sellable}
 
@@ -619,7 +624,7 @@ def compute_simulation_quarter(
     ceiling_binding = raw_conv > ceiling
     warranty_bonus = WARRANTY_BONUS_PTS.get(allocations.warranty, ZERO)
     warranty_mult = WARRANTY_COST_MULT.get(allocations.warranty, ZERO)
-    final_conv = max(ZERO, capped_conv + warranty_bonus + conv_bonus - conv_penalty)
+    final_conv = max(ZERO, capped_conv + warranty_bonus + buzz_conv_bonus + conv_bonus - conv_penalty)
 
     # ── the line ─────────────────────────────────────────────────────
     capacity_added = Decimal(240) * pw(get("capex"), "0.75")
@@ -808,9 +813,7 @@ def compute_simulation_quarter(
         equipment=equipment, ip=ip_asset, retained_earnings=retained_earnings,
         installed_capacity=installed_capacity, staff=staff_out, products=next_products,
         innovations=owned_inno, pipeline=pipeline,
-        launch_hype=hype_now,
-        launch_boost_left=(Decimal(2) if pro_launching
-                           else max(ZERO, dec(state.launch_boost_left) - (ONE if P["pro"].live else ZERO))),
+        buzz_hist={**dict(state.buzz_hist), q: buzz_gain},
         customers=customers, prior_units=units_sold,
         brand=brand_end, seo=state.seo + seo_gain, quality=quality, innovation=innovation, npd=npd,
         supplier_rel=supplier_rel, logistics_eff=logistics_eff,
@@ -847,7 +850,7 @@ def compute_simulation_quarter(
         equity_raised=equity_raised,
         interest_expense=interest_expense, interest_income=interest_income, ar_days=ar_days,
         compliance=compliance, forecast=forecast, audit=audit, penalty_risk=penalty_risk,
-        channel_leads=channel_leads, raw_leads=raw_leads, seo_free=seo_free, hype_free=hype_free,
+        channel_leads=channel_leads, raw_leads=raw_leads, seo_free=seo_free, buzz_free=buzz_free,
         brand_now=brand_now, brand_end=brand_end, brand_mult=brand_mult, eff_leads=eff_leads,
         marketing_spend=marketing_spend, referral_cap_spend=referral_cap_spend,
         referral_waste=referral_waste,
@@ -856,9 +859,9 @@ def compute_simulation_quarter(
         idle_capacity=idle_capacity, lead_waste_frac=lead_waste_frac,
         started=started, landed=landed_t, pipeline=pipeline, inno_spend=inno_spend,
         quality=quality, quality_gain=quality_gain, defect_rate=defect_rate,
-        innovation=innovation, npd=npd, pro_launching=pro_launching, hype_now=hype_now,
+        innovation=innovation, npd=npd, pro_launching=pro_launching,
         raw_conv=raw_conv, ceiling=ceiling, ceiling_binding=ceiling_binding,
-        warranty_bonus=warranty_bonus, final_conv=final_conv,
+        warranty_bonus=warranty_bonus, buzz_conv_bonus=buzz_conv_bonus, final_conv=final_conv,
         price_info=price_info, eff_price=eff_price, blended_price_mult=blended_price_mult,
         mkt_demand=mkt_demand, rival_total=rival_total, our_strength=our_strength,
         attract_share=attract_share, reachable_demand=reachable_demand,
