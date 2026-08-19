@@ -13,6 +13,7 @@ from app.routes import (
     marketing,
         simulation,
     product,
+    profile,
     quarter,
     run,
     sales,
@@ -34,6 +35,7 @@ app = FastAPI(
     ),
     openapi_tags=[
         {"name": "auth", "description": "Registration/login -- proxies to Supabase Auth. Not run-scoped."},
+        {"name": "profile", "description": "Read/edit the onboarding answers. Not run-scoped."},
         {"name": "company", "description": "Start a run, open quarters, read current state."},
         {"name": "run", "description": "The single rich run-state read -- poll this between every write."},
         {"name": "allocations", "description": "The 22-line spend model + the crisis-response line. The primary write surface."},
@@ -96,6 +98,7 @@ app.add_middleware(
 # until operations_rules.json/people_rules.json exist, rather than shipping routers that
 # can never accept a real decision.
 app.include_router(auth.router)
+app.include_router(profile.router)
 app.include_router(company.router)
 app.include_router(finance.router)
 app.include_router(marketing.router)
