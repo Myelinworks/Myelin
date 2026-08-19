@@ -243,3 +243,36 @@ def test_pending_investment_is_raised_not_teleported():
     assert r_with.cash - r_without.cash == D(5_000_000)
     # Spent or not, it doesn't linger -- there's no Q5 for it to be "pending" into.
     assert r_with.next_state.pending_investment == D(0)
+
+
+def test_prelaunch_buzz_pays_out_over_the_next_two_quarters():
+    """Buzz zero-leads its own quarter (`buzz_free` reads history, never this quarter's own
+    gain), pays 15x as free leads the quarter after, then 25x free leads plus a one-time 0.3
+    conversion bonus the quarter after that -- never on the quarter it was actually funded."""
+    s1 = opening_state()
+    r1 = compute_simulation_quarter(s1, alloc(prelaunch=4))
+    gain = D(4) * D(4) ** D("0.5")  # 4 * sqrt(4) = 8
+
+    assert r1.buzz_free == D(0)
+    assert r1.buzz_conv_bonus == D(0)
+    assert r1.next_state.buzz_hist[1] == gain
+
+    r2 = compute_simulation_quarter(r1.next_state, alloc(google=1))
+    assert r2.buzz_free == gain * D(15)
+    assert r2.buzz_conv_bonus == D(0)
+
+    r3 = compute_simulation_quarter(r2.next_state, alloc(google=1))
+    assert r3.buzz_free == gain * D(25)
+    assert r3.buzz_conv_bonus == gain * D("0.3")
+
+    r4 = compute_simulation_quarter(r3.next_state, alloc(google=1))
+    assert r4.buzz_free == D(0)
+    assert r4.buzz_conv_bonus == D(0)
+
+
+def test_innovation_score_only_moves_via_landed_cards_today():
+    """Documents a known gap (see quarter.py's own comment at `innov_gain`): the reference
+    engine's direct-spend "innovation" line has no equivalent allocation key in this port, so
+    funding nothing but a landed innovation-board card is the only way the score moves at all."""
+    r = compute_simulation_quarter(opening_state(), alloc(google=1))
+    assert r.innovation == opening_state().innovation == D(0)
