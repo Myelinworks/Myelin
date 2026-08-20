@@ -8,7 +8,14 @@ via httpx/pytest, the same way Phase 12's acceptance tests exercise the run life
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.routes.deps import NotAuthenticatedError
-from app.schemas.auth import AuthResponse, ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest
+from app.schemas.auth import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+)
 from app.services.auth_service import SupabaseAuthClient, SupabaseAuthError, get_supabase_auth_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -63,6 +70,33 @@ async def login(
         # Any other rejection (wrong password, unknown email, unconfirmed email, ...) means
         # this request didn't authenticate -- the same envelope `get_current_user` uses for a
         # missing/invalid Bearer token, so the frontend's one 401 handler catches both.
+        raise NotAuthenticatedError(exc.message) from exc
+    return AuthResponse(**result)
+
+
+@router.post(
+    "/refresh",
+    response_model=AuthResponse,
+    summary="Renew an expiring session",
+    description="Proxies to Supabase Auth's refresh grant and returns a new session. Supabase "
+    "access tokens expire after roughly an hour -- shorter than a four-quarter run takes to "
+    "play -- so a client holding a `refresh_token` calls this instead of letting the session "
+    "die mid-run. 401 `{\"error\": \"not_authenticated\"}` if the refresh token is itself "
+    "expired, already used, or revoked: at that point the user really does have to log in "
+    "again. 429 (plain `detail`) if Supabase's rate limit was hit.",
+)
+async def refresh(
+    payload: RefreshRequest,
+    client: SupabaseAuthClient = Depends(get_supabase_auth_client),
+) -> AuthResponse:
+    try:
+        result = await client.refresh_session(refresh_token=payload.refresh_token)
+    except SupabaseAuthError as exc:
+        if exc.status_code == 429:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc
+        # A refresh token Supabase will not trade is indistinguishable, to the client, from
+        # having no session at all -- same 401 envelope as `/login` and `get_current_user`,
+        # so the frontend's one 401 handler is all that is needed to send them to login.
         raise NotAuthenticatedError(exc.message) from exc
     return AuthResponse(**result)
 

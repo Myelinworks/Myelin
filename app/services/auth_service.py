@@ -112,6 +112,7 @@ def _to_auth_error(response: httpx.Response) -> SupabaseAuthError:
 class SupabaseAuthClient(Protocol):
     async def sign_up(self, *, email: str, password: str) -> dict: ...
     async def sign_in(self, *, email: str, password: str) -> dict: ...
+    async def refresh_session(self, *, refresh_token: str) -> dict: ...
     async def request_password_reset(self, *, email: str) -> None: ...
     async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None: ...
 
@@ -185,6 +186,18 @@ class HttpxSupabaseAuthClient:
     async def sign_in(self, *, email: str, password: str) -> dict:
         return await self._call(
             "/auth/v1/token?grant_type=password", {"email": email, "password": password}
+        )
+
+    async def refresh_session(self, *, refresh_token: str) -> dict:
+        """Trades a refresh token for a fresh access token via Supabase's refresh grant.
+
+        Supabase access tokens expire after an hour by default -- comfortably shorter than a
+        four-quarter run takes to play. Without this the session simply died mid-run and the
+        frontend's 401 handler signed the CEO out somewhere around Q3, which is exactly what
+        the refresh token issued alongside every session is for.
+        """
+        return await self._call(
+            "/auth/v1/token?grant_type=refresh_token", {"refresh_token": refresh_token}
         )
 
     async def request_password_reset(self, *, email: str) -> None:

@@ -198,6 +198,46 @@ async def test_reset_password_expired_token_becomes_a_known_auth_error():
     assert exc_info.value.status_code == 401
 
 
+async def test_refresh_uses_the_refresh_grant_and_returns_a_new_session():
+    """A run outlives Supabase's ~1h access token, so the session has to be renewable. The
+    refresh grant takes `refresh_token`, not credentials, and answers with the same session
+    shape `/login` does."""
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        captured["body"] = request.content
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "fresh-access-token",
+                "refresh_token": "next-refresh-token",
+                "user": {"id": "11111111-1111-1111-1111-111111111111", "email": "student@myelin.dev"},
+            },
+        )
+
+    result = await _client_with(handler).refresh_session(refresh_token="old-refresh-token")
+
+    assert "grant_type=refresh_token" in captured["url"]
+    assert b"old-refresh-token" in captured["body"]
+    assert result["access_token"] == "fresh-access-token"
+    assert result["refresh_token"] == "next-refresh-token"
+
+
+async def test_refresh_with_a_dead_token_becomes_a_known_auth_error():
+    """A revoked/already-spent refresh token is the one case where the user really does have to
+    log in again -- it must arrive as a mapped rejection, not an opaque 500."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": "invalid_grant", "error_description": "Invalid Refresh Token"})
+
+    with pytest.raises(SupabaseAuthError) as exc_info:
+        await _client_with(handler).refresh_session(refresh_token="spent-token")
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.message == "Invalid Refresh Token"
+
+
 async def test_recover_derives_the_redirect_from_frontend_url_when_unset():
     """A blank `PASSWORD_RESET_REDIRECT_URL` used to mean "send no redirect_to at all", which
     hands Supabase the choice -- and Supabase chooses the project's Site URL. There is now

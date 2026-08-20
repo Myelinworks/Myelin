@@ -24,6 +24,14 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RefreshRequest(BaseModel):
+    """`POST /auth/refresh` -- trades the `refresh_token` handed out with a session for a fresh
+    `access_token`. Supabase access tokens last about an hour, which is shorter than a full
+    four-quarter run, so a long session has to be renewed rather than simply expiring."""
+
+    refresh_token: str
+
+
 class ForgotPasswordRequest(BaseModel):
     """`POST /auth/forgot-password` -- proxies to Supabase Auth's `/recover`. Always answers
     the same way regardless of whether the email is registered (Supabase's own anti-enumeration
