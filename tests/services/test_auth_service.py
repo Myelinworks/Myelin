@@ -14,7 +14,11 @@ import httpx
 import pytest
 
 from app.core.config import Settings
-from app.services.auth_service import HttpxSupabaseAuthClient, SupabaseAuthError
+from app.services.auth_service import (
+    HttpxSupabaseAuthClient,
+    SupabaseAuthError,
+    probe_password_reset_redirect,
+)
 
 SETTINGS = Settings(supabase_url="https://example.supabase.co", supabase_publishable_key="test-key")
 
@@ -215,3 +219,40 @@ async def test_recover_derives_the_redirect_from_frontend_url_when_unset():
     await client.request_password_reset(email="student@myelin.dev")
 
     assert "redirect_to=https%3A%2F%2Fmyelin.example%2Freset-password" in captured["url"]
+
+
+async def test_probe_reports_a_redirect_supabase_honours():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            303, headers={"location": "http://localhost:3000/reset-password#access_token=x&type=recovery"}
+        )
+
+    probe = await probe_password_reset_redirect(SETTINGS, transport=httpx.MockTransport(handler))
+
+    assert probe.ok
+
+
+async def test_probe_catches_the_silent_fallback_to_the_site_url():
+    """The exact failure that made every reset link a 404: Supabase drops a redirect_to that is
+    not allow-listed and substitutes the project's Site URL, without ever saying so."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            303, headers={"location": "https://some-other-host.example/**#error=access_denied"}
+        )
+
+    probe = await probe_password_reset_redirect(SETTINGS, transport=httpx.MockTransport(handler))
+
+    assert not probe.ok
+    assert probe.landed_on == "https://some-other-host.example/**"
+    assert "Redirect URLs" in probe.detail
+
+
+async def test_probe_never_takes_startup_down_when_supabase_is_unreachable():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    probe = await probe_password_reset_redirect(SETTINGS, transport=httpx.MockTransport(handler))
+
+    assert probe.ok
+    assert "inconclusive" in probe.detail

@@ -202,6 +202,67 @@ class HttpxSupabaseAuthClient:
         )
 
 
+@dataclass(frozen=True)
+class RedirectProbe:
+    """What Supabase actually does with our configured `redirect_to`."""
+
+    ok: bool
+    configured: str
+    landed_on: str
+    detail: str
+
+
+async def probe_password_reset_redirect(
+    settings: Settings, *, transport: httpx.BaseTransport | None = None
+) -> RedirectProbe:
+    """Ask Supabase, without sending anyone an email, where a reset link would actually land.
+
+    GoTrue validates `redirect_to` against the project's allow-list *before* it validates the
+    token itself, so a deliberately-bogus token is enough: an allow-listed URL comes back in
+    the `Location` header, and a rejected one is silently swapped for the project's Site URL.
+    That silent swap is unobservable from `/auth/v1/recover` (which answers 200 either way),
+    so without this check a misconfigured allow-list only shows up as a 404 in a user's inbox.
+
+    Never raises -- a probe that cannot reach Supabase reports itself as inconclusive rather
+    than taking startup down with it.
+    """
+    configured = settings.password_reset_redirect
+    if not settings.supabase_url:
+        return RedirectProbe(True, configured, "", "no Supabase URL configured; probe skipped")
+
+    try:
+        async with httpx.AsyncClient(transport=transport, timeout=10.0) as client:
+            response = await client.get(
+                f"{settings.supabase_url}/auth/v1/verify",
+                params={"token": "redirect-allow-list-probe", "type": "recovery", "redirect_to": configured},
+                headers={"apikey": settings.supabase_publishable_key},
+                follow_redirects=False,
+            )
+    except httpx.HTTPError as exc:
+        return RedirectProbe(True, configured, "", f"could not reach Supabase Auth ({exc!r}); probe inconclusive")
+
+    location = response.headers.get("location", "")
+    if not location:
+        return RedirectProbe(True, configured, "", "Supabase did not redirect; probe inconclusive")
+
+    # Supabase appends the failure as a fragment (`#error=...`) -- the part before it is the
+    # target it chose, which is the only thing being checked here.
+    landed_on = location.split("#", 1)[0].split("?", 1)[0].rstrip("/")
+    ok = landed_on == configured.split("#", 1)[0].split("?", 1)[0].rstrip("/")
+    detail = (
+        "Supabase honours this redirect"
+        if ok
+        else (
+            f"Supabase rejected {configured!r} and fell back to the project's Site URL "
+            f"({landed_on!r}). Password-reset links will land there instead of on the "
+            "reset-password page. Fix: Supabase dashboard -> Authentication -> URL "
+            f"Configuration -> add {configured!r} to Redirect URLs (and make sure Site URL is "
+            "a real URL, not a wildcard pattern)."
+        )
+    )
+    return RedirectProbe(ok, configured, landed_on, detail)
+
+
 def get_supabase_auth_client(settings: Settings = Depends(get_settings)) -> SupabaseAuthClient:
     """FastAPI dependency -- a bare import would make the real Supabase client impossible to
     swap out in tests via `app.dependency_overrides`, the same mechanism already used for

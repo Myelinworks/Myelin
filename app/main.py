@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -19,12 +22,34 @@ from app.routes import (
     sales,
 )
 from app.routes.deps import NotAuthenticatedError
+from app.services.auth_service import probe_password_reset_redirect
 from app.services.authorization_service import NotPermittedError
 from app.services.run_service import IllegalMoveError
 
 settings = get_settings()
 
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Say out loud, once, whether password-reset links will actually work.
+
+    Supabase answers `/auth/v1/recover` with the same 200 whether or not it honoured our
+    `redirect_to`, so a redirect URL missing from the project's allow-list is invisible from
+    the API and only surfaces as a 404 in someone's inbox. Probing at startup turns that into
+    a log line with the fix in it. Never fatal -- a backend that can boot should boot.
+    """
+    probe = await probe_password_reset_redirect(settings)
+    if probe.ok:
+        logger.info("Password-reset redirect: %s -- %s", probe.configured, probe.detail)
+    else:
+        logger.error("Password-reset redirect is misconfigured. %s", probe.detail)
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.app_name,
     description=(
         "Deterministic CEO decision-simulation engine. A run belongs to the authenticated user "
