@@ -192,3 +192,26 @@ async def test_reset_password_expired_token_becomes_a_known_auth_error():
         await client.confirm_password_reset(access_token="stale-token", new_password="new correct horse battery")
 
     assert exc_info.value.status_code == 401
+
+
+async def test_recover_derives_the_redirect_from_frontend_url_when_unset():
+    """A blank `PASSWORD_RESET_REDIRECT_URL` used to mean "send no redirect_to at all", which
+    hands Supabase the choice -- and Supabase chooses the project's Site URL. There is now
+    always a redirect_to, derived from `FRONTEND_URL`."""
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={})
+
+    settings = Settings(
+        supabase_url="https://example.supabase.co",
+        supabase_publishable_key="test-key",
+        frontend_url="https://myelin.example/",
+        password_reset_redirect_url="",
+    )
+    client = HttpxSupabaseAuthClient(settings, transport=httpx.MockTransport(handler))
+
+    await client.request_password_reset(email="student@myelin.dev")
+
+    assert "redirect_to=https%3A%2F%2Fmyelin.example%2Freset-password" in captured["url"]

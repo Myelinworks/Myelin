@@ -33,14 +33,33 @@ class Settings(BaseSettings):
     supabase_secret_key: str = ""
     supabase_jwks_url: str = ""
 
+    # The browser origin this API's frontend is served from. Used to derive any URL that has
+    # to point *back* at the frontend -- currently just the password-reset landing page.
+    frontend_url: str = "http://localhost:3000"
+
     # Where Supabase redirects after a user clicks the password-reset email link (the
     # frontend's own reset-password page). Passed as `redirect_to` on `/auth/v1/recover`.
+    # Left blank on purpose: `password_reset_redirect` below derives it from `frontend_url`
+    # rather than letting a blank value mean "send no redirect_to at all", which is how reset
+    # links silently ended up on the Supabase project's Site URL (a 404) instead of this page.
     password_reset_redirect_url: str = ""
 
     # The valid-role universe, kept in config so a new role is an env change, not a code
     # change. Which of these roles get cross-ownership read access is a business rule, not
     # a config knob -- see authorization_service.INSTRUCTOR_ROLES.
     app_roles: Annotated[list[str], NoDecode] = ["student", "instructor", "admin"]
+
+    @property
+    def password_reset_redirect(self) -> str:
+        """The `redirect_to` every recovery email must carry -- never empty.
+
+        Supabase only honours a `redirect_to` that its own Auth -> URL Configuration ->
+        Redirect URLs allow-list matches; anything else (including *no* `redirect_to`) is
+        silently replaced with the project's Site URL. That silent substitution is what turned
+        every reset link into a 404, so this always resolves to a real page and
+        `probe_password_reset_redirect` checks at startup that Supabase actually accepts it.
+        """
+        return self.password_reset_redirect_url or f"{self.frontend_url.rstrip('/')}/reset-password"
 
     @field_validator("cors_origins", "app_roles", mode="before")
     @classmethod

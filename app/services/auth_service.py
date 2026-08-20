@@ -123,7 +123,7 @@ class HttpxSupabaseAuthClient:
     def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
         self._base_url = settings.supabase_url
         self._api_key = settings.supabase_publishable_key
-        self._redirect_url = settings.password_reset_redirect_url
+        self._redirect_url = settings.password_reset_redirect
         # None means "real network" (httpx's own default) -- only ever overridden by tests, to
         # exercise this exact error-classification logic against a mocked Supabase response
         # instead of duplicating `_call` in the test suite.
