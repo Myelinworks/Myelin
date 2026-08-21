@@ -102,6 +102,50 @@ class TestListMyRuns:
         assert [e["name"] for e in entries] == ["Mine"]
 
 
+class TestRunNumbersAreStablePerOwner:
+    """`seq` is what a `/run/<n>` URL is built from, so the only thing that matters about it is
+    that it never moves: the number a student sees today must open the same run tomorrow."""
+
+    async def test_a_first_run_is_number_one(self, client):
+        created = await _create_company(client, name="First")
+
+        assert created["seq"] == 1
+
+    async def test_each_new_run_takes_the_next_number(self, client):
+        first = await _create_company(client, name="One")
+        second = await _create_company(client, name="Two")
+        third = await _create_company(client, name="Three")
+
+        assert [first["seq"], second["seq"], third["seq"]] == [1, 2, 3]
+
+    async def test_the_number_resolves_back_to_the_same_uuid_on_a_later_read(self, client):
+        """The whole contract behind the URL: look up "run 2" in the owner's list and you get
+        the id every API path actually takes. A client never has to store the mapping."""
+        await _create_company(client, name="One")
+        second = await _create_company(client, name="Two")
+
+        entries = (await client.get("/companies")).json()["entries"]
+        by_number = {e["seq"]: e["id"] for e in entries}
+
+        assert by_number[2] == second["id"]
+
+    async def test_numbering_is_per_owner_so_every_student_has_a_run_one(self, client, db_session):
+        """Global numbering would leak how many runs the whole platform has ever had into every
+        student's first URL, and make "my first run" a different number for everyone."""
+        from app.models.app_user import AppUser
+        from app.services.company_service import create_company
+
+        stranger = AppUser(id=uuid.uuid4(), email="stranger-seq@myelin.dev", role="student")
+        db_session.add(stranger)
+        await db_session.flush()
+        await create_company(db_session, name="Theirs", owner_id=stranger.id)
+        await create_company(db_session, name="Theirs again", owner_id=stranger.id)
+
+        mine = await _create_company(client, name="Mine")
+
+        assert mine["seq"] == 1
+
+
 class TestLeaderboardReportsTheScoreTheEngineWrites:
     async def test_locked_quarter_reports_its_real_ceo_score(self, client):
         """Regression: this returned `QuarterPerformance.overall_score`, which only the legacy

@@ -168,6 +168,7 @@ async def list_companies(
         entries.append(
             CompanyListItem(
                 id=company.id,
+                seq=company.seq,
                 name=company.name,
                 created_at=company.created_at,
                 run_status=company.run_status,

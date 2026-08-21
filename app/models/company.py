@@ -2,7 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,6 +27,7 @@ class Company(UUIDPkMixin, TimestampMixin, Base):
     """
 
     __tablename__ = "companies"
+    __table_args__ = (UniqueConstraint("owner_id", "seq", name="uq_companies_owner_id_seq"),)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     scenario_id: Mapped[str] = mapped_column(String(100), nullable=False, default="nadi_wear_standard")
@@ -52,6 +53,19 @@ class Company(UUIDPkMixin, TimestampMixin, Base):
     owner_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("app_users.id"), nullable=True, index=True
     )
+
+    # Per-owner run number -- this owner's 1st, 2nd, 3rd run -- assigned once at creation and
+    # never reassigned. It exists so a URL can say `/run/3` instead of carrying a raw uuid: the
+    # id stays the only key the API and the database use, and this is purely the human-facing
+    # label for it. Persisted rather than derived from creation order because a derived number
+    # would silently renumber every earlier run the moment one row went away, and a link a
+    # student had already bookmarked would then open somebody else's quarter.
+    #
+    # Unique per owner, not globally: two students both have a run 1. Null owners (pre-launch
+    # rows, see `owner_id` above) fall outside the unique index entirely -- PostgreSQL treats
+    # NULL as distinct -- which is correct, since an owner-less row is unreadable through the
+    # API and can never be addressed by a `/run/<n>` URL in the first place.
+    seq: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     quarters: Mapped[list["Quarter"]] = relationship(back_populates="company")
     owner: Mapped["AppUser | None"] = relationship(back_populates="companies")

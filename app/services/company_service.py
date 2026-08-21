@@ -116,6 +116,23 @@ def _opening_state_rows(scenario: Scenario, quarter_id: uuid.UUID) -> list[Base]
     return rows
 
 
+async def _next_seq(session: AsyncSession, owner_id: uuid.UUID | None) -> int:
+    """This owner's next run number: 1 for their first run, then one past their highest.
+
+    Reads the maximum rather than counting rows, so the number never repeats even if a run is
+    later removed -- a `/run/<n>` link that is already in someone's history must not start
+    resolving to a different run. The unique index on (owner_id, seq) is what makes two
+    simultaneous `POST /companies` from one caller fail loudly instead of both landing on the
+    same number; there is no correct silent answer to that race.
+    """
+    highest = (
+        await session.execute(
+            select(func.max(Company.seq)).where(Company.owner_id == owner_id)
+        )
+    ).scalar_one()
+    return (highest or 0) + 1
+
+
 async def create_company(
     session: AsyncSession,
     *,
@@ -141,6 +158,7 @@ async def create_company(
         seed_name=scenario.seed,
         profile_name=scenario.profile,
         owner_id=owner_id,
+        seq=await _next_seq(session, owner_id),
     )
     session.add(company)
     await session.flush()

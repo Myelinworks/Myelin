@@ -10,6 +10,15 @@ from app.schemas._examples import example
 from app.schemas.base import ORMBase
 
 
+# Documented identically on `CompanyResponse` and `CompanyListItem`: the same field, and a
+# client that reads it off one response must not be told something different by the other.
+_SEQ_DESCRIPTION = (
+    "This owner's run number -- their 1st, 2nd, 3rd run -- assigned once at creation and never "
+    "reassigned. Unique per owner, so it is the readable handle a client can put in a URL "
+    "(`/run/2`) instead of the uuid; `id` remains the only key every API path and foreign key uses."
+)
+
+
 class CompanyCreate(BaseModel):
     """`POST /companies` -- starts a new run. The authenticated caller becomes the run's owner."""
 
@@ -43,6 +52,7 @@ class QuarterSummary(BaseModel):
 
 class CompanyResponse(ORMBase):
     name: str
+    seq: int = Field(description=_SEQ_DESCRIPTION)
     scenario_id: str
     seed_name: str
     profile_name: str
@@ -83,6 +93,7 @@ class CompanyListItem(BaseModel):
     """
 
     id: uuid.UUID
+    seq: int = Field(description=_SEQ_DESCRIPTION)
     name: str
     created_at: datetime
     run_status: RunStatus
