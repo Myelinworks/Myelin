@@ -32,3 +32,8 @@ asyncio_mode = "auto"
 # "another operation is in progress" cross-loop errors against the async engine).
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
+markers = [
+    # Whole-run tests that drive the HTTP API over four quarters. Slow and DB-backed:
+    # `-m "not e2e"` is the fast suite.
+    "e2e: end-to-end run through the API",
+]
