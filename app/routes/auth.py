@@ -5,6 +5,8 @@ Supabase directly, so the full register -> login -> play lifecycle stays testabl
 via httpx/pytest, the same way Phase 12's acceptance tests exercise the run lifecycle.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.core.config import Settings, get_settings
@@ -18,10 +20,13 @@ from app.schemas.auth import (
     ResetPasswordRequest,
 )
 from app.services.auth_service import (
+    PasswordResetMisconfigured,
     SupabaseAuthClient,
     SupabaseAuthError,
     get_supabase_auth_client,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -114,7 +119,8 @@ async def refresh(
     "email enumeration. The emailed link lands on the caller's own origin when this API "
     "already accepts browser requests from it (so a reset started on production lands on "
     "production, and one started on a preview deploy lands on that preview), and on the "
-    "configured `FRONTEND_URL` otherwise. 429 (plain `detail`) "
+    "configured `FRONTEND_URL` otherwise. 500 if Supabase would not honour that landing page "
+    "-- no email is sent in that case, because the link in it would 404. 429 (plain `detail`) "
     "if Supabase's rate limit was hit.",
 )
 async def forgot_password(
@@ -130,6 +136,15 @@ async def forgot_password(
 
     try:
         await client.request_password_reset(email=payload.email, redirect_to=redirect_to)
+    except PasswordResetMisconfigured as exc:
+        # Nothing was sent, and saying "check your inbox" here is exactly the lie that made
+        # this bug invisible. The operator-facing fix goes to the log, not to the user.
+        logger.error("Refused to send a password-reset email. %s", exc.detail)
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "Password resets are misconfigured on this deployment, so the emailed link would "
+            "not work. No email was sent -- please contact support.",
+        ) from exc
     except SupabaseAuthError as exc:
         if exc.status_code == 429:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc

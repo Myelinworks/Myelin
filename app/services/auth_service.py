@@ -109,6 +109,21 @@ def _to_auth_error(response: httpx.Response) -> SupabaseAuthError:
     return SupabaseAuthError(response.status_code, error_code, message)
 
 
+class PasswordResetMisconfigured(Exception):
+    """The reset link this deployment would email is one Supabase will not honour.
+
+    Raised *instead of* sending, because the alternative is a cheerful "check your inbox"
+    followed by a 404 -- Supabase answers `/auth/v1/recover` with the same 200 whether or not
+    it kept our `redirect_to`, so this is the only point at which the difference is visible.
+    Carries the operator-facing fix in `detail`; the route logs that and tells the user
+    something honest and short.
+    """
+
+    def __init__(self, detail: str):
+        super().__init__(detail)
+        self.detail = detail
+
+
 class SupabaseAuthClient(Protocol):
     async def sign_up(self, *, email: str, password: str) -> dict: ...
     async def sign_in(self, *, email: str, password: str) -> dict: ...
@@ -122,6 +137,7 @@ class HttpxSupabaseAuthClient:
     this backend never implements either itself."""
 
     def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
+        self._settings = settings
         self._base_url = settings.supabase_url
         self._api_key = settings.supabase_publishable_key
         self._redirect_url = settings.password_reset_redirect
@@ -208,8 +224,17 @@ class HttpxSupabaseAuthClient:
         the requesting origin (`Settings.reset_redirect_for`) so the link points back at the
         deployment the user is actually on; the configured fallback is used only when it is
         omitted, which is what a non-browser caller does.
+
+        Checks that Supabase will actually honour that landing page before sending anything.
+        One extra GET is worth strictly more than a 404 in someone's inbox, and this endpoint
+        is rate-limited by Supabase to a handful of calls an hour regardless.
         """
         target = redirect_to or self._redirect_url
+        probe = await probe_password_reset_redirect(
+            self._settings, redirect_to=target, transport=self._transport
+        )
+        if not probe.ok:
+            raise PasswordResetMisconfigured(probe.detail)
         params = {"redirect_to": target} if target else None
         await self._request("POST", "/auth/v1/recover", json={"email": email}, params=params)
 
@@ -233,7 +258,10 @@ class RedirectProbe:
 
 
 async def probe_password_reset_redirect(
-    settings: Settings, *, transport: httpx.BaseTransport | None = None
+    settings: Settings,
+    *,
+    redirect_to: str | None = None,
+    transport: httpx.BaseTransport | None = None,
 ) -> RedirectProbe:
     """Ask Supabase, without sending anyone an email, where a reset link would actually land.
 
@@ -243,10 +271,14 @@ async def probe_password_reset_redirect(
     That silent swap is unobservable from `/auth/v1/recover` (which answers 200 either way),
     so without this check a misconfigured allow-list only shows up as a 404 in a user's inbox.
 
+    Called at startup against the configured fallback, and again per request against the URL a
+    reset is actually about to be emailed with -- one cheap GET is worth strictly more than a
+    404 in someone's inbox, and this endpoint is rate-limited by Supabase regardless.
+
     Never raises -- a probe that cannot reach Supabase reports itself as inconclusive rather
     than taking startup down with it.
     """
-    configured = settings.password_reset_redirect
+    configured = redirect_to or settings.password_reset_redirect
     if not settings.supabase_url:
         return RedirectProbe(True, configured, "", "no Supabase URL configured; probe skipped")
 

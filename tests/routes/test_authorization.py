@@ -23,7 +23,12 @@ from app.core.db import get_db
 from app.main import app
 from app.models.app_user import AppUser
 from app.routes.deps import get_current_user
-from app.services.auth_service import CurrentUser, SupabaseAuthError, get_supabase_auth_client
+from app.services.auth_service import (
+    CurrentUser,
+    PasswordResetMisconfigured,
+    SupabaseAuthError,
+    get_supabase_auth_client,
+)
 from tests.routes.test_company_routes import Q1_BY_DEPARTMENT, _create_company, _open_quarter
 
 
@@ -520,3 +525,21 @@ class TestResetLinkPointsBackAtTheCallersDeployment:
         _, fake = await self._forgot_from(auth_client, settings, None)
 
         assert fake.reset_redirect == "https://myelin.example/auth/new-password"
+
+    async def test_a_link_supabase_would_not_honour_is_a_500_and_no_email(self, auth_client):
+        """The whole bug in one test: rather than answering "check your inbox" and emailing a
+        link that lands on a 404, the request fails and nothing is sent."""
+        _as_user(None)
+        error = PasswordResetMisconfigured("Supabase rejected the redirect and fell back to ...")
+        app.dependency_overrides[get_supabase_auth_client] = lambda: _FakeAuthClientThatRaises(error)
+        try:
+            response = await auth_client.post(
+                "/auth/forgot-password", json={"email": "student@myelin.dev"}
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+
+        assert response.status_code == 500
+        # The operator-facing fix belongs in the log, not in a stranger's browser.
+        assert "misconfigured" in response.json()["detail"]
+        assert "Supabase" not in response.json()["detail"]

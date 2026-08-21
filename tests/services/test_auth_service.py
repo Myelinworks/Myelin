@@ -16,6 +16,7 @@ import pytest
 from app.core.config import Settings
 from app.services.auth_service import (
     HttpxSupabaseAuthClient,
+    PasswordResetMisconfigured,
     SupabaseAuthError,
     probe_password_reset_redirect,
 )
@@ -321,3 +322,48 @@ async def test_recover_prefers_the_redirect_the_route_resolved_over_the_configur
 
     assert "redirect_to=https%3A%2F%2Fmyelin.example%2Freset-password" in captured["url"]
     assert "localhost" not in captured["url"]
+
+
+async def test_recover_refuses_to_send_a_link_supabase_would_not_honour():
+    """The failure this whole path exists to stop: Supabase answers `/recover` with 200 even
+    when it threw the redirect away, so the check has to happen *before* the send, and the
+    send has to not happen."""
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        # The verify probe: Supabase substitutes the project's Site URL, which here is the
+        # bare wildcard that made every emailed link a 404.
+        return httpx.Response(
+            303, headers={"location": "https://myelin.example/**#error=access_denied"}
+        )
+
+    client = _client_with(handler)
+
+    with pytest.raises(PasswordResetMisconfigured) as exc_info:
+        await client.request_password_reset(
+            email="student@myelin.dev", redirect_to="https://myelin.example/reset-password"
+        )
+
+    assert "Redirect URLs" in exc_info.value.detail
+    assert all("/recover" not in url for url in calls), "no email may be sent"
+
+
+async def test_recover_still_sends_when_supabase_cannot_be_probed():
+    """An unreachable probe is not evidence of misconfiguration. Failing closed here would
+    turn a blip in Supabase's verify endpoint into "nobody can reset their password"."""
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        if "/verify" in str(request.url):
+            raise httpx.ConnectError("connection refused", request=request)
+        return httpx.Response(200, json={})
+
+    client = _client_with(handler)
+
+    await client.request_password_reset(
+        email="student@myelin.dev", redirect_to="https://myelin.example/reset-password"
+    )
+
+    assert any("/recover" in url for url in seen)
