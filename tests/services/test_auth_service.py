@@ -296,3 +296,28 @@ async def test_probe_never_takes_startup_down_when_supabase_is_unreachable():
 
     assert probe.ok
     assert "inconclusive" in probe.detail
+
+
+async def test_recover_prefers_the_redirect_the_route_resolved_over_the_configured_one():
+    """The route reads the landing page off the requesting origin so a reset started on
+    production lands on production. The configured `FRONTEND_URL` is only the fallback, and
+    must not override what it was handed."""
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={})
+
+    settings = Settings(
+        supabase_url="https://example.supabase.co",
+        supabase_publishable_key="test-key",
+        frontend_url="http://localhost:3000",
+    )
+    client = HttpxSupabaseAuthClient(settings, transport=httpx.MockTransport(handler))
+
+    await client.request_password_reset(
+        email="student@myelin.dev", redirect_to="https://myelin.example/reset-password"
+    )
+
+    assert "redirect_to=https%3A%2F%2Fmyelin.example%2Freset-password" in captured["url"]
+    assert "localhost" not in captured["url"]

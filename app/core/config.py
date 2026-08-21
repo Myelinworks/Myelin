@@ -1,9 +1,14 @@
 import json
+import re
 from functools import lru_cache
 from typing import Annotated
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# The frontend route that completes a password reset. Lives here because it is the one piece
+# of the frontend's own routing this backend has to know: every recovery email points at it.
+RESET_PATH = "/reset-password"
 
 
 class Settings(BaseSettings):
@@ -51,15 +56,47 @@ class Settings(BaseSettings):
 
     @property
     def password_reset_redirect(self) -> str:
-        """The `redirect_to` every recovery email must carry -- never empty.
+        """The configured fallback `redirect_to` -- never empty.
 
         Supabase only honours a `redirect_to` that its own Auth -> URL Configuration ->
         Redirect URLs allow-list matches; anything else (including *no* `redirect_to`) is
         silently replaced with the project's Site URL. That silent substitution is what turned
         every reset link into a 404, so this always resolves to a real page and
         `probe_password_reset_redirect` checks at startup that Supabase actually accepts it.
+
+        Used only when the request carries no origin this API recognises -- see
+        `reset_redirect_for`, which is what the route actually calls.
         """
-        return self.password_reset_redirect_url or f"{self.frontend_url.rstrip('/')}/reset-password"
+        return self.password_reset_redirect_url or f"{self.frontend_url.rstrip('/')}{RESET_PATH}"
+
+    def allows_origin(self, origin: str | None) -> bool:
+        """Whether `origin` is one this API already accepts browser calls from.
+
+        Deliberately the same two knobs CORS is configured with: an origin the operator has
+        declared to be our frontend is an origin we are willing to send a password-reset link
+        back to. Nothing else qualifies -- `Origin` is just a request header, forgeable by
+        anyone with curl, and an unchecked one would put an attacker's URL in a recovery email.
+        """
+        if not origin:
+            return False
+        if origin in self.cors_origins:
+            return True
+        return bool(self.cors_origin_regex and re.fullmatch(self.cors_origin_regex, origin))
+
+    def reset_redirect_for(self, origin: str | None) -> str:
+        """Where a reset link requested from `origin` should land the user.
+
+        The link has to point back at the deployment the user is actually on, and a static env
+        var cannot know that: one backend serves production, every Vercel preview, and local
+        dev. Reading it off the (allow-list-checked) request origin makes a reset requested
+        from production land on production by construction, instead of depending on someone
+        having remembered to set FRONTEND_URL on the host -- which is exactly how every
+        emailed link ended up pointing at `http://localhost:3000` and, once Supabase swapped
+        in the project's Site URL, at a 404.
+        """
+        if self.allows_origin(origin):
+            return f"{origin.rstrip('/')}{RESET_PATH}"
+        return self.password_reset_redirect
 
     @field_validator("cors_origins", "app_roles", mode="before")
     @classmethod

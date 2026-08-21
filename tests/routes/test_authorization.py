@@ -18,6 +18,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.main import app
 from app.models.app_user import AppUser
@@ -229,7 +230,8 @@ class FakeSupabaseAuthClient:
     async def sign_in(self, *, email: str, password: str) -> dict:
         return await self.sign_up(email=email, password=password)
 
-    async def request_password_reset(self, *, email: str) -> None:
+    async def request_password_reset(self, *, email: str, redirect_to: str | None = None) -> None:
+        self.reset_redirect = redirect_to
         return None
 
     async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:
@@ -280,7 +282,7 @@ class _FakeAuthClientThatRaises:
     async def sign_in(self, *, email: str, password: str) -> dict:
         raise self._error
 
-    async def request_password_reset(self, *, email: str) -> None:
+    async def request_password_reset(self, *, email: str, redirect_to: str | None = None) -> None:
         raise self._error
 
     async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:
@@ -421,3 +423,100 @@ class TestForgotAndResetPasswordProxy:
 
         assert response.status_code == 422
         assert response.json()["detail"] == "Token has expired or is invalid"
+
+
+class TestResetLinkPointsBackAtTheCallersDeployment:
+    """The emailed link has to land on whichever deployment the user is actually on.
+
+    One backend serves production, every Vercel preview and local dev, so a single
+    `FRONTEND_URL` cannot be right for all of them -- and when it was wrong Supabase silently
+    swapped in the project's Site URL and the link 404'd. The origin the request came from is
+    the only thing that knows the answer, and it is trusted exactly as far as this API's own
+    CORS allow-list already trusts it.
+    """
+
+    @staticmethod
+    def _settings(**overrides) -> Settings:
+        """`Settings` reads the developer's own `.env`, so every field these tests assert on is
+        pinned here -- otherwise a local `PASSWORD_RESET_REDIRECT_URL` decides the outcome."""
+        return Settings(
+            **{
+                "database_url": "postgresql+asyncpg://unused/db",
+                "redis_url": "redis://unused",
+                "frontend_url": "http://localhost:3000",
+                "password_reset_redirect_url": "",
+                "cors_origins": "",
+                "cors_origin_regex": "",
+                **overrides,
+            }
+        )
+
+    async def _forgot_from(self, auth_client, settings: Settings, origin: str | None):
+        _as_user(None)
+        fake = FakeSupabaseAuthClient()
+        app.dependency_overrides[get_supabase_auth_client] = lambda: fake
+        app.dependency_overrides[get_settings] = lambda: settings
+        try:
+            response = await auth_client.post(
+                "/auth/forgot-password",
+                json={"email": "student@myelin.dev"},
+                headers={"origin": origin} if origin else {},
+            )
+        finally:
+            del app.dependency_overrides[get_supabase_auth_client]
+            del app.dependency_overrides[get_settings]
+        return response, fake
+
+    async def test_an_allow_listed_origin_becomes_the_reset_link(self, auth_client):
+        settings = self._settings(
+            cors_origins="https://myelin.example",
+            frontend_url="http://localhost:3000",
+        )
+
+        response, fake = await self._forgot_from(auth_client, settings, "https://myelin.example")
+
+        assert response.status_code == 200
+        # Not the localhost `frontend_url`: a reset started on production lands on production.
+        assert fake.reset_redirect == "https://myelin.example/reset-password"
+
+    async def test_a_preview_origin_matching_the_cors_regex_is_honoured_too(self, auth_client):
+        """Vercel mints an origin per deployment, which is why CORS has a regex at all. A
+        reset requested from a preview has to come back to that same preview."""
+        settings = self._settings(
+            cors_origins="https://myelin.example",
+            cors_origin_regex=r"^https://myelin-[a-z0-9]+\.vercel\.app$",
+        )
+
+        _, fake = await self._forgot_from(auth_client, settings, "https://myelin-a1b2c3.vercel.app")
+
+        assert fake.reset_redirect == "https://myelin-a1b2c3.vercel.app/reset-password"
+
+    async def test_an_unrecognised_origin_is_ignored_not_trusted(self, auth_client):
+        """`Origin` is a request header, forgeable by anyone with curl. An unchecked one would
+        put an attacker's URL into a real user's recovery email, so only the operator's own
+        allow-list can decide -- everything else falls back to the configured frontend."""
+        settings = self._settings(
+            cors_origins="https://myelin.example",
+            frontend_url="https://myelin.example",
+        )
+
+        _, fake = await self._forgot_from(auth_client, settings, "https://attacker.example")
+
+        assert fake.reset_redirect == "https://myelin.example/reset-password"
+
+    async def test_no_origin_at_all_falls_back_to_the_configured_frontend(self, auth_client):
+        settings = self._settings(frontend_url="https://myelin.example")
+
+        _, fake = await self._forgot_from(auth_client, settings, None)
+
+        assert fake.reset_redirect == "https://myelin.example/reset-password"
+
+    async def test_an_explicit_redirect_override_is_used_when_there_is_no_origin(self, auth_client):
+        settings = self._settings(
+            frontend_url="https://myelin.example",
+            password_reset_redirect_url="https://myelin.example/auth/new-password",
+        )
+
+        _, fake = await self._forgot_from(auth_client, settings, None)
+
+        assert fake.reset_redirect == "https://myelin.example/auth/new-password"

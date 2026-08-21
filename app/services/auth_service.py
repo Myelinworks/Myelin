@@ -113,7 +113,7 @@ class SupabaseAuthClient(Protocol):
     async def sign_up(self, *, email: str, password: str) -> dict: ...
     async def sign_in(self, *, email: str, password: str) -> dict: ...
     async def refresh_session(self, *, refresh_token: str) -> dict: ...
-    async def request_password_reset(self, *, email: str) -> None: ...
+    async def request_password_reset(self, *, email: str, redirect_to: str | None = None) -> None: ...
     async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None: ...
 
 
@@ -200,10 +200,17 @@ class HttpxSupabaseAuthClient:
             "/auth/v1/token?grant_type=refresh_token", {"refresh_token": refresh_token}
         )
 
-    async def request_password_reset(self, *, email: str) -> None:
+    async def request_password_reset(self, *, email: str, redirect_to: str | None = None) -> None:
         """Proxies to `/auth/v1/recover` -- Supabase emails a recovery link itself and, like
-        signup, never reveals whether the address is actually registered."""
-        params = {"redirect_to": self._redirect_url} if self._redirect_url else None
+        signup, never reveals whether the address is actually registered.
+
+        `redirect_to` is the landing page the emailed link carries. The route resolves it from
+        the requesting origin (`Settings.reset_redirect_for`) so the link points back at the
+        deployment the user is actually on; the configured fallback is used only when it is
+        omitted, which is what a non-browser caller does.
+        """
+        target = redirect_to or self._redirect_url
+        params = {"redirect_to": target} if target else None
         await self._request("POST", "/auth/v1/recover", json={"email": email}, params=params)
 
     async def confirm_password_reset(self, *, access_token: str, new_password: str) -> None:

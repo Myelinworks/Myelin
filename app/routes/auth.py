@@ -5,8 +5,9 @@ Supabase directly, so the full register -> login -> play lifecycle stays testabl
 via httpx/pytest, the same way Phase 12's acceptance tests exercise the run lifecycle.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from app.core.config import Settings, get_settings
 from app.routes.deps import NotAuthenticatedError
 from app.schemas.auth import (
     AuthResponse,
@@ -16,7 +17,11 @@ from app.schemas.auth import (
     RegisterRequest,
     ResetPasswordRequest,
 )
-from app.services.auth_service import SupabaseAuthClient, SupabaseAuthError, get_supabase_auth_client
+from app.services.auth_service import (
+    SupabaseAuthClient,
+    SupabaseAuthError,
+    get_supabase_auth_client,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -106,14 +111,25 @@ async def refresh(
     summary="Request a password-reset email",
     description="Proxies to Supabase Auth's `/recover`. Always returns the same generic ack "
     "whether or not the email is registered -- Supabase itself never reveals that, to prevent "
-    "email enumeration. 429 (plain `detail`) if Supabase's rate limit was hit.",
+    "email enumeration. The emailed link lands on the caller's own origin when this API "
+    "already accepts browser requests from it (so a reset started on production lands on "
+    "production, and one started on a preview deploy lands on that preview), and on the "
+    "configured `FRONTEND_URL` otherwise. 429 (plain `detail`) "
+    "if Supabase's rate limit was hit.",
 )
 async def forgot_password(
     payload: ForgotPasswordRequest,
+    request: Request,
     client: SupabaseAuthClient = Depends(get_supabase_auth_client),
+    settings: Settings = Depends(get_settings),
 ) -> dict:
+    # The link has to point back at whichever deployment the caller is on. `Origin` is only
+    # trusted when it is already on this API's own CORS allow-list; anything else falls back
+    # to the configured FRONTEND_URL.
+    redirect_to = settings.reset_redirect_for(request.headers.get("origin"))
+
     try:
-        await client.request_password_reset(email=payload.email)
+        await client.request_password_reset(email=payload.email, redirect_to=redirect_to)
     except SupabaseAuthError as exc:
         if exc.status_code == 429:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, exc.message) from exc
