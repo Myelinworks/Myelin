@@ -102,6 +102,7 @@ Response (`company_create_response`, trimmed):
 ```json
 {
   "id": "2204ec72-1e8a-4532-b299-7635b3c413e3",
+  "seq": 1,
   "name": "Nadi Wear Capture Co",
   "owner_id": "5c95a0ec-dd5a-4ef1-8062-d21a1250142e",
   "run_status": "active",
@@ -109,6 +110,11 @@ Response (`company_create_response`, trimmed):
   "quarters": []
 }
 ```
+
+`seq` is this owner's run number — their 1st, 2nd, 3rd run — assigned once at creation and
+never reassigned. It is unique per owner, so a client can address a run as `/run/2` in its own
+URLs instead of exposing the uuid, and resolve it back by looking the number up in
+`GET /companies`. Every API path still takes `id`, and only `id`.
 
 Now read run state (`GET /companies/{id}/run`) — this is the payload the entire UI should render
 from, at every lifecycle point:
