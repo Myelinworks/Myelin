@@ -245,6 +245,25 @@ def test_pending_investment_is_raised_not_teleported():
     assert r_with.next_state.pending_investment == D(0)
 
 
+def test_budget_reports_the_signed_cheque_and_raises_the_ceiling():
+    """The rescue cheque has to move the number the CEO plans against the moment it's signed,
+    and be nameable on the screen that shows it -- otherwise Q4 looks unfunded to the one
+    person who just funded it."""
+    from app.services.simulation_service import budget
+
+    without = opening_state().with_(quarter=4)
+    with_cheque = without.with_(pending_investment=D(5_000_000))
+    plan = alloc(google=5)
+
+    b_without = budget(without, None, plan)
+    b_with = budget(with_cheque, None, plan)
+
+    assert b_without["investment"] == D(0)
+    assert b_with["investment"] == D(5_000_000)
+    assert b_with["ceiling"] - b_without["ceiling"] == D(5_000_000)
+    assert b_with["committed"] == b_without["committed"]
+
+
 def test_prelaunch_buzz_pays_out_over_the_next_two_quarters():
     """Buzz zero-leads its own quarter (`buzz_free` reads history, never this quarter's own
     gain), pays 15x as free leads the quarter after, then 25x free leads plus a one-time 0.3

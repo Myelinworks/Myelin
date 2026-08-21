@@ -209,10 +209,14 @@ def replay(quarters: list[SimulationQuarter]) -> tuple[SimulationCompanyState, l
 def budget(state: SimulationCompanyState, result: SimulationQuarterResult | None, allocations: SimulationAllocations) -> dict:
     """What the quarter can afford, and what has been committed against it.
 
-    The ceiling is cash plus whatever credit is actually drawn, less the fixed costs that land
-    whatever happens and the working-capital buffer the board set. Committing past it is
-    allowed -- the buffer absorbs it and the record shows it -- which is why this is reported
-    rather than enforced.
+    The ceiling is cash plus whatever credit is actually drawn and whatever investment has been
+    signed but not yet banked, less the fixed costs that land whatever happens and the
+    working-capital buffer the board set. Committing past it is allowed -- the buffer absorbs it
+    and the record shows it -- which is why this is reported rather than enforced.
+
+    `investment` is reported alongside `drawn` for the same reason `drawn` is: a ceiling that
+    moved because a term sheet was signed has to be explainable on the screen that shows it,
+    without the client re-deriving it from the opening state.
     """
     opex = allocations.opex_lakhs * _LAKH
     capex = allocations.capex_lakhs * _LAKH
@@ -224,6 +228,7 @@ def budget(state: SimulationCompanyState, result: SimulationQuarterResult | None
 
     return {
         "opex": opex, "capex": capex, "inno": inno, "people": people, "repay": repay, "drawn": drawn,
+        "investment": state.pending_investment,
         "committed": opex + capex + inno + people + repay,
         "ceiling": max(Decimal(0), state.cash + state.pending_investment + drawn - fixed - BUFFER),
     }
