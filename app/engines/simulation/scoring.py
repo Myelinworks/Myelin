@@ -174,7 +174,10 @@ def score_quarter(
     worst_staffing = min(r.staffing.values()) if r.staffing else ONE
     available = sum((r.avail[p] for p in PRODUCT_IDS), ZERO)
     demand = r.demand_total
-    commit = dec(r.lines.get("_crisis_commit", ZERO))
+    # The result carries the commitment; `r.lines` holds the 44 allocation keys and never has
+    # held a `_crisis_commit` among them, so reading it from there scored every response as
+    # nothing committed -- including the ones that were.
+    commit = r.crisis_commit
 
     # How far the mix moved from last quarter -- half the total absolute change, so a full
     # reallocation reads as 1.0 rather than 2.0.

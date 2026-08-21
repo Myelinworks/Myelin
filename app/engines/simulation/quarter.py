@@ -73,6 +73,9 @@ class SimulationQuarterResult:
     # crisis
     crisis_variant: str | None
     crisis_strategy: str | None
+    #: Rs lakhs put behind the response. Zero in a quarter with no event, and zero for a CEO
+    #: who picked a posture and funded none of it -- which is the distinction scoring grades.
+    crisis_commit: Decimal
     situation: CrisisSituation | None
     neutralised: bool
     damp: Decimal
@@ -836,6 +839,7 @@ def compute_simulation_quarter(
         entering=state, next_state=next_state, products_in=P,
         crisis_variant=cr.variant if has_crisis else None,
         crisis_strategy=cr.strategy if has_crisis else None,
+        crisis_commit=dec(cr.commit) if has_crisis else ZERO,
         situation=situation, neutralised=neutralised,
         damp=damp, damp_before=damp_before, conv_penalty=conv_penalty,
         penalty_before=penalty_before, ceiling_penalty=ceiling_penalty, cap_mult=cap_mult,

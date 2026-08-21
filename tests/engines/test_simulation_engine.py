@@ -245,6 +245,38 @@ def test_pending_investment_is_raised_not_teleported():
     assert r_with.next_state.pending_investment == D(0)
 
 
+def test_committing_to_the_crisis_response_is_scored_as_a_response():
+    """The commitment reaches the scorer.
+
+    It used to be read from a `_crisis_commit` key in `result.lines`, which holds the 44
+    allocation keys and never carried one -- so every crisis quarter was graded as "market event
+    ignored", including the quarters where the CEO put real money behind a posture."""
+    from app.engines.simulation.state import CrisisResponse
+    from app.engines.simulation.scoring import score_quarter
+
+    state = opening_state().with_(quarter=3)
+
+    def run(commit):
+        a = SimulationAllocations(
+            lines=normalise_lines({"google": D(8), "reps": D(6), "production": D(8)}),
+            crisis=CrisisResponse(variant="price_war", diagnosis="price", strategy="differentiate",
+                                  reasoning="Undercut on price, not out-featured.", commit=D(commit)),
+        )
+        r = compute_simulation_quarter(state, a)
+        return r, score_quarter(r, None, {}, None, "cash", ("cash",), D(10_000_000))
+
+    ignored, ignored_score = run(0)
+    answered, answered_score = run(12)
+
+    assert ignored.crisis_commit == D(0)
+    assert answered.crisis_commit == D(12)
+
+    ignored_note = "Market event ignored -- nothing committed to any response line."
+    assert any(m.why == ignored_note for m in ignored_score.modifiers)
+    assert not any(m.why == ignored_note for m in answered_score.modifiers)
+    assert answered_score.final > ignored_score.final
+
+
 def test_budget_reports_the_signed_cheque_and_raises_the_ceiling():
     """The rescue cheque has to move the number the CEO plans against the moment it's signed,
     and be nameable on the screen that shows it -- otherwise Q4 looks unfunded to the one
