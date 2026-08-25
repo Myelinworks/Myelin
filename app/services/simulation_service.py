@@ -471,6 +471,62 @@ async def submit_endgame(session: AsyncSession, company: Company, path: str,
     return {"path": path, "term_sheet_name": term_sheet_name, "reasoning": reasoning, "tier": ts.tier}
 
 
+MAX_REWINDS = 2
+
+
+async def rewind(session: AsyncSession, company: Company, target_quarter: int) -> dict:
+    """Rewind the simulation to a previously completed quarter.
+
+    Deletes all SimulationQuarter rows with number >= target_quarter, increments the
+    rewind counter, and clears the endgame decision if rewinding past Q3. The replay
+    architecture means no other state needs updating -- the next loadRun() will replay
+    the remaining quarters and reconstruct the correct state.
+    """
+    if target_quarter < 1 or target_quarter >= TOTAL_QUARTERS:
+        raise SimulationError(f"target quarter must be between 1 and {TOTAL_QUARTERS - 1} (got {target_quarter})")
+
+    run = await get_or_create_run(session, company)
+    if run.rewinds_used >= MAX_REWINDS:
+        raise SimulationError("no rewind opportunities remaining")
+
+    quarters = await locked_quarters(session, company.id)
+    if not quarters:
+        raise SimulationError("no quarters have been locked yet")
+
+    target_numbers = [q.number for q in quarters if q.number >= target_quarter]
+    if not target_numbers:
+        raise SimulationError(f"quarter {target_quarter} has not been completed yet")
+
+    # Delete all quarters at or after the target
+    await session.execute(
+        select(SimulationQuarter).where(
+            SimulationQuarter.company_id == company.id,
+            SimulationQuarter.number >= target_quarter,
+        ).with_for_update()
+    )
+    for q in quarters:
+        if q.number >= target_quarter:
+            await session.delete(q)
+
+    # Increment rewind counter
+    run.rewinds_used += 1
+
+    # If rewinding past Q3, clear the endgame decision so the player re-chooses
+    if target_quarter <= CRISIS_QUARTER:
+        run.endgame_path = None
+        run.endgame_term_sheet = None
+        run.endgame_reasoning = None
+
+    await session.flush()
+
+    return {
+        "target_quarter": target_quarter,
+        "deleted_quarters": sorted(target_numbers),
+        "rewinds_used": run.rewinds_used,
+        "rewinds_remaining": MAX_REWINDS - run.rewinds_used,
+    }
+
+
 async def run_state(session: AsyncSession, company: Company) -> dict:
     """Everything a client needs to render the run at any lifecycle point."""
     run = await get_or_create_run(session, company)
@@ -495,4 +551,5 @@ async def run_state(session: AsyncSession, company: Company) -> dict:
         "history": [row.result for row in quarters],
         "scores": [row.score for row in quarters],
         "endgame_path": run.endgame_path,
+        "rewinds_used": run.rewinds_used,
     }
