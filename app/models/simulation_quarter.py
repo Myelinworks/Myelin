@@ -70,3 +70,6 @@ class SimulationRun(Base, UUIDPkMixin, TimestampMixin):
     endgame_path: Mapped[str | None] = mapped_column(String(1), nullable=True)
     endgame_term_sheet: Mapped[str | None] = mapped_column(String(100), nullable=True)
     endgame_reasoning: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+
+    #: How many of the 2 allowed rewinds the player has used. Backend is source of truth.
+    rewinds_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
