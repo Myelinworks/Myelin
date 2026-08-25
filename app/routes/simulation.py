@@ -16,13 +16,14 @@ chain, but the run is untouched until `lock`.
 
 import uuid
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.models.company import Company
 from app.routes.deps import get_current_user
 from app.schemas.errors import READ_RESPONSES_WITH_PLAIN_CONFLICT, WRITE_RESPONSES
+from app.schemas.quarter import SimulationReportPdfResponse
 from app.services.auth_service import CurrentUser
 from app.services.authorization_service import require_owner, require_read_access
 from app.services.simulation_service import (
@@ -33,8 +34,17 @@ from app.services.simulation_service import (
     run_state,
     submit_endgame,
 )
+from app.services.storage_service import (
+    REPORT_BUCKET,
+    SupabaseStorageClient,
+    SupabaseStorageError,
+    get_supabase_storage_client,
+)
 
 router = APIRouter(prefix="/companies/{company_id}/simulation", tags=["simulation"])
+
+SIMULATION_REPORT_BUCKET = "simulation-reports"
+_SIMULATION_PDF_SIGNED_URL_TTL = 3600
 
 
 async def _readable(company_id: uuid.UUID, session: AsyncSession, user: CurrentUser) -> Company:
@@ -165,3 +175,80 @@ async def post_endgame(
         raise _illegal(exc) from exc
     await session.commit()
     return result
+
+
+def _simulation_report_path(user_id: uuid.UUID, company_id: uuid.UUID) -> str:
+    return f"{user_id}/{company_id}/final.pdf"
+
+
+@router.post(
+    "/report/pdf",
+    response_model=SimulationReportPdfResponse,
+    summary="Store the simulation final report PDF",
+    description="The frontend renders the PDF client-side from the scoring and history data, "
+    "then hands the finished bytes here. Stored in Supabase Storage's private "
+    "`simulation-reports` bucket under a user-scoped path.",
+)
+async def store_simulation_report_pdf(
+    company_id: uuid.UUID,
+    file: UploadFile = File(...),
+    user: CurrentUser = Depends(get_current_user),
+    storage: SupabaseStorageClient = Depends(get_supabase_storage_client),
+) -> SimulationReportPdfResponse:
+    data = await file.read()
+    path = _simulation_report_path(user.id, company_id)
+    try:
+        await storage.upload(
+            SIMULATION_REPORT_BUCKET, path, data, content_type="application/pdf"
+        )
+        signed_url = await storage.create_signed_url(
+            SIMULATION_REPORT_BUCKET, path, expires_in=_SIMULATION_PDF_SIGNED_URL_TTL
+        )
+    except SupabaseStorageError as exc:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            f"Supabase Storage rejected the upload: {exc.message}",
+        ) from exc
+
+    return SimulationReportPdfResponse(
+        bucket=SIMULATION_REPORT_BUCKET,
+        path=path,
+        signed_url=signed_url,
+        expires_in=_SIMULATION_PDF_SIGNED_URL_TTL,
+    )
+
+
+@router.get(
+    "/report/pdf",
+    response_model=SimulationReportPdfResponse,
+    summary="Re-sign a previously stored simulation report PDF",
+    description="404s if the simulation PDF has never been generated. Signed URLs expire, "
+    "so this always mints a fresh one.",
+)
+async def get_simulation_report_pdf(
+    company_id: uuid.UUID,
+    user: CurrentUser = Depends(get_current_user),
+    storage: SupabaseStorageClient = Depends(get_supabase_storage_client),
+) -> SimulationReportPdfResponse:
+    path = _simulation_report_path(user.id, company_id)
+    try:
+        signed_url = await storage.create_signed_url(
+            SIMULATION_REPORT_BUCKET, path, expires_in=_SIMULATION_PDF_SIGNED_URL_TTL
+        )
+    except SupabaseStorageError as exc:
+        if exc.status_code == 404:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                "No simulation report PDF has been generated yet",
+            ) from exc
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            f"Supabase Storage rejected the request: {exc.message}",
+        ) from exc
+
+    return SimulationReportPdfResponse(
+        bucket=SIMULATION_REPORT_BUCKET,
+        path=path,
+        signed_url=signed_url,
+        expires_in=_SIMULATION_PDF_SIGNED_URL_TTL,
+    )
