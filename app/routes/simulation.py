@@ -31,6 +31,7 @@ from app.services.simulation_service import (
     endgame_preview,
     lock,
     preview,
+    rewind,
     run_state,
     submit_endgame,
 )
@@ -124,6 +125,32 @@ async def post_lock(
     company = await _writable(company_id, session, user)
     try:
         result = await lock(session, company, payload)
+    except SimulationError as exc:
+        raise _illegal(exc) from exc
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/rewind",
+    responses=WRITE_RESPONSES,
+    summary="Rewind to a previously completed quarter",
+    description="Deletes all locked quarters at or after the target, increments the rewind "
+    "counter (max 2 per run), and clears the endgame decision if rewinding past Q3. "
+    "The frontend must call loadRun() after this to get the refreshed state.",
+)
+async def post_rewind(
+    company_id: uuid.UUID,
+    payload: dict = Body(...),
+    session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    company = await _writable(company_id, session, user)
+    target = payload.get("target_quarter")
+    if not isinstance(target, int):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "target_quarter must be an integer")
+    try:
+        result = await rewind(session, company, target)
     except SimulationError as exc:
         raise _illegal(exc) from exc
     await session.commit()
