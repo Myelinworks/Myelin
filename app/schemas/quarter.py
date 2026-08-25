@@ -219,3 +219,13 @@ class QuarterReportPdfResponse(BaseModel):
     path: str
     signed_url: str = Field(description="Expires -- re-fetch via GET rather than caching this.")
     expires_in: int
+
+
+class SimulationReportPdfResponse(BaseModel):
+    """`POST`/`GET .../simulation/report/pdf` -- same shape as the quarter variant, stored in
+    the `simulation-reports` bucket under a user-scoped path."""
+
+    bucket: str
+    path: str
+    signed_url: str = Field(description="Expires -- re-fetch via GET rather than caching this.")
+    expires_in: int
