@@ -7,8 +7,8 @@ deployed instance could be exercised end to end.
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.loader import load_scenario
@@ -119,6 +119,8 @@ async def create_company_route(
     "owned. Strictly owner-scoped; never returns another user's runs.",
 )
 async def list_companies(
+    limit: int = 50,
+    offset: int = 0,
     session: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> CompanyListResponse:
@@ -126,23 +128,26 @@ async def list_companies(
     (companies, then every quarter belonging to them joined to its performance row) -- the
     per-company rollups are folded in Python rather than issued as a query per company.
     """
+    # First, get the total count of the user's runs for pagination
+    total = await session.scalar(
+        select(func.count()).where(Company.owner_id == user.id)
+    )
+
     companies = (
         (
             await session.execute(
                 select(Company)
                 .where(Company.owner_id == user.id)
-                # `created_at` is `func.now()`, which PostgreSQL evaluates once per *transaction*
-                # -- two runs started in the same transaction carry an identical timestamp, and
-                # ordering on it alone would let them swap places between two reads of the same
-                # unchanged data. `id` breaks the tie arbitrarily but stably.
                 .order_by(Company.created_at.desc(), Company.id.desc())
+                .limit(limit)
+                .offset(offset)
             )
         )
         .scalars()
         .all()
     )
     if not companies:
-        return CompanyListResponse(entries=[])
+        return CompanyListResponse(total=total or 0, entries=[])
 
     rows = (
         await session.execute(
@@ -183,7 +188,7 @@ async def list_companies(
                 latest_band=latest_scored.score_band if latest_scored else None,
             )
         )
-    return CompanyListResponse(entries=entries)
+    return CompanyListResponse(total=total, entries=entries)
 
 
 @router.get(

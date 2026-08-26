@@ -9,7 +9,7 @@ Two of the three conditions come from the designer's stated Distressed definitio
 (`docs/17-designer-resolutions.md`, Tier Assignment):
 
     Distressed: Buffer breached at any point
-                OR (NCF < 0 with cash declining 2+ consecutive quarters)
+                OR (NCF < 0 with cash declining 3 consecutive quarters)
 
 The third, `cash_exhausted`, is the unambiguous cash-zero line -- not a stated rule, but not a
 judgement call either. Nothing else is invented: there are no runway-quarter thresholds and no
@@ -130,7 +130,7 @@ def _sustained_decline(history: list[QuarterResult], tier_assignment_quarter: in
             break
         streak += 1
 
-    if streak < 2:
+    if streak < 3:
         return None
     return (
         f"net cash flow was negative for {streak} consecutive quarters, "

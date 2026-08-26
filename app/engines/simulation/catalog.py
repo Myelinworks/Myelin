@@ -28,6 +28,7 @@ OPENING_CASH = Decimal(15_000_000)
 
 DEPRECIATION_RATE = Decimal("0.05")
 AMORTISATION_RATE = Decimal("0.08")
+# 3.5% quarterly evaluates to 14% annually - a deliberately punishing unsecured distress rate
 INTEREST_RATE = Decimal("0.035")
 MIN_AR = Decimal(800_000)
 #: Price elasticity exponent -- demand moves against the market reference price to this power.

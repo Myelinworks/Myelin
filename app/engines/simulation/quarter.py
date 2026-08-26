@@ -406,6 +406,8 @@ def compute_simulation_quarter(
             )
 
     # ── credit, treasury and governance ──────────────────────────────
+    # Debt facility intentionally uses opening_inventory (prior quarter closing balance)
+    # to emulate real-world borrowing base facilities, drawing against realized collateral.
     opening_inventory = sum((P[p].inv * P[p].inv_cost for p in PRODUCT_IDS), ZERO)
     open_net_worth = (state.cash + state.ar + opening_inventory + state.equipment + state.ip
                       - state.ap - state.debt - OTHER_LIABILITIES)

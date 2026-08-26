@@ -127,6 +127,7 @@ class CompanyListResponse(BaseModel):
     it in here would silently widen what a plain `GET /companies` returns depending on who asks.
     """
 
+    total: int
     entries: list[CompanyListItem]
 
 
