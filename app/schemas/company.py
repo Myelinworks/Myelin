@@ -35,6 +35,12 @@ class CompanyCreate(BaseModel):
     )
 
 
+class CompanyUpdate(BaseModel):
+    """`PATCH /companies/{company_id}` -- rename an existing run."""
+
+    name: str = Field(description="New display name for the company.")
+
+
 class ScenarioResponse(BaseModel):
     scenario_id: str
     display_name: str
