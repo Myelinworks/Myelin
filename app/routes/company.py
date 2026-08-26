@@ -25,6 +25,7 @@ from app.schemas.company import (
     CompanyListItem,
     CompanyListResponse,
     CompanyResponse,
+    CompanyUpdate,
     QuarterDetailResponse,
     QuarterSummary,
     ScenarioResponse,
@@ -206,6 +207,33 @@ async def get_company(
         .all()
     )
 
+    return _company_detail(company, list(quarters))
+
+
+@router.patch(
+    "/companies/{company_id}",
+    response_model=CompanyDetailResponse,
+    responses=WRITE_RESPONSES,
+    summary="Rename a company",
+    description="Updates the display name of an existing run. Only the owner may rename.",
+)
+async def update_company(
+    company_id: uuid.UUID,
+    payload: CompanyUpdate,
+    session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> CompanyDetailResponse:
+    """Rename the company. Owner-only."""
+    company = await _load_company(company_id, session, user)
+    require_owner(company, user)
+    company.name = payload.name.strip()[:255] or company.name
+    await session.commit()
+    await session.refresh(company)
+    quarters = (
+        (await session.execute(select(Quarter).where(Quarter.company_id == company_id).order_by(Quarter.number)))
+        .scalars()
+        .all()
+    )
     return _company_detail(company, list(quarters))
 
 
