@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.reference/
 
 # Local scratch output -- smoke-test dumps, route listings, anything written just to eyeball
 # once. A pair of these (_api_paths.txt, _smoke_results.txt) reached a commit by accident, and
