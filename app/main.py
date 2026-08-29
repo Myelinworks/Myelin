@@ -11,6 +11,7 @@ from app.routes import (
     auth,
     company,
     cx,
+    demand_preview,
     endgame,
     finance,
     marketing,
@@ -125,6 +126,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(profile.router)
 app.include_router(company.router)
+app.include_router(demand_preview.router)
 app.include_router(finance.router)
 app.include_router(marketing.router)
 app.include_router(product.router)
