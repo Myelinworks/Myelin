@@ -395,6 +395,12 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
     session.add(row)
     await session.flush()
 
+    # Q4 only: freeze the settled term-sheet outcome so a reopened run shows the same report.
+    if settlement is not None:
+        run.settlement = _plain(settlement)
+        session.add(run)
+        await session.flush()
+
     return {
         "quarter": state.quarter,
         "result": result_to_dict(result),
@@ -552,4 +558,5 @@ async def run_state(session: AsyncSession, company: Company) -> dict:
         "scores": [row.score for row in quarters],
         "endgame_path": run.endgame_path,
         "rewinds_used": run.rewinds_used,
+        "settlement": run.settlement,
     }

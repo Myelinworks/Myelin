@@ -71,5 +71,11 @@ class SimulationRun(Base, UUIDPkMixin, TimestampMixin):
     endgame_term_sheet: Mapped[str | None] = mapped_column(String(100), nullable=True)
     endgame_reasoning: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
+    #: The Q4 term-sheet outcome, frozen at the moment Quarter 4 locks and never recomputed.
+    #: Persisted so a reopened, completed run shows the exact same CEO performance report the
+    #: player saw when they closed the year -- the valuation, covenant outcome, and settlement
+    #: are immutable once the run is complete. JSONB so the whole `Settlement` serialises as-is.
+    settlement: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     #: How many of the 2 allowed rewinds the player has used. Backend is source of truth.
     rewinds_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
