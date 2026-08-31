@@ -141,6 +141,22 @@ def test_balance_sheet_balances_after_a_real_quarter():
     assert r.total_assets == pytest.approx(r.total_liabilities + r.equity, rel=Decimal("1e-9"))
 
 
+def test_balance_sheet_balances_when_rescue_cheque_is_raised():
+    """The Q4 Path A cheque is added to cash (an asset) and must also appear on the equity side
+    of the closing sheet, or the balance sheet will be off by exactly the amount raised. This is
+    the multi-department discrepancy: every closed Path A quarter was short by `equity_raised`."""
+    with_cheque = opening_state().with_(quarter=4, pending_investment=D(15464))
+    r = compute_simulation_quarter(
+        with_cheque,
+        alloc(google=8, meta=4, reps=10, production=8, supplier=5, quality=4, culture=2),
+    )
+    assert r.equity_raised == D(15464)
+    assert r.total_assets == pytest.approx(r.total_liabilities + r.equity, rel=Decimal("1e-9"))
+    # The fix folds the raised money into equity, so net worth (assets - liabilities) equals
+    # equity and the valuation's net-worth term is unaffected by the presentation fix.
+    assert r.equity == r.net_worth
+
+
 def test_crisis_costs_less_to_a_prepared_company():
     """The whole point of the shock: preparation bought earlier is worth more than reaction now."""
     weak = opening_state()

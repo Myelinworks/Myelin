@@ -750,7 +750,7 @@ def compute_simulation_quarter(
     total_assets = cash + ar_close + inv_value + equipment + ip_asset
     total_liabilities = ap_close + debt_close + OTHER_LIABILITIES
     retained_earnings = state.retained_earnings + net_profit
-    equity = SHARE_CAPITAL + retained_earnings
+    equity = SHARE_CAPITAL + retained_earnings + equity_raised
     net_worth = total_assets - total_liabilities
 
     customers = min(MARKET_CUSTOMERS, (state.customers + units_sold) * (ONE - cust_loss / _100))
