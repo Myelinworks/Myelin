@@ -7,6 +7,8 @@ deployed instance could be exercised end to end.
 
 import uuid
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +20,7 @@ from app.models.company import Company
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
+from app.models.simulation_quarter import SimulationQuarter
 from app.routes.deps import get_current_user, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
     CompanyCreate,
@@ -158,14 +161,55 @@ async def list_companies(
         )
     ).all()
 
+    # The Nadi Wear simulation writes its own SimulationQuarter rows instead of the 22-line
+    # Quarter/QuarterPerformance pair. Read those too so its rollup is populated the same way.
+    sim_rows = (
+        (
+            await session.execute(
+                select(SimulationQuarter)
+                .where(SimulationQuarter.company_id.in_([c.id for c in companies]))
+                .order_by(SimulationQuarter.company_id, SimulationQuarter.number)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
     by_company: dict[uuid.UUID, list[tuple[Quarter, QuarterPerformance | None]]] = {}
     for quarter, performance in rows:
         by_company.setdefault(quarter.company_id, []).append((quarter, performance))
 
+    sim_by_company: dict[uuid.UUID, list[SimulationQuarter]] = {}
+    for sq in sim_rows:
+        sim_by_company.setdefault(sq.company_id, []).append(sq)
+
     entries = []
     for company in companies:
         quarters = by_company.get(company.id, [])
+        sim_quarters = sim_by_company.get(company.id, [])
         scenario = load_scenario(company.scenario_id)
+        if sim_quarters:
+            latest_sim = sim_quarters[-1]
+            sim_closed = [sq for sq in sim_quarters if sq.ceo_score is not None]
+            latest_scored_sim = sim_closed[-1] if sim_closed else None
+            entries.append(
+                CompanyListItem(
+                    id=company.id,
+                    seq=company.seq,
+                    name=company.name,
+                    created_at=company.created_at,
+                    run_status=company.run_status,
+                    scenario_id=company.scenario_id,
+                    total_quarters=scenario.total_quarters,
+                    crisis_quarter=scenario.crisis_quarter,
+                    current_quarter_number=latest_sim.number,
+                    current_quarter_status="closed",
+                    quarters_locked=len(sim_quarters),
+                    latest_ceo_score=Decimal(latest_scored_sim.ceo_score) if latest_scored_sim else None,
+                    latest_band=latest_scored_sim.band if latest_scored_sim else None,
+                )
+            )
+            continue
         closed = [(q, p) for q, p in quarters if q.status == QuarterStatus.CLOSED]
         latest_scored = next(
             (p for _, p in reversed(closed) if p is not None and p.ceo_score is not None), None

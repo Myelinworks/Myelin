@@ -41,6 +41,7 @@ from app.engines.simulation.catalog import (
 from app.engines.simulation.crisis import assess, available_strategies, commit_reading
 from app.engines.simulation.crisis import evidence as crisis_evidence
 from app.engines.simulation.state import CrisisResponse, headcount, salary_bill
+from app.engines.survival import RunStatus
 from app.models.company import Company
 from app.models.simulation_quarter import SimulationQuarter, SimulationRun
 
@@ -398,7 +399,9 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
     # Q4 only: freeze the settled term-sheet outcome so a reopened run shows the same report.
     if settlement is not None:
         run.settlement = _plain(settlement)
+        company.run_status = RunStatus.COMPLETED
         session.add(run)
+        session.add(company)
         await session.flush()
 
     return {
