@@ -531,6 +531,10 @@ async def rewind(session: AsyncSession, company: Company, target_quarter: int) -
         run.endgame_path = None
         run.endgame_term_sheet = None
         run.endgame_reasoning = None
+        # Also clear COMPLETED status if path C had ended the run
+        if company.run_status == RunStatus.COMPLETED:
+            company.run_status = RunStatus.ACTIVE
+            session.add(company)
 
     await session.flush()
 
