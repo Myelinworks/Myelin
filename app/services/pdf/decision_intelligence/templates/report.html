@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Intelligence Report - {{ metadata.company_name }}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Page 1: Cover & Decision Maker Profile -->
+    <div class="page page-cover">
+        <div class="page-content">
+            <div class="logo-mark">MYELIN</div>
+            
+            <div class="cover-hero">
+                <div class="score-display">
+                    <div class="score-value">{{ "%.1f"|format(page_01_cover.final_score) }}</div>
+                    <div class="score-label">{{ page_01_cover.verdict_label }}</div>
+                </div>
+                <h1 class="cover-title">Decision Intelligence Report</h1>
+                <p class="outcome-quote">{{ page_01_cover.outcome_quote }}</p>
+            </div>
+
+            <div class="decision-maker-card">
+                <div class="card-label">Decision Maker Profile</div>
+                <h2 class="ceo-name">{{ metadata.ceo_name }}</h2>
+                <div class="company-name">{{ metadata.company_name }}</div>
+                <p class="profile-text">{{ page_01_cover.decision_maker_profile }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">1/12</span>
+        </div>
+    </div>
+
+    <!-- Page 2: The Year You Created -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">The Year You Created</h2>
+            <div class="timeline">
+                {% for q in page_02_year_created.quarters %}
+                <div class="quarter-entry {% if q.flagged %}flagged{% endif %}">
+                    <div class="quarter-header">
+                        <span class="quarter-label">Quarter {{ q.quarter_number }}</span>
+                        <span class="quarter-score pill pill-{{ 'good' if q.quarter_score >= 70 else 'bad' if q.quarter_score < 45 else 'neutral' }}">
+                            {{ "%.1f"|format(q.quarter_score) }} · {{ q.verdict }}
+                        </span>
+                    </div>
+                    <div class="entry-section">
+                        <div class="entry-label">Decision</div>
+                        <p class="entry-text">{{ q.decision_text }}</p>
+                    </div>
+                    <div class="entry-section">
+                        <div class="entry-label">Consequence</div>
+                        <p class="entry-text">{{ q.consequence_text }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">2/12</span>
+        </div>
+    </div>
+
+    <!-- Page 3: Seven-Dimension Profile -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">Your Decision-Making Profile</h2>
+            <p class="page-subtitle">Seven dimensions assessed across four quarters</p>
+            
+            <div class="dimension-grid">
+                {% for dim in page_03_profile.dimensions %}
+                <div class="dimension-card">
+                    <div class="dimension-header">
+                        <h3 class="dimension-name">{{ dim.dimension_label }}</h3>
+                        <div class="dimension-score score-{{ 'high' if dim.score >= 70 else 'low' if dim.score < 45 else 'mid' }}">
+                            {{ "%.0f"|format(dim.score) }}%
+                        </div>
+                    </div>
+                    <div class="dimension-bar">
+                        <div class="dimension-bar-fill" style="width: {{ dim.score }}%"></div>
+                    </div>
+                    <p class="dimension-evidence">{{ dim.evidence_summary }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">3/12</span>
+        </div>
+    </div>
+
+    <!-- Page 4: Biggest Strength -->
+    <div class="page">
+        <div class="page-content">
+            <div class="insight-badge badge-good">Biggest Strength</div>
+            <h2 class="insight-title">{{ page_04_strength.headline }}</h2>
+            <div class="score-callout callout-good">
+                <span class="callout-label">{{ page_04_strength.strength_dimension }}</span>
+                <span class="callout-value">{{ "%.0f"|format(page_04_strength.strength_score) }}%</span>
+            </div>
+            
+            <div class="evidence-section">
+                <h3 class="section-label">Evidence</h3>
+                <ul class="evidence-list">
+                    {% for bullet in page_04_strength.evidence_bullets %}
+                    <li>{{ bullet }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="narrative-section">
+                <h3 class="section-label">Why This Matters</h3>
+                <p class="narrative-text">{{ page_04_strength.narrative }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">4/12</span>
+        </div>
+    </div>
+
+    <!-- Page 5: Biggest Decision Risk -->
+    <div class="page">
+        <div class="page-content">
+            <div class="insight-badge badge-bad">Biggest Decision Risk</div>
+            <h2 class="insight-title">{{ page_05_risk.headline }}</h2>
+            <div class="score-callout callout-bad">
+                <span class="callout-label">{{ page_05_risk.risk_dimension }}</span>
+                <span class="callout-value">{{ "%.0f"|format(page_05_risk.risk_score) }}%</span>
+            </div>
+            
+            <div class="evidence-section">
+                <h3 class="section-label">Evidence</h3>
+                <ul class="evidence-list">
+                    {% for bullet in page_05_risk.evidence_bullets %}
+                    <li>{{ bullet }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="narrative-section">
+                <h3 class="section-label">The Exposure</h3>
+                <p class="narrative-text">{{ page_05_risk.narrative }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">5/12</span>
+        </div>
+    </div>
+
+    <!-- Page 6: Decision That Mattered Most -->
+    <div class="page">
+        <div class="page-content">
+            <div class="insight-badge badge-neutral">Decision That Mattered Most</div>
+            <h2 class="insight-title">Quarter {{ page_06_decision_that_mattered.quarter }}</h2>
+            
+            <div class="decision-breakdown">
+                <div class="breakdown-item">
+                    <div class="breakdown-label">What You Knew</div>
+                    <p class="breakdown-text">{{ page_06_decision_that_mattered.what_you_knew }}</p>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">What You Decided</div>
+                    <p class="breakdown-text">{{ page_06_decision_that_mattered.what_you_decided }}</p>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">What You Risked</div>
+                    <p class="breakdown-text">{{ page_06_decision_that_mattered.what_you_risked }}</p>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">What Happened</div>
+                    <p class="breakdown-text">{{ page_06_decision_that_mattered.what_happened }}</p>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Why It Mattered</div>
+                    <p class="breakdown-text">{{ page_06_decision_that_mattered.why_it_mattered }}</p>
+                </div>
+            </div>
+            
+            {% if page_06_decision_that_mattered.data_inconsistency_note %}
+            <div class="callout-box callout-warning">
+                <div class="callout-icon">⚠</div>
+                <p>{{ page_06_decision_that_mattered.data_inconsistency_note }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">6/12</span>
+        </div>
+    </div>
+
+    <!-- Page 7: What You Missed -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">What You Missed</h2>
+            <p class="page-subtitle">Unused capabilities and overlooked opportunities</p>
+            
+            <h3 class="missed-headline">{{ page_07_missed_opportunities.headline }}</h3>
+            
+            <div class="missed-grid">
+                {% for opp in page_07_missed_opportunities.opportunities %}
+                <div class="missed-card">
+                    <div class="missed-stat">
+                        <div class="stat-label">{{ opp.label }}</div>
+                        <div class="stat-value">{{ opp.value }}</div>
+                    </div>
+                    <p class="missed-explanation">{{ opp.explanation }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">7/12</span>
+        </div>
+    </div>
+
+    <!-- Page 8: Adaptability Analysis -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">Adaptability Analysis</h2>
+            <p class="page-subtitle">How your strategy evolved quarter over quarter</p>
+            
+            <table class="adaptability-table">
+                <thead>
+                    <tr>
+                        <th>Quarter</th>
+                        <th>Allocation Focus</th>
+                        <th>Changed?</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in page_08_adaptability.rows %}
+                    <tr>
+                        <td class="col-quarter">Q{{ row.quarter }}</td>
+                        <td class="col-focus">{{ row.allocation_focus }}</td>
+                        <td class="col-changed">
+                            {% if row.changed_from_prior %}
+                            <span class="badge-changed">Yes</span>
+                            {% else %}
+                            <span class="badge-unchanged">No</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-score">{{ "%.1f"|format(row.adaptability_score) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="summary-box">
+                <h3 class="section-label">Pattern Analysis</h3>
+                <p class="summary-text">{{ page_08_adaptability.summary }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">8/12</span>
+        </div>
+    </div>
+
+    <!-- Page 9: Decision Signature -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">Your Decision Signature</h2>
+            <p class="page-subtitle">The pattern behind your choices</p>
+            
+            <h3 class="signature-headline">{{ page_09_decision_signature.signature_headline }}</h3>
+            
+            <div class="signature-traits">
+                {% for bullet in page_09_decision_signature.signature_bullets %}
+                <div class="trait-item">
+                    <div class="trait-bullet"></div>
+                    <p class="trait-text">{{ bullet }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="narrative-section">
+                <h3 class="section-label">What This Means</h3>
+                <p class="narrative-text">{{ page_09_decision_signature.overall_narrative }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">9/12</span>
+        </div>
+    </div>
+
+    <!-- Page 10: Final Score Explained -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">Final Score Explained</h2>
+            
+            <div class="score-math">
+                <div class="score-row score-base">
+                    <span class="score-label">Base Score</span>
+                    <span class="score-value">{{ "%.1f"|format(page_10_score_explained.base_score) }}</span>
+                </div>
+                
+                {% if page_10_score_explained.positive_modifiers %}
+                <div class="modifiers-section">
+                    <h3 class="section-label label-positive">Positive Modifiers</h3>
+                    {% for mod in page_10_score_explained.positive_modifiers %}
+                    <div class="score-row score-modifier modifier-positive">
+                        <span class="score-label">{{ mod.label }}</span>
+                        <span class="score-value">+{{ "%.1f"|format(mod.value) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if page_10_score_explained.negative_modifiers %}
+                <div class="modifiers-section">
+                    <h3 class="section-label label-negative">Negative Modifiers</h3>
+                    {% for mod in page_10_score_explained.negative_modifiers %}
+                    <div class="score-row score-modifier modifier-negative">
+                        <span class="score-label">{{ mod.label }}</span>
+                        <span class="score-value">−{{ "%.1f"|format(mod.value|abs) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="score-row score-final">
+                    <span class="score-label">Final Score</span>
+                    <span class="score-value">{{ "%.1f"|format(page_10_score_explained.final_score) }}</span>
+                </div>
+            </div>
+            
+            <div class="explanation-box">
+                <p class="explanation-text">{{ page_10_score_explained.explanation }}</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">10/12</span>
+        </div>
+    </div>
+
+    <!-- Page 11: What Happened to the Company -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">What Happened to the Company</h2>
+            <h3 class="outcome-headline">{{ page_11_company_outcome.outcome_headline }}</h3>
+            
+            <div class="metrics-grid">
+                {% for metric in page_11_company_outcome.metrics %}
+                <div class="metric-card">
+                    <div class="metric-label">{{ metric.label }}</div>
+                    <div class="metric-value">{{ metric.value }}</div>
+                    {% if metric.context %}
+                    <div class="metric-context">{{ metric.context }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">11/12</span>
+        </div>
+    </div>
+
+    <!-- Page 12: Your Next Move -->
+    <div class="page">
+        <div class="page-content">
+            <h2 class="page-title">Your Next Move</h2>
+            <p class="page-subtitle">Recommendations for improving your decision intelligence</p>
+            
+            <div class="recommendations">
+                {% for rec in page_12_next_move.recommendations %}
+                <div class="recommendation-card">
+                    <div class="rec-number">{{ loop.index }}</div>
+                    <div class="rec-content">
+                        <h3 class="rec-title">{{ rec.title }}</h3>
+                        <p class="rec-body">{{ rec.body }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="closing-note">
+                <p>This report was generated on {{ metadata.generated_date }} based on {{ metadata.source }}.</p>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <span>MYELIN DECISION INTELLIGENCE · {{ metadata.company_name }} · {{ metadata.source }}</span>
+            <span class="page-number">12/12</span>
+        </div>
+    </div>
+</body>
+</html>
