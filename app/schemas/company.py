@@ -167,51 +167,40 @@ class QuarterDetailResponse(BaseModel):
 
 
 class LeaderboardEntrySchema(BaseModel):
-    """One entry in the simulation leaderboard showing a user's best score."""
+    """One entry in the cross-user simulation leaderboard.
+
+    All figures come from the single best-scoring run the user has in this
+    scenario.  ``composite_score`` is ``SimulationScore.final`` (the
+    quarter-normalised CEO score that ``scoring.py`` writes into the JSONB
+    ``score`` column as ``score["final"]``).  ``ceo_score`` is the same value
+    stored redundantly in the typed ``ceo_score`` varchar column — both are
+    exposed so callers can pick whichever they prefer without having to parse
+    JSON.  ``valuation_inr`` and ``net_profit_inr`` come from the last locked
+    quarter's ``result`` JSONB (``result["valuation"]`` /
+    ``result["net_profit"]``) of that best run.
+    """
 
     rank: int = Field(description="Position on the leaderboard (1 = top)")
-    user_id: uuid.UUID = Field(description="The user who achieved this score")
-    user_name: str | None = Field(default=None, description="Display name (first_name or email)")
-    best_score: Decimal = Field(description="Best normalised CEO score across all runs")
-    band: str = Field(description="Performance band for the best score")
-    company_name: str = Field(description="Name of the company where best score was achieved")
-    is_current_user: bool = Field(default=False, description="True if this entry is for the requesting user")
+    user_id: uuid.UUID = Field(description="The AppUser who achieved this score")
+    user_name: str | None = Field(default=None, description="first_name, or the local-part of the email when first_name is unset")
+    company_name: str = Field(description="Name of the company where the best score was achieved")
+    # --- score fields ---
+    ceo_score: Decimal = Field(description="Best per-quarter CEO score (equals composite_score for a single quarter; shown for clarity)")
+    composite_score: Decimal = Field(description="SimulationScore.final for the best-scoring quarter (normalised 0-100, identical to ceo_score in the current engine)")
+    band: str = Field(description='Performance band, e.g. "Competent" / "Strong" / "Exceptional"')
+    # --- financial fields from that quarter's result JSONB ---
+    valuation_inr: Decimal | None = Field(default=None, description="Company valuation at quarter close (result['valuation']), null when the engine did not produce one")
+    net_profit_inr: Decimal | None = Field(default=None, description="Net profit / (loss) for the quarter (result['net_profit']), null when absent")
+    is_current_user: bool = Field(default=False, description="True when this entry belongs to the requesting user")
 
 
 class LeaderboardResponse(BaseModel):
-    """Leaderboard for a specific simulation scenario."""
+    """Cross-user leaderboard for one simulation scenario."""
 
-    model_config = ConfigDict(json_schema_extra={"example": {
-        "scenario_id": "nadi_wear_standard",
-        "total_entries": 42,
-        "top_entries": [
-            {
-                "rank": 1,
-                "user_id": "123e4567-e89b-12d3-a456-426614174000",
-                "user_name": "Alice",
-                "best_score": "87.50",
-                "band": "Strong",
-                "company_name": "Nadi Wear",
-                "is_current_user": False
-            }
-        ],
-        "current_user_entry": {
-            "rank": 15,
-            "user_id": "123e4567-e89b-12d3-a456-426614174001",
-            "user_name": "Bob",
-            "best_score": "72.30",
-            "band": "Competent",
-            "company_name": "Nadi Wear Inc",
-            "is_current_user": True
-        }
-    }})
-
-    scenario_id: str = Field(description="The scenario this leaderboard is for")
-    total_entries: int = Field(description="Total number of users with completed runs")
-    top_entries: list[LeaderboardEntrySchema] = Field(
-        description="Top 3 users by best score"
-    )
+    scenario_id: str = Field(description="The scenario this leaderboard covers")
+    total_entries: int = Field(description="Total number of distinct users with at least one scored quarter")
+    top_entries: list[LeaderboardEntrySchema] = Field(description="Top-3 entries by composite_score, ties broken by valuation_inr desc")
     current_user_entry: LeaderboardEntrySchema | None = Field(
         default=None,
-        description="Current user's position, null if they haven't completed a run in this scenario"
+        description="The requesting user's own entry; null if they have no scored run in this scenario",
     )

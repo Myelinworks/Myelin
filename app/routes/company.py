@@ -10,7 +10,8 @@ import uuid
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import cast, func, select
+from sqlalchemy.types import Numeric
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.loader import load_scenario
@@ -380,117 +381,134 @@ async def _quarter_detail(quarter: Quarter, session: AsyncSession) -> QuarterDet
     "/leaderboard",
     response_model=LeaderboardResponse,
     responses=READ_RESPONSES,
-    summary="Get simulation leaderboard",
-    description="Returns top 3 users by best score for a given scenario, plus the current user's "
-    "position if they have completed runs. Only considers SimulationQuarter scores (Nadi Wear "
-    "simulation), not the 22-line flow. Defaults to 'nadi_wear_standard' scenario.",
+    summary="Cross-user simulation leaderboard",
+    description=(
+        "Returns the top-3 users ranked by their best CEO score across all their runs in the "
+        "given scenario, plus the requesting user's own entry.  All figures (composite score, "
+        "valuation, net profit) come from the single best-scoring quarter of each user's best "
+        "run.  Only SimulationQuarter rows are considered (Nadi Wear / startup-survival flow)."
+    ),
 )
 async def get_leaderboard(
-    scenario_id: str = Query(default="nadi_wear_standard", description="Scenario to filter leaderboard by"),
+    scenario_id: str = Query(default="nadi_wear_standard", description="Scenario to rank users within"),
     session: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> LeaderboardResponse:
-    """Fetch leaderboard for a specific scenario showing top users and current user's rank.
-    
-    The query finds each user's best score across all their runs in this scenario, then ranks
-    users by that best score. Users with no completed simulation quarters are excluded.
-    """
-    # Subquery to get each user's best score per scenario
-    # Join Company -> SimulationQuarter -> AppUser, filter by scenario_id
-    from sqlalchemy import and_, case, func as sql_func
-    from sqlalchemy.orm import aliased
-    
-    # Subquery: for each user, find their best ceo_score in this scenario
-    subq = (
+    from sqlalchemy import and_
+
+    # ── Step 1: for every (user, company) pair find the highest ceo_score quarter ──
+    # We use a correlated subquery approach that works on SQLAlchemy 2.x async:
+    #
+    #   best_sq  – per-user MAX(cast(ceo_score, numeric)) across all companies+quarters
+    #              in this scenario.
+    #   detail_sq – join back to pick one representative quarter row per user (the one
+    #              whose cast score equals the user's max).  DISTINCT ON user_id keeps
+    #              one row when two quarters are tied.
+    #
+    # result['valuation'] and result['net_profit'] are JSONB path reads; cast to Numeric
+    # so they arrive as Decimal rather than a JSON string.
+
+    best_sq = (
         select(
             Company.owner_id.label("user_id"),
-            sql_func.max(
-                sql_func.cast(SimulationQuarter.ceo_score, Decimal)
-            ).label("best_score"),
-            # Get the company_id and band where max score was achieved
-            # Using a window function approach would be cleaner but for simplicity we'll fetch separately
+            func.max(cast(SimulationQuarter.ceo_score, Numeric)).label("best_score"),
         )
         .join(SimulationQuarter, SimulationQuarter.company_id == Company.id)
         .where(
             and_(
                 Company.scenario_id == scenario_id,
                 Company.owner_id.isnot(None),
-                SimulationQuarter.ceo_score.isnot(None)
+                SimulationQuarter.ceo_score.isnot(None),
             )
         )
         .group_by(Company.owner_id)
-        .subquery()
+        .subquery("best_sq")
     )
-    
-    # Now join back to get user details and company name for the best score
-    # For each user_id in subq, find the company and quarter where they achieved best_score
-    query = (
+
+    # Pick the earliest (by SimulationQuarter.id) quarter that matches the user's best
+    # score, joining through the company that owns it.  DISTINCT ON is PostgreSQL-specific
+    # but this project already requires PostgreSQL.
+    detail_q = (
         select(
-            subq.c.user_id,
-            subq.c.best_score,
+            best_sq.c.user_id,
+            best_sq.c.best_score,
             AppUser.first_name,
             AppUser.email,
             Company.name.label("company_name"),
             SimulationQuarter.band,
+            SimulationQuarter.score["final"].astext.cast(Numeric).label("composite_score"),
+            SimulationQuarter.result["valuation"].astext.cast(Numeric).label("valuation_inr"),
+            SimulationQuarter.result["net_profit"].astext.cast(Numeric).label("net_profit_inr"),
         )
-        .select_from(subq)
-        .join(AppUser, AppUser.id == subq.c.user_id)
+        .select_from(best_sq)
+        .join(AppUser, AppUser.id == best_sq.c.user_id)
         .join(
             Company,
             and_(
-                Company.owner_id == subq.c.user_id,
-                Company.scenario_id == scenario_id
-            )
+                Company.owner_id == best_sq.c.user_id,
+                Company.scenario_id == scenario_id,
+            ),
         )
         .join(
             SimulationQuarter,
             and_(
                 SimulationQuarter.company_id == Company.id,
-                sql_func.cast(SimulationQuarter.ceo_score, Decimal) == subq.c.best_score
-            )
+                cast(SimulationQuarter.ceo_score, Numeric) == best_sq.c.best_score,
+            ),
         )
-        .order_by(subq.c.best_score.desc())
+        .distinct(best_sq.c.user_id)           # one row per user
+        .order_by(best_sq.c.user_id, best_sq.c.best_score.desc())
     )
-    
-    results = (await session.execute(query)).all()
-    
-    if not results:
+
+    rows = (await session.execute(detail_q)).all()
+
+    if not rows:
         return LeaderboardResponse(
             scenario_id=scenario_id,
             total_entries=0,
             top_entries=[],
             current_user_entry=None,
         )
-    
-    # Build ranked entries
+
+    # Sort all rows by best_score desc, valuation_inr desc (tiebreaker) in Python so we
+    # can assign contiguous ranks and handle ties identically to what the client sees.
+    def _sort_key(r):
+        score = float(r.best_score) if r.best_score is not None else 0.0
+        val   = float(r.valuation_inr) if r.valuation_inr is not None else 0.0
+        return (-score, -val)
+
+    sorted_rows = sorted(rows, key=_sort_key)
+
     entries: list[LeaderboardEntrySchema] = []
     current_user_entry: LeaderboardEntrySchema | None = None
-    
-    for rank, row in enumerate(results, start=1):
-        user_name = row.first_name if row.first_name else row.email.split("@")[0]
-        is_current = row.user_id == user.id
-        
+
+    for rank, row in enumerate(sorted_rows, start=1):
+        display_name = (row.first_name or "").strip() or row.email.split("@")[0]
+        is_me = row.user_id == user.id
+
+        # composite_score may be None when the JSONB key is absent (very old rows written
+        # before the score column existed); fall back to the typed ceo_score column.
+        composite = row.composite_score if row.composite_score is not None else row.best_score
+
         entry = LeaderboardEntrySchema(
             rank=rank,
             user_id=row.user_id,
-            user_name=user_name,
-            best_score=row.best_score,
-            band=row.band,
+            user_name=display_name,
             company_name=row.company_name,
-            is_current_user=is_current,
+            ceo_score=row.best_score,
+            composite_score=composite,
+            band=row.band,
+            valuation_inr=row.valuation_inr,
+            net_profit_inr=row.net_profit_inr,
+            is_current_user=is_me,
         )
-        
         entries.append(entry)
-        
-        if is_current:
+        if is_me:
             current_user_entry = entry
-    
-    # Top 3 entries
-    top_entries = entries[:3]
-    
+
     return LeaderboardResponse(
         scenario_id=scenario_id,
         total_entries=len(entries),
-        top_entries=top_entries,
+        top_entries=entries[:3],
         current_user_entry=current_user_entry,
     )
