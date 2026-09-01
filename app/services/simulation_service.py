@@ -477,13 +477,27 @@ async def submit_endgame(session: AsyncSession, company: Company, path: str,
     run.endgame_term_sheet = term_sheet_name
     run.endgame_reasoning = reasoning
     
-    # Path C means "stay independent and do not play Q4" -- mark the run as completed
-    if path == "C":
+    # Path B (acquisition) and Path C (some independent options) end the simulation immediately.
+    # Check if the chosen offer ends early by inspecting its kind and terms.
+    chosen_offer = ts.offer(path)
+    ends_early = False
+    
+    if chosen_offer:
+        # Path B acquisitions always end early (kind='acquire')
+        if chosen_offer.kind == "acquire":
+            ends_early = True
+        # Some Path C options also end early - check the terms for the signal
+        elif path == "C":
+            # Path C can be either "runs normally" or in rare edge cases might end early
+            # For now, no Path C options end early in the current implementation
+            pass
+    
+    if ends_early:
         company.run_status = RunStatus.COMPLETED
         session.add(company)
     
     await session.flush()
-    return {"path": path, "term_sheet_name": term_sheet_name, "reasoning": reasoning, "tier": ts.tier}
+    return {"path": path, "term_sheet_name": term_sheet_name, "reasoning": reasoning, "tier": ts.tier, "ends_early": ends_early}
 
 
 MAX_REWINDS = 2
