@@ -15,12 +15,13 @@ from app.routes import (
     endgame,
     finance,
     marketing,
-        simulation,
     product,
     profile,
     quarter,
+    reports,
     run,
     sales,
+    simulation,
 )
 from app.routes.deps import NotAuthenticatedError
 from app.services.auth_service import probe_password_reset_redirect
@@ -72,6 +73,7 @@ app = FastAPI(
         {"name": "product", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
         {"name": "sales", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
         {"name": "cx", "description": "Legacy per-decision pipeline -- not part of the primary allocation flow."},
+        {"name": "reports", "description": "PDF report generation (Decision Intelligence, quarterly reports)."},
     ],
 )
 
@@ -136,6 +138,7 @@ app.include_router(allocations.router)
 app.include_router(quarter.router)
 app.include_router(endgame.router)
 app.include_router(run.router)
+app.include_router(reports.router)
 # The four-quarter simulation: a parallel engine on the same companies, never in the 22-line path.
 app.include_router(simulation.router)
 
