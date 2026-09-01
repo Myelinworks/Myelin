@@ -476,6 +476,12 @@ async def submit_endgame(session: AsyncSession, company: Company, path: str,
     run.endgame_path = path
     run.endgame_term_sheet = term_sheet_name
     run.endgame_reasoning = reasoning
+    
+    # Path C means "stay independent and do not play Q4" -- mark the run as completed
+    if path == "C":
+        company.run_status = RunStatus.COMPLETED
+        session.add(company)
+    
     await session.flush()
     return {"path": path, "term_sheet_name": term_sheet_name, "reasoning": reasoning, "tier": ts.tier}
 
