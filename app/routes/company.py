@@ -20,6 +20,7 @@ from app.models.company import Company
 from app.models.quarter import Quarter, QuarterStatus
 from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
+from app.models.app_user import AppUser
 from app.models.simulation_quarter import SimulationQuarter
 from app.routes.deps import get_current_user, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
@@ -29,6 +30,8 @@ from app.schemas.company import (
     CompanyListResponse,
     CompanyResponse,
     CompanyUpdate,
+    LeaderboardEntrySchema,
+    LeaderboardResponse,
     QuarterDetailResponse,
     QuarterSummary,
     ScenarioResponse,
@@ -369,4 +372,125 @@ async def _quarter_detail(quarter: Quarter, session: AsyncSession) -> QuarterDet
         crisis=None
         if allocation is None
         else {column: getattr(allocation, column) for column in _CRISIS_COLUMNS},
+    )
+
+
+
+@router.get(
+    "/leaderboard",
+    response_model=LeaderboardResponse,
+    responses=READ_RESPONSES,
+    summary="Get simulation leaderboard",
+    description="Returns top 3 users by best score for a given scenario, plus the current user's "
+    "position if they have completed runs. Only considers SimulationQuarter scores (Nadi Wear "
+    "simulation), not the 22-line flow. Defaults to 'nadi_wear_standard' scenario.",
+)
+async def get_leaderboard(
+    scenario_id: str = Query(default="nadi_wear_standard", description="Scenario to filter leaderboard by"),
+    session: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> LeaderboardResponse:
+    """Fetch leaderboard for a specific scenario showing top users and current user's rank.
+    
+    The query finds each user's best score across all their runs in this scenario, then ranks
+    users by that best score. Users with no completed simulation quarters are excluded.
+    """
+    # Subquery to get each user's best score per scenario
+    # Join Company -> SimulationQuarter -> AppUser, filter by scenario_id
+    from sqlalchemy import and_, case, func as sql_func
+    from sqlalchemy.orm import aliased
+    
+    # Subquery: for each user, find their best ceo_score in this scenario
+    subq = (
+        select(
+            Company.owner_id.label("user_id"),
+            sql_func.max(
+                sql_func.cast(SimulationQuarter.ceo_score, Decimal)
+            ).label("best_score"),
+            # Get the company_id and band where max score was achieved
+            # Using a window function approach would be cleaner but for simplicity we'll fetch separately
+        )
+        .join(SimulationQuarter, SimulationQuarter.company_id == Company.id)
+        .where(
+            and_(
+                Company.scenario_id == scenario_id,
+                Company.owner_id.isnot(None),
+                SimulationQuarter.ceo_score.isnot(None)
+            )
+        )
+        .group_by(Company.owner_id)
+        .subquery()
+    )
+    
+    # Now join back to get user details and company name for the best score
+    # For each user_id in subq, find the company and quarter where they achieved best_score
+    query = (
+        select(
+            subq.c.user_id,
+            subq.c.best_score,
+            AppUser.first_name,
+            AppUser.email,
+            Company.name.label("company_name"),
+            SimulationQuarter.band,
+        )
+        .select_from(subq)
+        .join(AppUser, AppUser.id == subq.c.user_id)
+        .join(
+            Company,
+            and_(
+                Company.owner_id == subq.c.user_id,
+                Company.scenario_id == scenario_id
+            )
+        )
+        .join(
+            SimulationQuarter,
+            and_(
+                SimulationQuarter.company_id == Company.id,
+                sql_func.cast(SimulationQuarter.ceo_score, Decimal) == subq.c.best_score
+            )
+        )
+        .order_by(subq.c.best_score.desc())
+    )
+    
+    results = (await session.execute(query)).all()
+    
+    if not results:
+        return LeaderboardResponse(
+            scenario_id=scenario_id,
+            total_entries=0,
+            top_entries=[],
+            current_user_entry=None,
+        )
+    
+    # Build ranked entries
+    entries: list[LeaderboardEntrySchema] = []
+    current_user_entry: LeaderboardEntrySchema | None = None
+    
+    for rank, row in enumerate(results, start=1):
+        user_name = row.first_name if row.first_name else row.email.split("@")[0]
+        is_current = row.user_id == user.id
+        
+        entry = LeaderboardEntrySchema(
+            rank=rank,
+            user_id=row.user_id,
+            user_name=user_name,
+            best_score=row.best_score,
+            band=row.band,
+            company_name=row.company_name,
+            is_current_user=is_current,
+        )
+        
+        entries.append(entry)
+        
+        if is_current:
+            current_user_entry = entry
+    
+    # Top 3 entries
+    top_entries = entries[:3]
+    
+    return LeaderboardResponse(
+        scenario_id=scenario_id,
+        total_entries=len(entries),
+        top_entries=top_entries,
+        current_user_entry=current_user_entry,
     )
