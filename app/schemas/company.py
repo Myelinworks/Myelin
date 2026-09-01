@@ -164,3 +164,54 @@ class QuarterDetailResponse(BaseModel):
         "retention_offers, emergency_supply_fund, crisis_choice_d_spend) -- only meaningful in "
         "the crisis quarter. Null alongside `allocations` when nothing has been submitted yet.",
     )
+
+
+class LeaderboardEntrySchema(BaseModel):
+    """One entry in the simulation leaderboard showing a user's best score."""
+
+    rank: int = Field(description="Position on the leaderboard (1 = top)")
+    user_id: uuid.UUID = Field(description="The user who achieved this score")
+    user_name: str | None = Field(default=None, description="Display name (first_name or email)")
+    best_score: Decimal = Field(description="Best normalised CEO score across all runs")
+    band: str = Field(description="Performance band for the best score")
+    company_name: str = Field(description="Name of the company where best score was achieved")
+    is_current_user: bool = Field(default=False, description="True if this entry is for the requesting user")
+
+
+class LeaderboardResponse(BaseModel):
+    """Leaderboard for a specific simulation scenario."""
+
+    model_config = ConfigDict(json_schema_extra={"example": {
+        "scenario_id": "nadi_wear_standard",
+        "total_entries": 42,
+        "top_entries": [
+            {
+                "rank": 1,
+                "user_id": "123e4567-e89b-12d3-a456-426614174000",
+                "user_name": "Alice",
+                "best_score": "87.50",
+                "band": "Strong",
+                "company_name": "Nadi Wear",
+                "is_current_user": False
+            }
+        ],
+        "current_user_entry": {
+            "rank": 15,
+            "user_id": "123e4567-e89b-12d3-a456-426614174001",
+            "user_name": "Bob",
+            "best_score": "72.30",
+            "band": "Competent",
+            "company_name": "Nadi Wear Inc",
+            "is_current_user": True
+        }
+    }})
+
+    scenario_id: str = Field(description="The scenario this leaderboard is for")
+    total_entries: int = Field(description="Total number of users with completed runs")
+    top_entries: list[LeaderboardEntrySchema] = Field(
+        description="Top 3 users by best score"
+    )
+    current_user_entry: LeaderboardEntrySchema | None = Field(
+        default=None,
+        description="Current user's position, null if they haven't completed a run in this scenario"
+    )
