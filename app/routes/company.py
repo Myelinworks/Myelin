@@ -23,7 +23,7 @@ from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
 from app.models.app_user import AppUser
 from app.models.simulation_quarter import SimulationQuarter
-from app.routes.deps import get_current_user, get_quarter, get_quarter_modifiers
+from app.routes.deps import get_current_user, get_current_user_optional, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
     CompanyCreate,
     CompanyDetailResponse,
@@ -384,15 +384,17 @@ async def _quarter_detail(quarter: Quarter, session: AsyncSession) -> QuarterDet
     summary="Cross-user simulation leaderboard",
     description=(
         "Returns the top-3 users ranked by their best CEO score across all their runs in the "
-        "given scenario, plus the requesting user's own entry.  All figures (composite score, "
-        "valuation, net profit) come from the single best-scoring quarter of each user's best "
-        "run.  Only SimulationQuarter rows are considered (Nadi Wear / startup-survival flow)."
+        "given scenario, plus the requesting user's own entry (if authenticated).  All figures "
+        "(composite score, valuation, net profit) come from the single best-scoring quarter of "
+        "each user's best run.  Only SimulationQuarter rows are considered (Nadi Wear / "
+        "startup-survival flow).  Anonymous users can view top 3; authenticated users also see "
+        "their own position."
     ),
 )
 async def get_leaderboard(
     scenario_id: str = Query(default="nadi_wear_standard", description="Scenario to rank users within"),
     session: AsyncSession = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentUser | None = Depends(get_current_user_optional),
 ) -> LeaderboardResponse:
     from sqlalchemy import and_
 
@@ -484,7 +486,7 @@ async def get_leaderboard(
 
     for rank, row in enumerate(sorted_rows, start=1):
         display_name = (row.first_name or "").strip() or row.email.split("@")[0]
-        is_me = row.user_id == user.id
+        is_me = user is not None and row.user_id == user.id
 
         # composite_score may be None when the JSONB key is absent (very old rows written
         # before the score column existed); fall back to the typed ceo_score column.
