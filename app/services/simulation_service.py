@@ -11,6 +11,7 @@ means the cached `result`/`opening_state` columns can be rebuilt from scratch at
 
 import uuid
 from dataclasses import asdict, is_dataclass, replace
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -73,8 +74,35 @@ def _plain(value):
     return value
 
 
-def state_to_dict(s: SimulationCompanyState) -> dict:
-    return _plain(s)
+def _create_checkpoint(timer_remaining: int | None, opening_state: SimulationCompanyState, 
+                       prior_result: SimulationQuarterResult | None, allocations: SimulationAllocations) -> dict | None:
+    """Create a checkpoint for quarter-start restoration during rewind.
+    
+    Returns checkpoint dict with timer, cash, and budget ceiling at quarter start, or None if timer not provided.
+    """
+    if timer_remaining is None:
+        return None
+    
+    # Calculate budget ceiling for THIS quarter's opening
+    # drawn is 0 for Q1, or from prior quarter's result for Q2+
+    drawn = prior_result.drawn if prior_result else Decimal(0)
+    fixed = salary_bill(opening_state.staff) + opening_state.overhead
+    budget_ceiling = max(Decimal(0), opening_state.cash + opening_state.pending_investment + drawn - fixed - BUFFER)
+    
+    return {
+        "timer_remaining": timer_remaining,
+        "cash_balance": str(opening_state.cash),  # Convert Decimal to string for JSON
+        "budget_ceiling": str(budget_ceiling),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def state_to_dict(s: SimulationCompanyState, checkpoint: dict | None = None) -> dict:
+    """Serialize state to JSONB, optionally including a checkpoint."""
+    state_dict = _plain(s)
+    if checkpoint is not None:
+        state_dict["checkpoint"] = checkpoint
+    return state_dict
 
 
 def state_from_dict(raw: dict) -> SimulationCompanyState:
@@ -364,6 +392,15 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
 
     state, history = replay(quarters)
     state = _apply_endgame_investment(state, run, history)
+    
+    # Extract timer_remaining from payload for checkpoint creation
+    timer_remaining = payload.get("timer_remaining")
+    
+    # Create checkpoint for THIS quarter's opening state
+    # For Q1: timer_remaining should be 3000 (50 minutes) at simulation start
+    # For Q2-Q4: timer_remaining is passed from frontend when previous quarter locked
+    checkpoint = _create_checkpoint(timer_remaining, state, history[-1] if history else None, allocations_from_payload(payload))
+    
     allocations = _with_assigned_crisis(allocations_from_payload(payload), state, run)
     result = compute_simulation_quarter(state, allocations)
 
@@ -388,11 +425,12 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
         constraint_id, all_ids, budget(state, result, allocations)["ceiling"], extra,
     )
 
+    # Save quarter with checkpoint in opening_state
     row = SimulationQuarter(
         company_id=company.id,
         number=state.quarter,
         decisions=allocations_to_dict(allocations),
-        opening_state=state_to_dict(state),
+        opening_state=state_to_dict(state, checkpoint),  # Include checkpoint
         result=result_to_dict(result),
         score=score_to_dict(score),
         ceo_score=str(score.final),
@@ -531,6 +569,13 @@ async def rewind(session: AsyncSession, company: Company, target_quarter: int) -
     if not target_numbers:
         raise SimulationError(f"quarter {target_quarter} has not been completed yet")
 
+    # Retrieve checkpoint from target quarter's opening_state BEFORE deletion
+    # This checkpoint will be used by the frontend to restore timer, cash, and budget ceiling
+    checkpoint = None
+    target_quarter_obj = next((q for q in quarters if q.number == target_quarter), None)
+    if target_quarter_obj and target_quarter_obj.opening_state:
+        checkpoint = target_quarter_obj.opening_state.get("checkpoint")
+
     # Delete all quarters at or after the target
     await session.execute(
         select(SimulationQuarter).where(
@@ -562,6 +607,7 @@ async def rewind(session: AsyncSession, company: Company, target_quarter: int) -
         "deleted_quarters": sorted(target_numbers),
         "rewinds_used": run.rewinds_used,
         "rewinds_remaining": MAX_REWINDS - run.rewinds_used,
+        "checkpoint": checkpoint,  # None for legacy runs without checkpoints
     }
 
 
