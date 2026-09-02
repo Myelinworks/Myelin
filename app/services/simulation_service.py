@@ -568,13 +568,36 @@ async def run_state(session: AsyncSession, company: Company) -> dict:
     state = _apply_endgame_investment(state, run, history)
     complete = len(quarters) >= TOTAL_QUARTERS
 
+    # Use the company's actual run_status, falling back to completed/active based on quarters
+    if company.run_status == RunStatus.FAILED:
+        run_status_str = "failed"
+    elif company.run_status == RunStatus.DISTRESSED:
+        run_status_str = "distressed"
+    elif company.run_status == RunStatus.COMPLETED or complete:
+        run_status_str = "completed"
+    else:
+        run_status_str = "active"
+
+    # If the company failed mid-run and there's no settlement yet, create a synthetic one
+    # with game_over=true so the frontend displays the failure state properly
+    settlement = run.settlement
+    if company.run_status == RunStatus.FAILED and settlement is None and history:
+        # Create a synthetic settlement indicating game over
+        settlement = {
+            "path": "C",  # Failed while running independently
+            "modifiers": [],
+            "final_valuation": "0",
+            "game_over": True,
+            "ended_early": True,
+        }
+
     return {
         "company_id": str(company.id),
         "total_quarters": TOTAL_QUARTERS,
         "crisis_quarter": CRISIS_QUARTER,
         "current_quarter": None if complete else state.quarter,
         "quarters_locked": len(quarters),
-        "run_status": "completed" if complete else "active",
+        "run_status": run_status_str,
         "state": state_to_dict(state),
         "legal_moves": list(legal_moves(state, run, len(quarters))),
         "crisis": crisis_briefing(state, run, history),
@@ -585,5 +608,5 @@ async def run_state(session: AsyncSession, company: Company) -> dict:
         "scores": [row.score for row in quarters],
         "endgame_path": run.endgame_path,
         "rewinds_used": run.rewinds_used,
-        "settlement": run.settlement,
+        "settlement": settlement,
     }
