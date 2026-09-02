@@ -50,6 +50,26 @@ async def get_current_user(
     return CurrentUser(id=app_user.id, email=app_user.email, role=app_user.role)
 
 
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    session: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> CurrentUser | None:
+    """Optional authentication -- returns CurrentUser if authenticated, None otherwise.
+    Used for public endpoints that show different data based on auth status (e.g. leaderboards).
+    """
+    if credentials is None:
+        return None
+    try:
+        claims = verify_jwt(credentials.credentials, settings)
+        sub = uuid.UUID(claims["sub"])
+        app_user = await get_or_create_app_user(session, sub=sub, email=claims.get("email", ""))
+        return CurrentUser(id=app_user.id, email=app_user.email, role=app_user.role)
+    except (jwt.PyJWTError, ValueError):
+        # Invalid token: treat as anonymous rather than raising auth error
+        return None
+
+
 async def get_quarter(
     company_id: uuid.UUID,
     quarter_id: uuid.UUID,
