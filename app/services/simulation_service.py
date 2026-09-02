@@ -367,6 +367,11 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
     allocations = _with_assigned_crisis(allocations_from_payload(payload), state, run)
     result = compute_simulation_quarter(state, allocations)
 
+    # Check for cash exhaustion (company failure)
+    if result.next_state.cash <= 0:
+        company.run_status = RunStatus.FAILED
+        session.add(company)
+
     prior = history[-1] if history else None
     constraint_id, all_ids = _constraint_ids(result)
     extra = ()
