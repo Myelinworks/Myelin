@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import cast, func, select
+from sqlalchemy.orm import aliased
 from sqlalchemy.types import Numeric
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +24,7 @@ from app.models.quarter_allocation import QuarterAllocation
 from app.models.quarter_performance import QuarterPerformance
 from app.models.app_user import AppUser
 from app.models.simulation_quarter import SimulationQuarter
+from app.engines.survival import RunStatus
 from app.routes.deps import get_current_user, get_current_user_optional, get_quarter, get_quarter_modifiers
 from app.schemas.company import (
     CompanyCreate,
@@ -383,12 +385,17 @@ async def _quarter_detail(quarter: Quarter, session: AsyncSession) -> QuarterDet
     responses=READ_RESPONSES,
     summary="Cross-user simulation leaderboard",
     description=(
-        "Returns the top-3 users ranked by their best CEO score across all their runs in the "
-        "given scenario, plus the requesting user's own entry (if authenticated).  All figures "
-        "(composite score, valuation, net profit) come from the single best-scoring quarter of "
-        "each user's best run.  Only SimulationQuarter rows are considered (Nadi Wear / "
-        "startup-survival flow).  Anonymous users can view top 3; authenticated users also see "
-        "their own position."
+        "Returns the top-3 users ranked by their overall performance across a completed run in "
+        "the given scenario, plus the requesting user's own entry (if authenticated).\n\n"
+        "A run enters the board only once it is completed (all four quarters locked, "
+        "`run_status == completed`).  Figures aggregate over ALL of that run's quarters rather "
+        "than a single best quarter:\n"
+        "  * `ceo_score` / `composite_score` – the mean of the four per-quarter CEO scores (the "
+        "    app's overall composite, matching the final report's composite).\n"
+        "  * `valuation_inr` – the final (last) quarter's valuation, not summed.\n"
+        "  * `net_profit_inr` – the cumulative net profit across the whole simulation (summed).\n"
+        "Each user is ranked by their single best completed run.  Anonymous users can view top 3; "
+        "authenticated users also see their own position."
     ),
 )
 async def get_leaderboard(
@@ -398,73 +405,87 @@ async def get_leaderboard(
 ) -> LeaderboardResponse:
     from sqlalchemy import and_
 
-    # ── Step 1: for every (user, company) pair find the highest ceo_score quarter ──
-    # We use a correlated subquery approach that works on SQLAlchemy 2.x async:
+    # ── Step 1: aggregate EVERY scored quarter of each completed run ──
+    # For cumulative/overall metrics we must not pick a single best quarter:
+    #   * the overall CEO score is the MEAN of the per-quarter scores across the run,
+    #   * net profit is the CUMULATIVE sum over the run,
+    #   * valuation is the FINAL (last) quarter's valuation, never the sum.
     #
-    #   best_sq  – per-user MAX(cast(ceo_score, numeric)) across all companies+quarters
-    #              in this scenario.
-    #   detail_sq – join back to pick one representative quarter row per user (the one
-    #              whose cast score equals the user's max).  DISTINCT ON user_id keeps
-    #              one row when two quarters are tied.
-    #
-    # result['valuation'] and result['net_profit'] are JSONB path reads; cast to Numeric
-    # so they arrive as Decimal rather than a JSON string.
+    # `last_val_sq` is a correlated scalar subquery that reads `result['valuation']` from the
+    # run's last locked quarter.  The inner quarter uses its own alias and correlates ONLY to
+    # `Company` -- correlating to the outer `SimulationQuarter` too (the same table) would
+    # auto-correlate it into nothing and drop the FROM clause.  JSONB path reads are cast to
+    # Numeric so they arrive as Decimal.
 
-    best_sq = (
+    _sq = aliased(SimulationQuarter)
+
+    last_val_sq = (
+        select(_sq.result["valuation"].astext.cast(Numeric))
+        .where(
+            and_(
+                _sq.company_id == Company.id,
+                _sq.result["valuation"].isnot(None),
+            )
+        )
+        .order_by(_sq.number.desc())
+        .limit(1)
+        .correlate(Company)
+        .scalar_subquery()
+    ).label("valuation_inr")
+
+    agg_sq = (
         select(
             Company.owner_id.label("user_id"),
-            func.max(cast(SimulationQuarter.ceo_score, Numeric)).label("best_score"),
+            Company.name.label("company_name"),
+            func.avg(cast(SimulationQuarter.ceo_score, Numeric)).label("avg_score"),
+            func.sum(
+                SimulationQuarter.result["net_profit"].astext.cast(Numeric)
+            ).label("net_profit_inr"),
+            last_val_sq,
         )
         .join(SimulationQuarter, SimulationQuarter.company_id == Company.id)
         .where(
             and_(
                 Company.scenario_id == scenario_id,
                 Company.owner_id.isnot(None),
+                Company.run_status == RunStatus.COMPLETED,
                 SimulationQuarter.ceo_score.isnot(None),
             )
         )
-        .group_by(Company.owner_id)
-        .subquery("best_sq")
+        .group_by(Company.id, Company.owner_id, Company.name)
+        .subquery("agg_sq")
     )
 
-    # Pick the earliest (by SimulationQuarter.id) quarter that matches the user's best
-    # score, joining through the company that owns it.  DISTINCT ON is PostgreSQL-specific
-    # but this project already requires PostgreSQL.
     detail_q = (
         select(
-            best_sq.c.user_id,
-            best_sq.c.best_score,
+            agg_sq.c.user_id,
+            agg_sq.c.company_name,
+            agg_sq.c.avg_score,
+            agg_sq.c.net_profit_inr,
+            agg_sq.c.valuation_inr,
             AppUser.first_name,
             AppUser.email,
-            Company.name.label("company_name"),
-            SimulationQuarter.band,
-            SimulationQuarter.score["final"].astext.cast(Numeric).label("composite_score"),
-            SimulationQuarter.result["valuation"].astext.cast(Numeric).label("valuation_inr"),
-            SimulationQuarter.result["net_profit"].astext.cast(Numeric).label("net_profit_inr"),
         )
-        .select_from(best_sq)
-        .join(AppUser, AppUser.id == best_sq.c.user_id)
-        .join(
-            Company,
-            and_(
-                Company.owner_id == best_sq.c.user_id,
-                Company.scenario_id == scenario_id,
-            ),
-        )
-        .join(
-            SimulationQuarter,
-            and_(
-                SimulationQuarter.company_id == Company.id,
-                cast(SimulationQuarter.ceo_score, Numeric) == best_sq.c.best_score,
-            ),
-        )
-        .distinct(best_sq.c.user_id)           # one row per user
-        .order_by(best_sq.c.user_id, best_sq.c.best_score.desc())
+        .select_from(agg_sq)
+        .join(AppUser, AppUser.id == agg_sq.c.user_id)
     )
 
     rows = (await session.execute(detail_q)).all()
 
-    if not rows:
+    # ── Step 2: keep each user's single best completed run ──
+    # A user may have several completed runs in the same scenario; the board shows their best,
+    # ranked by the aggregated overall score (ties broken by valuation desc).
+    best_by_user: dict[object, object] = {}
+    for r in rows:
+        cur = best_by_user.get(r.user_id)
+        if cur is None or (r.avg_score or 0) > (getattr(cur, "avg_score", None) or 0):
+            best_by_user[r.user_id] = r
+        elif r.avg_score == getattr(cur, "avg_score", None) and (r.valuation_inr or 0) > (cur.valuation_inr or 0):
+            best_by_user[r.user_id] = r
+
+    candidates = list(best_by_user.values())
+
+    if not candidates:
         return LeaderboardResponse(
             scenario_id=scenario_id,
             total_entries=0,
@@ -472,14 +493,23 @@ async def get_leaderboard(
             current_user_entry=None,
         )
 
-    # Sort all rows by best_score desc, valuation_inr desc (tiebreaker) in Python so we
-    # can assign contiguous ranks and handle ties identically to what the client sees.
     def _sort_key(r):
-        score = float(r.best_score) if r.best_score is not None else 0.0
-        val   = float(r.valuation_inr) if r.valuation_inr is not None else 0.0
+        score = float(r.avg_score) if r.avg_score is not None else 0.0
+        val = float(r.valuation_inr) if r.valuation_inr is not None else 0.0
         return (-score, -val)
 
-    sorted_rows = sorted(rows, key=_sort_key)
+    sorted_rows = sorted(candidates, key=_sort_key)
+
+    def _band_for(score: float) -> str:
+        if score >= 90:
+            return "Exceptional"
+        if score >= 75:
+            return "Strong"
+        if score >= 60:
+            return "Competent"
+        if score >= 40:
+            return "Weak"
+        return "Poor"
 
     entries: list[LeaderboardEntrySchema] = []
     current_user_entry: LeaderboardEntrySchema | None = None
@@ -487,19 +517,16 @@ async def get_leaderboard(
     for rank, row in enumerate(sorted_rows, start=1):
         display_name = (row.first_name or "").strip() or row.email.split("@")[0]
         is_me = user is not None and row.user_id == user.id
-
-        # composite_score may be None when the JSONB key is absent (very old rows written
-        # before the score column existed); fall back to the typed ceo_score column.
-        composite = row.composite_score if row.composite_score is not None else row.best_score
+        score = float(row.avg_score if row.avg_score is not None else 0)
 
         entry = LeaderboardEntrySchema(
             rank=rank,
             user_id=row.user_id,
             user_name=display_name,
             company_name=row.company_name,
-            ceo_score=row.best_score,
-            composite_score=composite,
-            band=row.band,
+            ceo_score=row.avg_score,
+            composite_score=row.avg_score,
+            band=_band_for(score),
             valuation_inr=row.valuation_inr,
             net_profit_inr=row.net_profit_inr,
             is_current_user=is_me,
