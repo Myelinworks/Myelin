@@ -239,13 +239,17 @@ def budget(state: SimulationCompanyState, result: SimulationQuarterResult | None
     """What the quarter can afford, and what has been committed against it.
 
     The ceiling is cash plus whatever credit is actually drawn and whatever investment has been
-    signed but not yet banked, less the fixed costs that land whatever happens and the
-    working-capital buffer the board set. Committing past it is allowed -- the buffer absorbs it
-    and the record shows it -- which is why this is reported rather than enforced.
+    signed but not yet banked (pending_investment), less the fixed costs that land whatever happens
+    and the working-capital buffer the board set. Committing past it is allowed -- the buffer absorbs
+    it and the record shows it -- which is why this is reported rather than enforced.
 
     `investment` is reported alongside `drawn` for the same reason `drawn` is: a ceiling that
     moved because a term sheet was signed has to be explainable on the screen that shows it,
     without the client re-deriving it from the opening state.
+    
+    Path A (Q4 external financing): When Path A is selected, pending_investment is set on Q4's opening
+    state and IS included in ceiling calculation, making it available for allocation through the normal
+    decision flow. The 'left' amount (ceiling - committed) will reflect this investment.
     """
     opex = allocations.opex_lakhs * _LAKH
     capex = allocations.capex_lakhs * _LAKH
