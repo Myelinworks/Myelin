@@ -408,6 +408,15 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
     if result.next_state.cash <= 0:
         company.run_status = RunStatus.FAILED
         session.add(company)
+    
+    # Check for budget exhaustion: if closing with exactly zero budget left, mark as distressed
+    # This prevents advancing to the next quarter - the run ends here with whatever was accomplished
+    closing_budget = budget(state, result, allocations)
+    left = closing_budget["ceiling"] - closing_budget["committed"]
+    if left <= 0 and state.quarter < TOTAL_QUARTERS:
+        # Zero budget left before Q4 means company ran out of money to allocate
+        company.run_status = RunStatus.DISTRESSED
+        session.add(company)
 
     prior = history[-1] if history else None
     constraint_id, all_ids = _constraint_ids(result)
@@ -422,7 +431,7 @@ async def lock(session: AsyncSession, company: Company, payload: dict) -> dict:
 
     score = score_quarter(
         result, prior, allocations.reflection, allocations.priority,
-        constraint_id, all_ids, budget(state, result, allocations)["ceiling"], extra,
+        constraint_id, all_ids, closing_budget["ceiling"], extra,
     )
 
     # Save quarter with checkpoint in opening_state
