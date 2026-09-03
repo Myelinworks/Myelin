@@ -1,2 +1,1 @@
-FAIL Idk@1355: InvalidPasswordError
-FAIL both: InvalidPasswordError
+SUCCESS with new password on pooler
