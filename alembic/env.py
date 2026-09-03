@@ -40,7 +40,9 @@ if config.config_file_name is not None:
 
 # Use the app's own settings (.env) as the single source of truth for the DB URL,
 # instead of duplicating the connection string in alembic.ini.
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# Escape percent signs because ConfigParser tries to interpolate them (breaking URL encoded passwords)
+safe_db_url = get_settings().database_url.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", safe_db_url)
 
 target_metadata = Base.metadata
 
